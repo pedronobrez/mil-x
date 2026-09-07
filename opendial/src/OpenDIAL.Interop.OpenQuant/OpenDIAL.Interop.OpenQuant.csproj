@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Bridges between OpenDIAL (untargeted, MS-DIAL engine) and OpenQuant (targeted quantitation):
+       export aligned spots as an OpenQuant component CSV, import an OpenQuant .oqproj batch. -->
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>OpenDIAL.Interop.OpenQuant</RootNamespace>
+    <Configurations>Debug;Release;Debug vendor unsupported;Release vendor unsupported</Configurations>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="OpenDIAL.Interop.OpenQuant.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../MsdialWorkbench-MSDIAL-v5.5.260817/src/Common/CommonStandard/CommonStandard.csproj" />
+    <ProjectReference Include="../../../MsdialWorkbench-MSDIAL-v5.5.260817/src/MSDIAL5/MsdialCore/MsdialCore.csproj" />
+  </ItemGroup>
+
+</Project>

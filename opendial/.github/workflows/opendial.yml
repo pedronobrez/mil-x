@@ -36,6 +36,8 @@ jobs:
       - run: pip install numpy
       - name: Register upstream package source (closed reader, parity tests only)
         run: dotnet nuget add source "${{ github.workspace }}/MsdialWorkbench-MSDIAL-v5.5.260817/Assemblies" --name msdial-local
+      - name: SCIEX SDK assemblies (from the alpharaw wheel; SCIEX redistribution license)
+        run: bash opendial/scripts/fetch-sciex-assemblies.sh || echo "no SCIEX assemblies; .wiff plugin builds as a stub"
       - name: Unit tests (OpenDIAL.RawData)
         run: dotnet test opendial/tests/OpenDIAL.RawData.Tests/OpenDIAL.RawData.Tests.csproj -c Release
       - name: End-to-end + pipeline tests

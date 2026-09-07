@@ -11,6 +11,10 @@ export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
 echo "[test] OpenDIAL.RawData unit tests"
 dotnet test "$ROOT/tests/OpenDIAL.RawData.Tests/OpenDIAL.RawData.Tests.csproj" -c Release --nologo -v minimal
 
+echo "[test] OpenQuant interop + SCIEX plugin tests"
+dotnet test "$ROOT/tests/OpenDIAL.Interop.OpenQuant.Tests/OpenDIAL.Interop.OpenQuant.Tests.csproj" -c Release --nologo -v minimal -p:UseOpenRawData=true
+dotnet test "$ROOT/tests/OpenDIAL.Plugins.SciexWiff.Tests/OpenDIAL.Plugins.SciexWiff.Tests.csproj" -c Release --nologo -v minimal
+
 if [ -f "$ROOT/tests/OpenDIAL.Pipeline.Tests/OpenDIAL.Pipeline.Tests.csproj" ]; then
   echo "[test] OpenDIAL.Pipeline tests"
   dotnet test "$ROOT/tests/OpenDIAL.Pipeline.Tests/OpenDIAL.Pipeline.Tests.csproj" -c "Debug vendor unsupported" --nologo -v minimal -p:UseOpenRawData=true
