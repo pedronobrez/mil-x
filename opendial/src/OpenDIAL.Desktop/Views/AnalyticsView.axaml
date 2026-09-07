@@ -66,6 +66,8 @@
           <ComboBox Classes="compact" ItemsSource="{Binding Ontologies}" SelectedItem="{Binding OntologyFilter}" Width="140" ToolTip.Tip="Lipid class / ontology" />
           <ComboBox Classes="compact" ItemsSource="{x:Static vm:AnalyticsViewModel.TagFilters}" SelectedItem="{Binding TagFilter}" Width="170" ToolTip.Tip="Review state" />
           <CheckBox Classes="compact" Content="MS/MS only" IsChecked="{Binding MsmsOnly}" Margin="4,0,0,0" />
+          <CheckBox Classes="compact" Content="Molecular ion" IsChecked="{Binding MolecularIonOnly}" ToolTip.Tip="Drop the features the run marked as isotopes of another" />
+          <CheckBox Classes="compact" Content="Hand-edited" IsChecked="{Binding ManuallyModifiedOnly}" ToolTip.Tip="Only features whose annotation or integration was changed by hand" />
         </StackPanel>
       </DockPanel>
     </Border>
@@ -119,6 +121,14 @@
               <DataGridTextColumn Header="S/N" Binding="{Binding SignalToNoise, Converter={x:Static views:Converters.Number}, ConverterParameter=F0}" Width="60" />
               <DataGridTextColumn Header="Score" Binding="{Binding Score, Converter={x:Static views:Converters.Number}, ConverterParameter=F2}" Width="64" />
               <DataGridTextColumn Header="Height" Binding="{Binding Height, Converter={x:Static views:Converters.Number}, ConverterParameter=N0}" Width="90" />
+              <DataGridTextColumn Header="Iso" Binding="{Binding IsotopeText}" Width="50" />
+              <DataGridTemplateColumn Header="Abundance" Width="110" CanUserSort="True" SortMemberPath="Height">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:SpotRowViewModel">
+                    <c:MiniBars Items="{Binding ClassHeights}" Height="18" Margin="4,4" ToolTip.Tip="Mean height per sample class" />
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
               <DataGridTextColumn Header="Tags" Binding="{Binding TagText}" Width="140" />
               <DataGridTextColumn Header="Comment" Binding="{Binding Comment}" Width="160" />
             </DataGrid.Columns>
@@ -257,12 +267,25 @@
               <!-- the alternatives to the reported annotation -->
               <TabItem Header="Candidates">
                 <DockPanel Margin="0,6,0,0">
+                  <Border DockPanel.Dock="Top" Classes="hairline-bottom" Padding="0,0,0,6" Margin="0,0,0,6">
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                      <TextBlock Classes="eyebrow" Text="SEARCH LIBRARY" Margin="0,0,4,0" VerticalAlignment="Center" />
+                      <TextBlock Classes="label" Text="MS1" VerticalAlignment="Center" />
+                      <TextBox Text="{Binding SearchMs1Tolerance}" Width="66" ToolTip.Tip="Precursor tolerance in Da" />
+                      <TextBlock Classes="label" Text="MS2" VerticalAlignment="Center" />
+                      <TextBox Text="{Binding SearchMs2Tolerance}" Width="66" ToolTip.Tip="Fragment tolerance in Da" />
+                      <CheckBox Classes="compact" Content="RT" IsChecked="{Binding SearchUseRt}" ToolTip.Tip="Also require the reference retention time to match" />
+                      <TextBox Text="{Binding SearchRtTolerance}" Width="56" IsEnabled="{Binding SearchUseRt}" ToolTip.Tip="Retention tolerance in minutes" />
+                      <Button Classes="tool strong" Content="Search" Command="{Binding SearchLibraryCommand}" IsEnabled="{Binding !IsSearching}" />
+                      <Button Classes="tool" Content="Back to the run's matches" Command="{Binding RestoreCandidatesCommand}" IsVisible="{Binding ShowingSearchResults}" />
+                      <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsSearching}" Width="80" Height="3" VerticalAlignment="Center" />
+                    </StackPanel>
+                  </Border>
                   <Border DockPanel.Dock="Bottom" Padding="0,6,0,0">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                       <Button Classes="tool strong" Content="Use this annotation" Command="{Binding UseSelectedCandidateCommand}" ToolTip.Tip="Replace the reported name with the selected candidate" />
                       <Button Classes="tool" Content="Back to the automatic name" Command="{Binding ResetAnnotationCommand}" />
-                      <TextBlock Classes="hint" VerticalAlignment="Center" Margin="8,0,0,0"
-                                 Text="These are the library matches the run kept for this feature, best first." />
+                      <TextBlock Classes="hint" VerticalAlignment="Center" Margin="8,0,0,0" Text="{Binding SearchHint}" TextTrimming="CharacterEllipsis" />
                     </StackPanel>
                   </Border>
                   <DataGrid ItemsSource="{Binding Candidates}" SelectedItem="{Binding SelectedCandidate, Mode=TwoWay}" AutoGenerateColumns="False" IsReadOnly="True">

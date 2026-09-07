@@ -91,6 +91,9 @@ public sealed record AnnotationCandidate(
     string Source,
     int LibraryId);
 
+/// <summary>Mean height of one sample class, for the inline chart of the ion table.</summary>
+public readonly record struct ClassHeight(string Class, double Mean);
+
 public sealed record SampleInfo(int FileId, string FileName, string Class, string SampleType);
 
 public readonly record struct SampleValue(int FileId, string FileName, string Class, double Height);
@@ -138,6 +141,13 @@ public sealed class AlignmentSpotRow
 
     /// <summary>Proportion of the monoisotopic ion in the MS1 isotope cluster, as MS-DIAL reports it.</summary>
     public double MonoisotopicPercentage { get; init; }
+
+    /// <summary>0 for the monoisotopic ion, 1 for M+1 and so on; -1 when the run did not decide.</summary>
+    public int IsotopeWeight { get; init; } = -1;
+    /// <summary>The reviewer re-integrated this feature by hand.</summary>
+    public bool IsManuallyQuantified { get; init; }
+    /// <summary>Mean height per sample class, for the ion table's inline chart.</summary>
+    public IReadOnlyList<ClassHeight> ClassHeights { get; init; } = Array.Empty<ClassHeight>();
 }
 
 public sealed class AlignmentTable

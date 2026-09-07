@@ -11,8 +11,10 @@ it, and the verdict is one keystroke away.
 
 Every aligned feature, sortable on any column: id, retention time, m/z, annotation, confidence
 level, adduct, lipid class, fill percentage, whether MS/MS was assigned, signal-to-noise, match
-score, mean height, tags and comment. The leftmost column is the verdict at a glance — a tick for
-Confirmed, a cross for Misannotation, a dot for anything flagged to come back to.
+score, mean height, isotope position, tags and comment. The leftmost column is the verdict at a
+glance — a tick for Confirmed, a cross for Misannotation, a dot for anything flagged to come back
+to — and an **abundance** column draws one bar per sample class inside the row, so a feature as high
+in the blanks as in the samples stands out while scrolling, without opening a panel.
 
 The filter band above it narrows the table and everything downstream of it:
 
@@ -24,6 +26,8 @@ The filter band above it narrows the table and everything downstream of it:
 | class | one lipid class at a time, which is how a class-by-class pass runs |
 | review state | untagged, reviewed, not reviewed, or one specific tag |
 | MS/MS only | drop the features annotated on mass alone |
+| molecular ion | drop the features the run marked as isotopes of another |
+| hand-edited | only what a reviewer changed, in the annotation or the integration |
 
 ## The verdict
 
@@ -69,6 +73,18 @@ breakdown and ticks for class, chain and sn-position evidence. The one the run r
 `Use this annotation` replaces it with another; `Back to the automatic name` undoes that.
 
 ![the candidate list](images/review-candidates.png)
+
+When the right compound is not among them, **search library** above the list asks the library again
+for this feature with tolerances you choose — precursor, fragment, and optionally retention time —
+and with no score cut-off at all, because a reviewer is looking for what exists rather than for what
+passes. The search runs the same annotator the pipeline used, so a score here means what a score
+there means. `Back to the run's matches` returns to the stored list.
+
+![searching the library again](images/review-search.png)
+
+Without a product spectrum every record at the same mass ties on score, so the closest mass decides
+the order; that is the only evidence there is in that case. The library comes from the project when
+it is loaded there, otherwise from the MSP the run was given.
 
 **Abundance** — one bar per injection, coloured by class. A feature as high in the blanks as in the
 samples is background; one that scatters across the quality-control injections is not quantifiable.
@@ -116,7 +132,6 @@ them with a `.before-curation` suffix.
 
 ## What is not here yet
 
-Re-searching the library from inside the application with different tolerances, and the statistics
-windows (principal components, clustering, molecular networking). The candidate list covers the
-common case of the automatic annotation picking the wrong record, which is what re-searching is
-usually for.
+The statistics windows: principal components, hierarchical clustering and molecular networking.
+Curation also does not reach the exported matrices yet — tags and comments live in the tag file and
+its sidecar, not in the columns of an exported result.

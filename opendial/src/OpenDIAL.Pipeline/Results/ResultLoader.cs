@@ -352,6 +352,12 @@ public static class ResultLoader
                     Comment = spot.Comment ?? string.Empty,
                     MonoisotopicPercentage = spot.MonoIsotopicPercentage,
                     IsManuallyAnnotated = spot.MatchResults?.IsManuallyModifiedRepresentative ?? false,
+                    IsManuallyQuantified = spot.IsManuallyModifiedForQuant,
+                    IsotopeWeight = spot.PeakCharacter?.IsotopeWeightNumber ?? -1,
+                    ClassHeights = heights
+                        .GroupBy(h => string.IsNullOrEmpty(h.Class) ? "(none)" : h.Class)
+                        .Select(g => new ClassHeight(g.Key, g.Average(h => h.Height)))
+                        .ToList(),
                     Candidates = BuildCandidates(spot.MatchResults, match),
                 });
             }

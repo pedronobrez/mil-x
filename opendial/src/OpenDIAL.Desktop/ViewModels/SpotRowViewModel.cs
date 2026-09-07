@@ -33,6 +33,12 @@ public sealed partial class SpotRowViewModel : ObservableObject
     public double Height => Spot.AverageHeight;
     public double SignalToNoise => Spot.SignalToNoiseAverage;
     public bool MsmsAssigned => Spot.MsmsAssigned;
+    public IReadOnlyList<ClassHeight> ClassHeights => Spot.ClassHeights;
+    /// <summary>Not an isotope of another feature: what MS-DIAL's "molecular ion" filter keeps.</summary>
+    public bool IsMolecularIon => Spot.IsotopeWeight <= 0;
+    public string IsotopeText => Spot.IsotopeWeight switch { < 0 => string.Empty, 0 => "M", var n => "M+" + n };
+    /// <summary>Touched by hand, either the annotation or the integration.</summary>
+    public bool IsManuallyEdited => IsManual || Spot.IsManuallyAnnotated || Spot.IsManuallyQuantified;
     public string MsmsText => Spot.MsmsAssigned ? "MS/MS" : string.Empty;
 
     /// <summary>The reviewer's name when they picked one, otherwise the annotation the run produced.</summary>

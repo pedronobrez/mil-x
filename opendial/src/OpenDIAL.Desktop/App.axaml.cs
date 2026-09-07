@@ -167,6 +167,37 @@ public partial class App : Application
                                 await Task.Delay(1500);
                                 break;
                             }
+                            case "search-demo":
+                            {
+                                // Runs a real library re-search through the same command the button uses.
+                                await Task.Delay(2000);
+                                Console.WriteLine($"[search] {vm.Analytics.IonRows.Count} feature(s) in the table");
+                                var pick = vm.Analytics.IonRows.Where(r => r.Spot.Candidates.Count > 0).OrderByDescending(r => r.Height).FirstOrDefault()
+                                           ?? vm.Analytics.IonRows.Where(r => r.Mz > 400).OrderByDescending(r => r.Height).FirstOrDefault()
+                                           ?? vm.Analytics.IonRows.FirstOrDefault();
+                                if (pick is null) { Console.WriteLine("[search] no feature"); break; }
+                                vm.Analytics.SelectedRow = pick;
+                                await Task.Delay(3000);
+                                Console.WriteLine($"[search] feature #{pick.Id} {pick.DisplayName} RT {pick.Rt:F3} m/z {pick.Mz:F4}");
+                                Console.WriteLine($"[search] the run kept {vm.Analytics.Candidates.Count} match(es):");
+                                foreach (var c in vm.Analytics.Candidates.Take(5))
+                                {
+                                    Console.WriteLine($"[search]   {c.Name,-40} total {c.TotalScore,6:F3} dot {c.WeightedDotProduct,6:F3} rev {c.ReverseDotProduct,6:F3}{(c.IsRepresentative ? "  <- reported" : string.Empty)}");
+                                }
+                                vm.Analytics.SearchMs1Tolerance = "0.05";
+                                vm.Analytics.SearchMs2Tolerance = "0.05";
+                                Console.WriteLine("[search] searching the library again at 0.05 Da on MS1");
+                                await vm.Analytics.SearchLibraryCommand.ExecuteAsync(null);
+                                Console.WriteLine($"[search] {vm.Analytics.SearchHint}");
+                                foreach (var c in vm.Analytics.Candidates.Take(8))
+                                {
+                                    Console.WriteLine($"[search]   {c.Name,-40} total {c.TotalScore,6:F3} dot {c.WeightedDotProduct,6:F3} rev {c.ReverseDotProduct,6:F3} matched {c.MatchedPeaksCount,4:F0}");
+                                }
+                                var searchTabs = Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(window).OfType<Avalonia.Controls.TabControl>().FirstOrDefault(t => t.Name == "ResultTabs");
+                                if (searchTabs is not null) searchTabs.SelectedIndex = 3;
+                                await Task.Delay(2000);
+                                break;
+                            }
                             case "reintegrate-demo":
                             {
                                 // Drives a real re-integration through the same commands the buttons

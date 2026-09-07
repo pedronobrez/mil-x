@@ -90,6 +90,8 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     private readonly Dictionary<int, ReviewPanelViewModel> _allPanels = new();
     private CurationStore? _curation;
     private AlignmentResultContainer? _container;
+    private MoleculeDataBase? _searchDatabase;
+    private IReadOnlyList<AnnotationCandidate> _storedCandidates = Array.Empty<AnnotationCandidate>();
     private List<SpotRowViewModel> _allRows = new();
     private bool _suspendFilter;
 
@@ -125,6 +127,8 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     [ObservableProperty] private string _rtFrom = string.Empty;
     [ObservableProperty] private string _rtTo = string.Empty;
     [ObservableProperty] private bool _msmsOnly;
+    [ObservableProperty] private bool _molecularIonOnly;
+    [ObservableProperty] private bool _manuallyModifiedOnly;
     [ObservableProperty] private string _annotationFilter = "All";
     [ObservableProperty] private string _tagFilter = "All";
     [ObservableProperty] private string _ontologyFilter = "All";
@@ -139,6 +143,15 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     [ObservableProperty] private string _integrationFrom = string.Empty;
     [ObservableProperty] private string _integrationTo = string.Empty;
     [ObservableProperty] private string _integrationHint = "Shift-drag a panel to set the window.";
+
+    // hand-driven library search
+    [ObservableProperty] private string _searchMs1Tolerance = "0.01";
+    [ObservableProperty] private string _searchMs2Tolerance = "0.05";
+    [ObservableProperty] private string _searchRtTolerance = "0.5";
+    [ObservableProperty] private bool _searchUseRt;
+    [ObservableProperty] private bool _isSearching;
+    [ObservableProperty] private bool _showingSearchResults;
+    [ObservableProperty] private string _searchHint = "Widen the tolerances and search the library again for this feature.";
 
     // candidates of the selected feature
     [ObservableProperty] private IReadOnlyList<AnnotationCandidate> _candidates = Array.Empty<AnnotationCandidate>();
@@ -206,6 +219,9 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
         IonRows.Clear();
         _curation = null;
         _container = null;
+        _searchDatabase = null;
+        _storedCandidates = Array.Empty<AnnotationCandidate>();
+        ShowingSearchResults = false;
         CurationDirty = false;
         PeaksEdited = false;
         Candidates = Array.Empty<AnnotationCandidate>();
@@ -265,6 +281,8 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     partial void OnRtFromChanged(string value) => RebuildRows();
     partial void OnRtToChanged(string value) => RebuildRows();
     partial void OnMsmsOnlyChanged(bool value) => RebuildRows();
+    partial void OnMolecularIonOnlyChanged(bool value) => RebuildRows();
+    partial void OnManuallyModifiedOnlyChanged(bool value) => RebuildRows();
     partial void OnAnnotationFilterChanged(string value) => RebuildRows();
     partial void OnTagFilterChanged(string value) => RebuildRows();
     partial void OnOntologyFilterChanged(string value) => RebuildRows();
@@ -292,6 +310,8 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
             if (rtLo is not null && r.Rt < rtLo) return false;
             if (rtHi is not null && r.Rt > rtHi) return false;
             if (MsmsOnly && !r.MsmsAssigned) return false;
+            if (MolecularIonOnly && !r.IsMolecularIon) return false;
+            if (ManuallyModifiedOnly && !r.IsManuallyEdited) return false;
             if (OntologyFilter is not ("All" or "" or null) && !string.Equals(r.Ontology, OntologyFilter, StringComparison.OrdinalIgnoreCase)) return false;
             switch (AnnotationFilter)
             {
@@ -387,7 +407,10 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
         }
         value.Refresh();
         SelectedSpot = value.Spot;
-        Candidates = value.Spot.Candidates;
+        _storedCandidates = value.Spot.Candidates;
+        Candidates = _storedCandidates;
+        ShowingSearchResults = false;
+        SearchHint = "Widen the tolerances and search the library again for this feature.";
         SelectedCandidate = Candidates.FirstOrDefault(c => c.IsRepresentative) ?? Candidates.FirstOrDefault();
         ScoreRows = BuildScoreRows(value.Spot);
         ResetIntegrationWindow();
@@ -432,6 +455,84 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
         return rows;
     }
 
+
+
+    // ---------------------------------------------------------------- library re-search
+
+    /// <summary>
+    /// Asks the library again for the selected feature, with the reviewer's own tolerances and no
+    /// score cut-offs. The run keeps only its best few matches; when the right compound is not among
+    /// them this is the way to find it. Scores come from the same annotator the run used.
+    /// </summary>
+    [RelayCommand]
+    private async Task SearchLibrary()
+    {
+        var row = SelectedRow;
+        if (row?.Spot.Spot is null || _session is null) return;
+        var options = new LibrarySearchOptions(
+            ParseTolerance(SearchMs1Tolerance, 0.01),
+            ParseTolerance(SearchMs2Tolerance, 0.05),
+            ParseTolerance(SearchRtTolerance, 0.5),
+            SearchUseRt);
+        IsSearching = true;
+        try
+        {
+            var database = await ResolveSearchDatabaseAsync();
+            if (database is null)
+            {
+                SearchHint = "No library to search: the project carries none and its MSP file is not on this machine.";
+                return;
+            }
+            var scan = _session.AlignmentFile is null ? null : await Task.Run(() => ResultLoader.LoadAlignmentMsDec(_session.AlignmentFile, row.Id));
+            var omics = _session.Parameter?.TargetOmics ?? CompMs.Common.Enum.TargetOmics.Metabolomics;
+            var spot = row.Spot.Spot;
+            var found = await Task.Run(() => LibrarySearcher.Search(database, omics, spot, scan, options));
+            if (!ReferenceEquals(SelectedRow, row)) return;
+            Candidates = found;
+            ShowingSearchResults = true;
+            SelectedCandidate = found.FirstOrDefault();
+            SearchHint = found.Count == 0
+                ? $"Nothing within {options.Ms1Tolerance:F3} Da of m/z {row.Mz:F4} in {database.Id}."
+                : $"{found.Count} record(s) within {options.Ms1Tolerance:F3} Da in {database.Id}, best first. Take one with Use this annotation.";
+        }
+        catch (Exception ex)
+        {
+            SearchHint = "The search failed: " + ex.Message;
+        }
+        finally
+        {
+            IsSearching = false;
+        }
+    }
+
+    /// <summary>Puts the matches the run itself kept back in the list.</summary>
+    [RelayCommand]
+    private void RestoreCandidates()
+    {
+        Candidates = _storedCandidates;
+        ShowingSearchResults = false;
+        SelectedCandidate = Candidates.FirstOrDefault(c => c.IsRepresentative) ?? Candidates.FirstOrDefault();
+        SearchHint = "Showing the matches the run kept.";
+    }
+
+    private static double ParseTolerance(string? text, double fallback) =>
+        double.TryParse(text?.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var v) && v > 0 ? v : fallback;
+
+    /// <summary>
+    /// The library to search: the one already in the project when it can be reached, otherwise the
+    /// MSP the run was given. Loading a large MSP takes a while, so it is kept for the session.
+    /// </summary>
+    private async Task<MoleculeDataBase?> ResolveSearchDatabaseAsync()
+    {
+        if (_searchDatabase is not null) return _searchDatabase;
+        _searchDatabase = LibrarySearcher.ResolveDatabase(_session?.DataBaseMapper, _spots);
+        if (_searchDatabase is not null) return _searchDatabase;
+        var msp = _session?.Parameter?.MspFilePath;
+        if (string.IsNullOrWhiteSpace(msp) || !File.Exists(msp)) return null;
+        SearchHint = $"Reading {Path.GetFileName(msp)}…";
+        _searchDatabase = await LibrarySearcher.LoadAsync(msp);
+        return _searchDatabase;
+    }
 
     // ---------------------------------------------------------------- manual peak editing
 
