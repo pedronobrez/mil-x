@@ -13,5 +13,8 @@ namespace OpenDIAL.Desktop.Tests;
 public static class TestApp
 {
     public static AppBuilder BuildAvaloniaApp() =>
-        AppBuilder.Configure<App>().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = true });
+        AppBuilder.Configure<App>()
+            .UseSkia()
+            // real drawing, so a test can capture the frame and compare it with a stored one
+            .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false });
 }

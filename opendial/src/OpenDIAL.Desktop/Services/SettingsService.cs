@@ -22,6 +22,10 @@ public sealed class AppSettings
     public string Theme { get; set; } = "System";
     public List<RecentProject> RecentProjects { get; set; } = new();
     public bool ShowLog { get; set; } = false;
+    /// <summary>Ion table column headers in the order the reviewer arranged them.</summary>
+    public List<string> IonTableColumnOrder { get; set; } = new();
+    /// <summary>The ion table was last used in its own window.</summary>
+    public bool IonTableDetached { get; set; } = false;
 }
 
 /// <summary>Persists <see cref="AppSettings"/> as JSON under %APPDATA%/OpenDIAL/settings.json (~/.config/OpenDIAL on macOS/Linux).</summary>

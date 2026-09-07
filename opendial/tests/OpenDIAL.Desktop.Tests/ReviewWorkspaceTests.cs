@@ -45,6 +45,9 @@ public class ReviewWorkspaceTests
         };
     }
 
+    /// <summary>The same fixture, reachable from the visual tests.</summary>
+    internal static (AnalyticsViewModel Vm, CurationStore Store, string Folder) NewAnalyticsForVisuals() => NewAnalytics();
+
     private static (AnalyticsViewModel Vm, CurationStore Store, string Folder) NewAnalytics()
     {
         var folder = Path.Combine(Path.GetTempPath(), "opendial-ui-" + Guid.NewGuid().ToString("N"));

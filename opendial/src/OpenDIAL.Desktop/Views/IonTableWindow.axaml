@@ -1,0 +1,18 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:OpenDIAL.Desktop.ViewModels"
+        xmlns:views="using:OpenDIAL.Desktop.Views"
+        x:Class="OpenDIAL.Desktop.Views.IonTableWindow"
+        x:DataType="vm:AnalyticsViewModel"
+        Title="Ion table"
+        Width="1180" Height="820" MinWidth="560" MinHeight="320"
+        FontSize="13"
+        Background="{DynamicResource OdCanvas}"
+        WindowStartupLocation="CenterScreen">
+  <!--
+    The ion table torn off into its own window, so it can sit on a second screen while the evidence
+    panels keep the main one. It hosts the same control bound to the same view model, which is what
+    keeps the selection, the filters and the tagging in step between the two.
+  -->
+  <views:IonTableView x:Name="Table" Margin="8" />
+</Window>

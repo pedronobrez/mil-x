@@ -138,6 +138,14 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     [ObservableProperty] private int _reviewedCount;
     [ObservableProperty] private bool _curationDirty;
     [ObservableProperty] private bool _peaksEdited;
+    /// <summary>The ion table is showing in its own window rather than beside the evidence.</summary>
+    [ObservableProperty] private bool _ionTableDetached;
+
+    /// <summary>Set by the shell: opens or closes the window the ion table can be torn off into.</summary>
+    public Action<bool>? RequestDetachIonTable { get; set; }
+
+    [RelayCommand]
+    private void ToggleIonTableWindow() => RequestDetachIonTable?.Invoke(!IonTableDetached);
 
     // manual re-integration
     [ObservableProperty] private string _integrationFrom = string.Empty;
@@ -643,10 +651,8 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
             if (string.IsNullOrEmpty(bean?.AnalysisFilePath)) continue;
             try
             {
-                var raw = await _cache.GetAsync(bean.AnalysisFilePath);
-                var ms1 = _cache.Channels(bean.AnalysisFilePath, raw).FirstOrDefault(c => c.Kind == RawChannelKind.Ms1);
-                if (ms1 is null) continue;
-                var eic = await Task.Run(() => RawExplorer.Xic(raw, ms1.SpectrumIndices, spot.Mz, tol));
+                var survey = await _cache.GetMs1Async(bean.AnalysisFilePath);
+                var eic = await Task.Run(() => survey.Xic(spot.Mz, tol));
                 var points = eic.Points.Select(q => new ChromatogramPoint(q.Rt, q.Intensity)).ToList();
                 map[id] = points;
                 if (_allPanels.TryGetValue(id, out var panel)) panel.FullTrace = points.Select(q => new Point(q.Rt, q.Intensity)).ToList();
@@ -1064,11 +1070,9 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
                 if (string.IsNullOrEmpty(path)) { panel.Title = $"{p.FileName} · raw file unknown"; continue; }
                 try
                 {
-                    var raw = await _cache.GetAsync(path);
+                    var survey = await _cache.GetMs1Async(path);
                     if (version != _gridVersion) return;
-                    var ms1 = _cache.Channels(path, raw).FirstOrDefault(c => c.Kind == RawChannelKind.Ms1);
-                    if (ms1 is null) continue;
-                    var eic = await Task.Run(() => RawExplorer.Xic(raw, ms1.SpectrumIndices, mz, tol));
+                    var eic = await Task.Run(() => survey.Xic(mz, tol));
                     if (version != _gridVersion) return;
                     panel.FullTrace = eic.Points.Select(q => new Point(q.Rt, q.Intensity)).ToList();
                     panel.PeakMax = p.HasPeak && !double.IsNaN(p.RtLeft) ? eic.Points.Where(q => q.Rt >= p.RtLeft && q.Rt <= p.RtRight).Select(q => q.Intensity).DefaultIfEmpty(0).Max() : eic.Points.Select(q => q.Intensity).DefaultIfEmpty(0).Max();

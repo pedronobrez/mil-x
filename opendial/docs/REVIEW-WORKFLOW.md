@@ -16,6 +16,11 @@ glance — a tick for Confirmed, a cross for Misannotation, a dot for anything f
 to — and an **abundance** column draws one bar per sample class inside the row, so a feature as high
 in the blanks as in the samples stands out while scrolling, without opening a panel.
 
+`Open in a window` tears the table off into a window of its own, for a second screen: it hosts the
+same control bound to the same view model, so the selection, the filters and the tagging stay in
+step with the panels on the main window. Columns can be dragged into whatever order suits the work,
+and both the order and whether the table was torn off come back on the next start.
+
 The filter band above it narrows the table and everything downstream of it:
 
 | Filter | What it is for |

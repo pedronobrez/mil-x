@@ -75,67 +75,8 @@
 
     <Grid ColumnDefinitions="1.15*,6,1.35*" Margin="8">
       <!-- ================= ion table ================= -->
-      <Border Grid.Column="0" Classes="panel">
-        <DockPanel>
-          <Border DockPanel.Dock="Top" Padding="12,10,12,4">
-            <DockPanel>
-              <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="2">
-                <Button Classes="icon" Content="▲" Command="{Binding PreviousSpotCommand}" ToolTip.Tip="Previous feature (Alt+↑)" />
-                <Button Classes="icon" Content="▼" Command="{Binding NextSpotCommand}" ToolTip.Tip="Next feature (Alt+↓)" />
-                <Button Classes="tool" Content="Next unreviewed" Command="{Binding NextUnreviewedCommand}" ToolTip.Tip="Jump to the next feature with no verdict (Alt+N)" />
-                <Rectangle Classes="vsep" />
-                <Button Classes="tool" Content="Confirm all shown" Command="{Binding ConfirmAllShownCommand}" ToolTip.Tip="Tag every feature the filter is showing as Confirmed" />
-                <Button Classes="tool" Content="Clear all shown" Command="{Binding ClearAllShownCommand}" />
-              </StackPanel>
-              <TextBlock Classes="eyebrow" Text="ION TABLE" Margin="0" VerticalAlignment="Center" />
-            </DockPanel>
-          </Border>
-          <DataGrid x:Name="IonTable" ItemsSource="{Binding IonRows}" SelectedItem="{Binding SelectedRow, Mode=TwoWay}"
-                    AutoGenerateColumns="False" IsReadOnly="True" CanUserSortColumns="True" CanUserResizeColumns="True"
-                    GridLinesVisibility="Horizontal" Margin="0,4,0,0">
-            <DataGrid.Styles>
-              <Style Selector="DataGridRow">
-                <Setter Property="MinHeight" Value="26" />
-              </Style>
-            </DataGrid.Styles>
-            <DataGrid.Columns>
-              <DataGridTemplateColumn Header="" Width="26" CanUserSort="True" SortMemberPath="TagText">
-                <DataGridTemplateColumn.CellTemplate>
-                  <DataTemplate x:DataType="vm:SpotRowViewModel">
-                    <Panel>
-                      <TextBlock Text="✓" Foreground="{DynamicResource OdAccent}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsConfirmed}" ToolTip.Tip="Confirmed" />
-                      <TextBlock Text="✕" Foreground="{DynamicResource OdDanger}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsRejected}" ToolTip.Tip="Misannotation" />
-                      <TextBlock Text="●" Classes="muted" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsFlagged}" ToolTip.Tip="Flagged for another look" />
-                    </Panel>
-                  </DataTemplate>
-                </DataGridTemplateColumn.CellTemplate>
-              </DataGridTemplateColumn>
-              <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="56" />
-              <DataGridTextColumn Header="RT" Binding="{Binding Rt, Converter={x:Static views:Converters.Number}, ConverterParameter=F2}" Width="60" />
-              <DataGridTextColumn Header="m/z" Binding="{Binding Mz, Converter={x:Static views:Converters.Number}, ConverterParameter=F4}" Width="86" />
-              <DataGridTextColumn Header="Annotation" Binding="{Binding DisplayName}" Width="240" MinWidth="150" />
-              <DataGridTextColumn Header="Level" Binding="{Binding Level}" Width="80" />
-              <DataGridTextColumn Header="Adduct" Binding="{Binding Adduct}" Width="90" />
-              <DataGridTextColumn Header="Class" Binding="{Binding Ontology}" Width="100" />
-              <DataGridTextColumn Header="Fill %" Binding="{Binding Fill, Converter={x:Static views:Converters.Number}, ConverterParameter=F0}" Width="62" />
-              <DataGridTextColumn Header="MS/MS" Binding="{Binding MsmsText}" Width="70" />
-              <DataGridTextColumn Header="S/N" Binding="{Binding SignalToNoise, Converter={x:Static views:Converters.Number}, ConverterParameter=F0}" Width="60" />
-              <DataGridTextColumn Header="Score" Binding="{Binding Score, Converter={x:Static views:Converters.Number}, ConverterParameter=F2}" Width="64" />
-              <DataGridTextColumn Header="Height" Binding="{Binding Height, Converter={x:Static views:Converters.Number}, ConverterParameter=N0}" Width="90" />
-              <DataGridTextColumn Header="Iso" Binding="{Binding IsotopeText}" Width="50" />
-              <DataGridTemplateColumn Header="Abundance" Width="110" CanUserSort="True" SortMemberPath="Height">
-                <DataGridTemplateColumn.CellTemplate>
-                  <DataTemplate x:DataType="vm:SpotRowViewModel">
-                    <c:MiniBars Items="{Binding ClassHeights}" Height="18" Margin="4,4" ToolTip.Tip="Mean height per sample class" />
-                  </DataTemplate>
-                </DataGridTemplateColumn.CellTemplate>
-              </DataGridTemplateColumn>
-              <DataGridTextColumn Header="Tags" Binding="{Binding TagText}" Width="140" />
-              <DataGridTextColumn Header="Comment" Binding="{Binding Comment}" Width="160" />
-            </DataGrid.Columns>
-          </DataGrid>
-        </DockPanel>
-      </Border>
+      <views:IonTableView Grid.Column="0" x:Name="InlineIonTable" IsVisible="{Binding !IonTableDetached}" />
+
       <GridSplitter Grid.Column="1" Classes="vertical" ResizeDirection="Columns" />
 
       <!-- ================= evidence for the selected feature ================= -->
@@ -182,9 +123,9 @@
                   <Border DockPanel.Dock="Top" Padding="0,0,0,6">
                     <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" HorizontalAlignment="Right">
                       <TextBlock Classes="label" Text="Columns" />
-                      <NumericUpDown Value="{Binding Columns}" Minimum="1" Maximum="8" Increment="1" FormatString="0" Width="88" MinHeight="26" />
+                      <NumericUpDown Value="{Binding Columns}" Minimum="1" Maximum="8" Increment="1" FormatString="0" Width="112" MinWidth="112" MinHeight="26" HorizontalContentAlignment="Center" />
                       <TextBlock Classes="label" Text="Rows" Margin="6,0,0,0" />
-                      <NumericUpDown Value="{Binding Rows}" Minimum="1" Maximum="6" Increment="1" FormatString="0" Width="88" MinHeight="26" />
+                      <NumericUpDown Value="{Binding Rows}" Minimum="1" Maximum="6" Increment="1" FormatString="0" Width="112" MinWidth="112" MinHeight="26" HorizontalContentAlignment="Center" />
                       <CheckBox Classes="compact" Content="Same Y" IsChecked="{Binding SameY}" Margin="6,0,0,0" />
                       <CheckBox Classes="compact" Content="Link X" IsChecked="{Binding LinkX}" />
                       <ComboBox Classes="compact" ItemsSource="{x:Static vm:AnalyticsViewModel.ZoomModes}" SelectedItem="{Binding ZoomMode}" Width="150" />

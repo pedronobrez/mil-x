@@ -21,6 +21,14 @@
           </ComboBox>
         </Grid>
 
+        <Border Classes="section"><TextBlock Classes="eyebrow" Text="SURVEY SCAN CACHE" /></Border>
+        <TextBlock Classes="hint" TextWrapping="Wrap"
+                   Text="Reading a vendor file takes about as long every time it is opened. The survey scans of each file are kept here after the first read, so reopening a project draws its chromatograms straight away. Nothing else is stored, and deleting the folder only costs one slow read." />
+        <DockPanel Margin="0,4,0,0">
+          <Button DockPanel.Dock="Right" Content="Empty it" Margin="8,0,0,0" Click="OnClearMs1Cache" />
+          <TextBlock x:Name="Ms1CacheInfo" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+        </DockPanel>
+
         <Border Classes="section"><TextBlock Classes="eyebrow" Text="VENDOR FORMAT CONVERSION" /></Border>
         <TextBlock Classes="hint" TextWrapping="Wrap"
                    Text="Thermo .raw, Agilent/Bruker .d and Sciex .wiff/.wiff2 are converted to mzML with ProteoWizard msconvert before processing: a native msconvert executable, or the Docker image." />

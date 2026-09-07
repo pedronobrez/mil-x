@@ -12,6 +12,7 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <InvariantGlobalization>true</InvariantGlobalization>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Configurations>Debug;Release;Debug vendor unsupported;Release vendor unsupported</Configurations>
   </PropertyGroup>
 
@@ -20,10 +21,17 @@
     <PackageReference Include="xunit" Version="2.9.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
     <PackageReference Include="Avalonia.Headless.XUnit" Version="11.3.13" />
+    <PackageReference Include="Avalonia.Skia" Version="11.3.13" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.13" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="../../src/OpenDIAL.Desktop/OpenDIAL.Desktop.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- the reference images the visual tests compare against -->
+    <None Include="Baselines/**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

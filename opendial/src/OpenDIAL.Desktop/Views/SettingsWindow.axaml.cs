@@ -26,6 +26,24 @@ public partial class SettingsWindow : Window
             SettingsPath.Text = "Stored in " + settings.FilePath;
             ThemeBox.SelectedIndex = settings.Current.Theme switch { "Light" => 1, "Dark" => 2, _ => 0 };
         }
+        ShowCacheSize();
+    }
+
+    private readonly OpenDIAL.Pipeline.Caching.Ms1SnapshotCache _ms1Cache = new();
+
+    private void ShowCacheSize()
+    {
+        var count = _ms1Cache.Count();
+        var megabytes = _ms1Cache.SizeBytes() / 1024.0 / 1024.0;
+        Ms1CacheInfo.Text = count == 0
+            ? $"Empty · {_ms1Cache.Root}"
+            : $"{count} file(s), {megabytes:N0} MB · {_ms1Cache.Root}";
+    }
+
+    private void OnClearMs1Cache(object? sender, RoutedEventArgs e)
+    {
+        _ms1Cache.Clear();
+        ShowCacheSize();
     }
 
     public static void ApplyTheme(string theme)

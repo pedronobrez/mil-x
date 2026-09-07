@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using CompMs.Common.DataObj;
 using CompMs.RawDataHandler.Core;
+using OpenDIAL.Pipeline.Caching;
 using OpenDIAL.Pipeline.Results;
 
 namespace OpenDIAL.Desktop.Services;
@@ -13,7 +14,11 @@ public sealed class RawDataCache
 {
     private readonly ConcurrentDictionary<string, Task<RawMeasurement>> _raw = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, IReadOnlyList<RawChannel>> _channels = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, Task<Ms1Snapshot>> _snapshots = new(StringComparer.OrdinalIgnoreCase);
     private readonly SemaphoreSlim _gate = new(2);
+
+    /// <summary>Survey scans kept on disk between sessions; see <see cref="Ms1SnapshotCache"/>.</summary>
+    public Ms1SnapshotCache Disk { get; } = new();
 
     public event EventHandler<string>? Status;
 
@@ -60,6 +65,41 @@ public sealed class RawDataCache
         }
     }
 
+    /// <summary>
+    /// The survey scans of a file, for extracting chromatograms. It comes from the disk cache when
+    /// it is there, which is the difference between a review pass starting straight away and one
+    /// that waits for the vendor reader on every file again.
+    /// </summary>
+    public Task<Ms1Snapshot> GetMs1Async(string path, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(path)) throw new FileNotFoundException("No raw file path.");
+        return _snapshots.GetOrAdd(path, p => LoadSnapshotAsync(p, ct));
+    }
+
+    private async Task<Ms1Snapshot> LoadSnapshotAsync(string path, CancellationToken ct)
+    {
+        try
+        {
+            var cached = await Task.Run(() => Disk.TryLoad(path), ct).ConfigureAwait(false);
+            if (cached is not null)
+            {
+                Status?.Invoke(this, $"{Path.GetFileName(path)}: survey scans from the cache");
+                return cached;
+            }
+            var raw = await GetAsync(path, ct).ConfigureAwait(false);
+            var ms1 = Channels(path, raw).FirstOrDefault(c => c.Kind == RawChannelKind.Ms1);
+            var indices = ms1?.SpectrumIndices ?? Array.Empty<int>();
+            var snapshot = await Task.Run(() => Ms1Snapshot.FromMeasurement(raw, indices), ct).ConfigureAwait(false);
+            _ = Task.Run(() => Disk.Save(path, snapshot), CancellationToken.None);
+            return snapshot;
+        }
+        catch
+        {
+            _snapshots.TryRemove(path, out _);
+            throw;
+        }
+    }
+
     public IReadOnlyList<RawChannel> Channels(string path, RawMeasurement raw)
         => _channels.GetOrAdd(path, _ => RawExplorer.DiscoverChannels(raw));
 
@@ -67,5 +107,6 @@ public sealed class RawDataCache
     {
         _raw.Clear();
         _channels.Clear();
+        _snapshots.Clear();
     }
 }

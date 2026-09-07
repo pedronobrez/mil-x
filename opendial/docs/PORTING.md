@@ -97,3 +97,26 @@ managed and works; `.cdf` needs `brew install netcdf` and the library visible to
   networking browser, MS-FINDER integration, imaging) are not ported.
 * Linux is covered by CI (ubuntu-22.04) for the CLI; Docker-based conversion works the same way
   (no emulation needed on x86-64).
+
+
+## The survey scan cache
+
+A vendor file costs the same read every time a project is opened — about 25 seconds for one of the
+ZenoTOF acquisitions here, and a review pass over eight of them started with three minutes of
+waiting. After the first read the survey scans of a file are written to a cache directory, and every
+chromatogram after that comes from there:
+
+| | |
+| --- | --- |
+| vendor library, one 60 MB `.wiff` | 24 882 ms |
+| the same file from the cache | 87 ms |
+| what is stored | 484 scans, 4 295 640 centroids, 32 MB |
+
+Entries are keyed by the file's own identity — path, size and last write time — so an edited or
+replaced file never serves a stale one. Masses are kept as tenths of a millidalton in a 32-bit
+integer, two orders finer than any tolerance a chromatogram is extracted with, which halves both the
+file and the time to read it. The store is capped and evicted least-recently-used.
+
+It lives in `~/Library/Caches/OpenDIAL/ms1` on macOS, `$XDG_CACHE_HOME/OpenDIAL/ms1` on Linux and
+under `LocalAppData` on Windows; `OPENDIAL_CACHE` moves it. Preferences shows its size and empties
+it. Deleting it by hand is safe: it costs one slow read.
