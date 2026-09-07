@@ -5,9 +5,10 @@ OpenDIAL is an open, cross-platform port of [MS-DIAL 5](https://github.com/syste
 unchanged; the Windows-only pieces are replaced:
 
 * **`OpenDIAL.RawData`** – an open raw-data layer that is a drop-in replacement for the closed
-  `RawDataHandler` package: native mzML reader, vendor formats (Thermo `.raw`, Agilent/Bruker `.d`,
-  Sciex `.wiff`/`.wiff2`, Shimadzu `.lcd`) through a ProteoWizard *msconvert* bridge, optional
-  reflection bridge to the original dll for `.ibf`/`.cdf`/`.imzML`.
+  `RawDataHandler` package: native mzML reader, **native SCIEX `.wiff`** (Clearcore2 plugin, the
+  same route OpenQuant uses), other vendor formats (Thermo `.raw`, Agilent/Bruker `.d`,
+  Shimadzu `.lcd`) through a ProteoWizard *msconvert* bridge, optional reflection bridge to the
+  original dll for `.ibf`/`.cdf`/`.imzML`.
 * **`MSDIALCUI` console** – built and published as a self-contained macOS ARM64/x64 or Linux binary.
 * **`OpenDIAL.Desktop`** – a new Avalonia desktop application (project → run → results).
 * **`OpenDIAL.Pipeline`** – headless orchestration library shared by the GUI and tests.

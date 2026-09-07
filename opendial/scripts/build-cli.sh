@@ -27,6 +27,15 @@ dotnet publish "$UPSTREAM/tests/MSDIAL5/MsdialCoreTestApp/MsdialCoreTestApp.cspr
   --configuration "$CONFIG" --framework net8 --runtime "$RID" --self-contained \
   -p:UseOpenRawData=true -p:SkipLibraryDownload=true -p:DebugType=None -p:DebugSymbols=false \
   -p:ErrorOnDuplicatePublishOutputFiles=false -o "$OUT"
+# optional native SCIEX .wiff plugin (needs vendor/sciex from scripts/fetch-sciex-assemblies.sh)
+if [ -f "$ROOT/vendor/sciex/Clearcore2.Data.AnalystDataProvider.dll" ]; then
+  echo "[plugins] building the native SCIEX .wiff plugin"
+  dotnet publish "$ROOT/src/OpenDIAL.Plugins.SciexWiff/OpenDIAL.Plugins.SciexWiff.csproj" -c Release -o "$OUT/plugins/sciex" -p:DebugType=None -p:DebugSymbols=false --nologo -v quiet
+  # the plugin's own copies of Common/OpenDIAL.RawData must not shadow the application's
+  rm -f "$OUT/plugins/sciex/Common.dll" "$OUT/plugins/sciex/OpenDIAL.RawData.dll" "$OUT/plugins/sciex/NCDK.dll" "$OUT"/plugins/sciex/MathNet.Numerics.dll "$OUT"/plugins/sciex/Accord*.dll "$OUT"/plugins/sciex/MessagePack*.dll "$OUT"/plugins/sciex/Newtonsoft.Json.dll "$OUT"/plugins/sciex/Splash.dll 2>/dev/null || true
+else
+  echo "[plugins] vendor/sciex not present: .wiff will go through msconvert (run scripts/fetch-sciex-assemblies.sh for native reading)"
+fi
 cp "$UPSTREAM/LGPL.txt" "$UPSTREAM/THIRD-PARTY-LICENSE-README.md" "$OUT/" 2>/dev/null || true
 cat > "$OUT/opendial-cli" <<'EOF'
 #!/usr/bin/env bash

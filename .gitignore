@@ -20,3 +20,4 @@ opendial/testdata/**/*.msp2*
 opendial/testdata/**/*_tags.xml
 opendial/testdata/**/*.rtc
 opendial/testdata/**/*.mzML
+opendial/vendor/

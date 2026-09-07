@@ -1,0 +1,88 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Native SCIEX .wiff reader plugin for OpenDIAL (IRawFileReaderPlugin).
+
+    Links against SCIEX's Clearcore2 WIFF Reader SDK assemblies, which are not in this repository:
+    run scripts/fetch-sciex-assemblies.sh (they land in opendial/vendor/sciex) or point
+    -p:SciexAssemblyDir=... at an existing copy (e.g. alpharaw/ext/sciex). When the assemblies are
+    absent the project still builds, but produces a stub that reports why .wiff cannot be read.
+
+    Runs on macOS/Linux/Windows on .NET 8: the SDK targets .NET Framework, so a few compatibility
+    packages are referenced, and on non-Windows the structured-storage layer is switched to its
+    managed (OpenMcdf) implementation — the same recipe OpenQuant uses.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>OpenDIAL.Plugins.SciexWiff</RootNamespace>
+    <AssemblyName>OpenDIAL.Plugins.SciexWiff</AssemblyName>
+    <Configurations>Debug;Release;Debug vendor unsupported;Release vendor unsupported</Configurations>
+    <SciexAssemblyDir Condition="'$(SciexAssemblyDir)' == ''">$(MSBuildThisFileDirectory)../../vendor/sciex</SciexAssemblyDir>
+    <SciexAssembliesFound Condition="Exists('$(SciexAssemblyDir)/Clearcore2.Data.AnalystDataProvider.dll')">true</SciexAssembliesFound>
+    <DefineConstants Condition="'$(SciexAssembliesFound)' == 'true'">$(DefineConstants);SCIEX_SDK</DefineConstants>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="SciexWiffReaderPlugin.cs" />
+    <Compile Include="WiffSampleLinks.cs" />
+    <Compile Include="ClearcoreReader.cs" Condition="'$(SciexAssembliesFound)' == 'true'" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="OpenDIAL.Plugins.SciexWiff.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../OpenDIAL.RawData/OpenDIAL.RawData.csproj" />
+    <ProjectReference Include="../../../MsdialWorkbench-MSDIAL-v5.5.260817/src/Common/CommonStandard/CommonStandard.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(SciexAssembliesFound)' == 'true'">
+    <!-- .NET Framework compatibility shims the SDK expects (MIT, from NuGet) -->
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.1" />
+    <PackageReference Include="System.Diagnostics.EventLog" Version="8.0.1" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+    <PackageReference Include="System.Security.Permissions" Version="8.0.0" />
+    <PackageReference Include="System.Windows.Extensions" Version="8.0.0" />
+
+    <Reference Include="Clearcore2.Data">
+      <HintPath>$(SciexAssemblyDir)/Clearcore2.Data.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Clearcore2.Data.AnalystDataProvider">
+      <HintPath>$(SciexAssemblyDir)/Clearcore2.Data.AnalystDataProvider.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Clearcore2.Data.CommonInterfaces">
+      <HintPath>$(SciexAssemblyDir)/Clearcore2.Data.CommonInterfaces.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Clearcore2.RawXYProcessing">
+      <HintPath>$(SciexAssemblyDir)/Clearcore2.RawXYProcessing.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Clearcore2.Utility">
+      <HintPath>$(SciexAssemblyDir)/Clearcore2.Utility.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Sciex.Data.XYData">
+      <HintPath>$(SciexAssemblyDir)/Sciex.Data.XYData.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- the whole SDK folder travels with the plugin so the plugin directory is self-contained -->
+    <None Include="$(SciexAssemblyDir)/*.dll;$(SciexAssemblyDir)/*.txt" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <Target Name="WarnNoSciex" BeforeTargets="Build" Condition="'$(SciexAssembliesFound)' != 'true'">
+    <Warning Text="SCIEX assemblies not found in $(SciexAssemblyDir); building the .wiff plugin as a stub. Run scripts/fetch-sciex-assemblies.sh." />
+  </Target>
+
+</Project>

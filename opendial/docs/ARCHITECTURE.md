@@ -146,6 +146,7 @@ opendial/
                                vendor formats on Windows when the vendor-enabled build is present)
     Plugins/RawReaderPlugins.cs   IRawFileReaderPlugin discovery from ./plugins (e.g. a future Thermo
                                RawFileReader plugin, which needs a separately licensed library)
+  src/OpenDIAL.Plugins.SciexWiff/  native .wiff reader on SCIEX's Clearcore2 SDK (ADR 0005), loaded from plugins/sciex
   src/OpenDIAL.Pipeline/       orchestration library (adapted from the console) – used by the GUI
   src/OpenDIAL.Desktop/        Avalonia 11 desktop application (macOS/Linux/Windows)
   tests/OpenDIAL.RawData.Tests 28 unit tests (encodings, numpress round trips, semantics, vendor bridge)
@@ -164,6 +165,7 @@ opendial/
 RawDataAccess.GetMeasurement()
   ├─ any registered IRawFileReaderPlugin that CanRead(path)      (plugins/)
   ├─ .mzml                       -> MzmlReader
+  ├─ .wiff (.wiff2)             -> OpenDIAL.Plugins.SciexWiff when present in plugins/sciex (native, ~1 s per file)
   ├─ .raw .d .wiff .wiff2 .lcd .qgd .lrp
   │     ├─ Windows + vendor-enabled legacy dll present -> legacy dll
   │     └─ otherwise VendorConverter.EnsureMzml(path)  -> <name>.mzML next to the file (or
