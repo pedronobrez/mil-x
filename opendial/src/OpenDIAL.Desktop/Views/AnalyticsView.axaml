@@ -1,0 +1,180 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:OpenDIAL.Desktop.ViewModels"
+             xmlns:c="using:OpenDIAL.Desktop.Controls"
+             xmlns:views="using:OpenDIAL.Desktop.Views"
+             x:Class="OpenDIAL.Desktop.Views.AnalyticsView"
+             x:DataType="vm:AnalyticsViewModel">
+  <DockPanel>
+    <Border DockPanel.Dock="Top" Classes="band">
+      <DockPanel>
+        <TextBlock DockPanel.Dock="Right" Classes="muted" Text="{Binding Summary}" VerticalAlignment="Center" Margin="12,0,4,0" TextTrimming="CharacterEllipsis" />
+        <StackPanel Orientation="Horizontal" Spacing="2">
+          <Button Classes="tool strong" Content="Process batch" Command="{Binding $parent[Window].DataContext.ProcessBatchCommand}" ToolTip.Tip="Run the pipeline on the current batch (Cmd+R)" />
+          <Button Classes="tool" Content="Re-export…" Command="{Binding $parent[Window].DataContext.ReexportCommand}" IsEnabled="{Binding HasResults}" />
+          <Button Classes="tool" Content="Open output folder" Command="{Binding OpenOutputFolderCommand}" IsEnabled="{Binding HasResults}" />
+          <Rectangle Classes="vsep" />
+          <Button Classes="tool" Content="Magnify" Click="OnMagnifySelected" IsEnabled="{Binding HasResults}" ToolTip.Tip="Enlarge the selected sample's panel (double-click a panel does the same)" />
+        </StackPanel>
+      </DockPanel>
+    </Border>
+
+    <Grid ColumnDefinitions="300,6,*" Margin="8">
+      <!-- left: alignment spots -->
+      <Border Grid.Column="0" Classes="panel">
+        <DockPanel>
+          <Border DockPanel.Dock="Top" Padding="12,10,12,6">
+            <StackPanel Spacing="8">
+              <DockPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="4">
+                  <Border Classes="count" ToolTip.Tip="annotated"><TextBlock Text="{Binding AnnotatedCount}" /></Border>
+                  <Border Classes="badge" ToolTip.Tip="unknown"><TextBlock Classes="badge" Text="{Binding UnknownCount}" /></Border>
+                </StackPanel>
+                <TextBlock Classes="eyebrow" Text="ALIGNED SPOTS" Margin="0" VerticalAlignment="Center" />
+              </DockPanel>
+              <TextBox Text="{Binding FilterText}" Watermark="Filter by name, m/z, adduct, ontology…" />
+            </StackPanel>
+          </Border>
+          <ListBox Classes="flat" ItemsSource="{Binding SpotItems}" SelectedItem="{Binding SelectedItem, Mode=TwoWay}" Margin="4,0,4,4">
+            <ListBox.Styles>
+              <Style Selector="ListBoxItem" x:DataType="vm:SpotListItem">
+                <Setter Property="IsEnabled" Value="{Binding !IsHeader}" />
+              </Style>
+            </ListBox.Styles>
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:SpotListItem">
+                <Panel>
+                  <DockPanel IsVisible="{Binding IsHeader}" Margin="0,6,0,2">
+                    <Border DockPanel.Dock="Right" Classes="count"><TextBlock Text="{Binding Count}" /></Border>
+                    <TextBlock Classes="eyebrow" Text="{Binding Header}" Margin="0" VerticalAlignment="Center" />
+                  </DockPanel>
+                  <StackPanel IsVisible="{Binding !IsHeader}" Spacing="1">
+                    <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Classes="hint" Text="{Binding Subtitle}" />
+                  </StackPanel>
+                </Panel>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </DockPanel>
+      </Border>
+      <GridSplitter Grid.Column="1" Classes="vertical" ResizeDirection="Columns" />
+
+      <!-- right: review grid over result tabs -->
+      <Panel Grid.Column="2">
+        <Grid RowDefinitions="Auto,2*,6,3*">
+          <Border Grid.Row="0" Padding="2,0,2,6">
+            <DockPanel>
+              <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <TextBlock Classes="label" Text="Columns" Margin="0,0,4,0" />
+                <NumericUpDown Value="{Binding Columns}" Minimum="1" Maximum="8" Increment="1" FormatString="0" Width="92" MinHeight="26" />
+                <TextBlock Classes="label" Text="Rows" Margin="6,0,4,0" />
+                <NumericUpDown Value="{Binding Rows}" Minimum="1" Maximum="6" Increment="1" FormatString="0" Width="92" MinHeight="26" />
+                <CheckBox Classes="compact" Content="Same Y" IsChecked="{Binding SameY}" Margin="8,0,0,0" />
+                <CheckBox Classes="compact" Content="Link X" IsChecked="{Binding LinkX}" />
+                <TextBlock Classes="label" Text="Zoom" Margin="6,0,4,0" />
+                <ComboBox Classes="compact" ItemsSource="{x:Static vm:AnalyticsViewModel.ZoomModes}" SelectedItem="{Binding ZoomMode}" Width="150" />
+                <Button Classes="icon" Content="◀" Command="{Binding PreviousPageCommand}" Margin="8,0,0,0" />
+                <TextBlock Text="{Binding PageLabel}" VerticalAlignment="Center" MinWidth="36" TextAlignment="Center" />
+                <Button Classes="icon" Content="▶" Command="{Binding NextPageCommand}" />
+              </StackPanel>
+              <StackPanel Spacing="1" VerticalAlignment="Center">
+                <TextBlock Classes="title" Text="{Binding SpotTitle}" TextTrimming="CharacterEllipsis" />
+                <TextBlock Classes="hint" Text="{Binding SpotDetail}" TextTrimming="CharacterEllipsis" />
+              </StackPanel>
+            </DockPanel>
+          </Border>
+
+          <Border Grid.Row="1" Classes="panel" Padding="4">
+            <Panel>
+              <ItemsControl ItemsSource="{Binding Panels}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <UniformGrid Columns="{Binding $parent[ItemsControl].DataContext.Columns}" Rows="{Binding $parent[ItemsControl].DataContext.EffectiveRows}" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:ReviewPanelViewModel">
+                    <Border Margin="3" BorderBrush="{DynamicResource OdLine}" BorderThickness="1" CornerRadius="6" ClipToBounds="True">
+                      <c:LineChart Compact="True" Series="{Binding Series}" Windows="{Binding Windows}" Title="{Binding Title}" MarkerX="{Binding MarkerRt}"
+                                   FixedXMin="{Binding FixedXMin}" FixedXMax="{Binding FixedXMax}" FixedYMax="{Binding FixedYMax}" IsHighlighted="{Binding IsSelected}"
+                                   AutoZoomToHighlight="False" ShowLegend="False" PointClicked="OnPanelClicked" ChartDoubleClicked="OnPanelDoubleClicked" />
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <TextBlock Classes="faint" Text="Select an aligned spot to review its peak in every sample." HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !Panels.Count}" />
+              <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsGridBusy}" VerticalAlignment="Top" Height="3" Margin="2" />
+            </Panel>
+          </Border>
+          <GridSplitter Grid.Row="2" Classes="horizontal" ResizeDirection="Rows" />
+
+          <Border Grid.Row="3" Classes="panel">
+            <TabControl x:Name="ResultTabs" Classes="panel-tabs" Margin="6,0,6,6">
+              <TabItem Header="Results">
+                <DataGrid Margin="0,6,0,0" ItemsSource="{Binding SampleRows}" SelectedItem="{Binding SelectedSampleRow, Mode=TwoWay}" AutoGenerateColumns="False" IsReadOnly="True">
+                  <DataGrid.Columns>
+                    <DataGridTextColumn Header="#" Binding="{Binding Order}" Width="40" />
+                    <DataGridTextColumn Header="Sample" Binding="{Binding Sample}" Width="180" />
+                    <DataGridTextColumn Header="Class" Binding="{Binding Class}" Width="90" />
+                    <DataGridTextColumn Header="Type" Binding="{Binding SampleType}" Width="80" />
+                    <DataGridTextColumn Header="RT (min)" Binding="{Binding Rt, Converter={x:Static views:Converters.Number}, ConverterParameter=F3}" Width="90" />
+                    <DataGridTextColumn Header="m/z" Binding="{Binding Mz, Converter={x:Static views:Converters.Number}, ConverterParameter=F4}" Width="90" />
+                    <DataGridTextColumn Header="Height" Binding="{Binding Height, Converter={x:Static views:Converters.Number}, ConverterParameter=N0}" Width="100" />
+                    <DataGridTextColumn Header="Area" Binding="{Binding Area, Converter={x:Static views:Converters.Number}, ConverterParameter=N0}" Width="100" />
+                    <DataGridTextColumn Header="S/N" Binding="{Binding SignalToNoise, Converter={x:Static views:Converters.Number}, ConverterParameter=N0}" Width="90" />
+                    <DataGridTextColumn Header="Start" Binding="{Binding RtLeft, Converter={x:Static views:Converters.Number}, ConverterParameter=F3}" Width="80" />
+                    <DataGridTextColumn Header="End" Binding="{Binding RtRight, Converter={x:Static views:Converters.Number}, ConverterParameter=F3}" Width="80" />
+                    <DataGridTextColumn Header="Gap-filled" Binding="{Binding GapFilled}" Width="*" />
+                  </DataGrid.Columns>
+                </DataGrid>
+              </TabItem>
+              <TabItem Header="Spectrum">
+                <c:SpectrumChart Margin="0,6,0,0" Peaks="{Binding Ms2Peaks}" ReferencePeaks="{Binding ReferencePeaks}" PrecursorMz="{Binding Ms2Precursor}" Title="{Binding Ms2Title}" />
+              </TabItem>
+              <TabItem Header="Statistics">
+                <DataGrid Margin="0,6,0,0" ItemsSource="{Binding ClassStats}" AutoGenerateColumns="False" IsReadOnly="True">
+                  <DataGrid.Columns>
+                    <DataGridTextColumn Header="Class" Binding="{Binding Class}" Width="140" />
+                    <DataGridTextColumn Header="n" Binding="{Binding N}" Width="50" />
+                    <DataGridTextColumn Header="Mean height" Binding="{Binding Mean, StringFormat={}{0:N0}}" Width="110" />
+                    <DataGridTextColumn Header="SD" Binding="{Binding Sd, StringFormat={}{0:N0}}" Width="100" />
+                    <DataGridTextColumn Header="% CV" Binding="{Binding Cv, StringFormat={}{0:F1}}" Width="70" />
+                    <DataGridTextColumn Header="Min" Binding="{Binding Min, StringFormat={}{0:N0}}" Width="100" />
+                    <DataGridTextColumn Header="Max" Binding="{Binding Max, StringFormat={}{0:N0}}" Width="100" />
+                    <DataGridTextColumn Header="Mean area" Binding="{Binding AreaMean, StringFormat={}{0:N0}}" Width="*" />
+                  </DataGrid.Columns>
+                </DataGrid>
+              </TabItem>
+              <TabItem Header="Metric plot">
+                <DockPanel Margin="0,6,0,0">
+                  <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="6" Margin="0,0,0,6">
+                    <TextBlock Classes="label" Text="Y" />
+                    <ComboBox Classes="compact" ItemsSource="{x:Static vm:AnalyticsViewModel.MetricColumns}" SelectedItem="{Binding MetricY}" Width="110" />
+                    <TextBlock Classes="label" Text="X" Margin="10,0,4,0" />
+                    <ComboBox Classes="compact" ItemsSource="{x:Static vm:AnalyticsViewModel.MetricXColumns}" SelectedItem="{Binding MetricX}" Width="150" />
+                    <TextBlock Classes="hint" Text="Coloured by class · click a point to select the sample" VerticalAlignment="Center" Margin="10,0,0,0" />
+                  </StackPanel>
+                  <c:ScatterChart Items="{Binding MetricPoints}" SelectedItem="{Binding SelectedMetricPoint, Mode=TwoWay}" XLabel="{Binding MetricX}" YLabel="{Binding MetricY}" Connect="True" />
+                </DockPanel>
+              </TabItem>
+            </TabControl>
+          </Border>
+        </Grid>
+
+        <!-- magnified panel overlay -->
+        <Border Classes="panel" IsVisible="{Binding MagnifiedPanel, Converter={x:Static views:Converters.IsNotNull}}" Margin="0" Background="{DynamicResource OdSurface}">
+          <DockPanel DataContext="{Binding MagnifiedPanel}">
+            <Border DockPanel.Dock="Top" Classes="hairline-bottom" Padding="12,8">
+              <DockPanel>
+                <Button DockPanel.Dock="Right" Content="Close" Command="{Binding $parent[UserControl].DataContext.CloseMagnifiedCommand}" />
+                <TextBlock Classes="title" Text="{Binding Title}" VerticalAlignment="Center" />
+              </DockPanel>
+            </Border>
+            <c:LineChart Series="{Binding Series}" Windows="{Binding Windows}" MarkerX="{Binding MarkerRt}" FixedXMin="{Binding FixedXMin}" FixedXMax="{Binding FixedXMax}" AutoZoomToHighlight="False" ShowLegend="False" Margin="4" />
+          </DockPanel>
+        </Border>
+      </Panel>
+    </Grid>
+  </DockPanel>
+</UserControl>

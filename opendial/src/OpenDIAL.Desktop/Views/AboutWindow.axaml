@@ -1,28 +1,27 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="OpenDIAL.Desktop.Views.AboutWindow"
-        Title="About OpenDIAL" Width="560" Height="360" CanResize="False"
+        Title="About OpenDIAL" Width="560" Height="420" CanResize="False"
+        FontSize="13" Background="{DynamicResource OdCanvas}"
         WindowStartupLocation="CenterOwner">
-  <DockPanel Margin="20">
-    <Button DockPanel.Dock="Bottom" Content="Close" HorizontalAlignment="Right" MinWidth="90" Click="OnClose" Margin="0,12,0,0" />
+  <DockPanel Margin="24">
+    <Button DockPanel.Dock="Bottom" Content="Close" HorizontalAlignment="Right" MinWidth="90" Click="OnClose" Margin="0,14,0,0" />
     <StackPanel Spacing="10">
-      <TextBlock Text="OpenDIAL" FontSize="26" FontWeight="Bold" />
+      <TextBlock Classes="wordmark" Text="OpenDIAL" />
       <TextBlock x:Name="VersionText" Classes="muted" />
+      <Border Classes="hairline-top" Margin="0,4,0,4" />
       <TextBlock TextWrapping="Wrap">
         OpenDIAL is an open, community-maintained port of the MS-DIAL 5 processing engine
         (peak picking, MS/MS deconvolution, spectral-library annotation and alignment) to
         macOS, Linux and Windows, with a cross-platform Avalonia user interface.
       </TextBlock>
-      <TextBlock TextWrapping="Wrap">
-        It is built on the MS-DIAL source code released under the GNU Lesser General Public
+      <TextBlock TextWrapping="Wrap" Classes="muted">
+        Built on the MS-DIAL source code released under the GNU Lesser General Public
         License v3.0 (LGPL-3.0). OpenDIAL is itself distributed under LGPL-3.0.
       </TextBlock>
-      <TextBlock TextWrapping="Wrap" FontWeight="SemiBold">
-        OpenDIAL is not affiliated with, endorsed by, or supported by RIKEN or the MS-DIAL
-        development team. MS-DIAL is a trademark of its respective owners.
-      </TextBlock>
       <TextBlock TextWrapping="Wrap" Classes="muted">
-        If you use OpenDIAL in a publication, please cite the original MS-DIAL papers.
+        OpenDIAL is not affiliated with, endorsed by, or supported by RIKEN or the MS-DIAL
+        development team. If you use OpenDIAL in a publication, please cite the original MS-DIAL papers.
       </TextBlock>
     </StackPanel>
   </DockPanel>

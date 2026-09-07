@@ -2,9 +2,9 @@ using Avalonia.Controls;
 
 namespace OpenDIAL.Desktop.Views;
 
-public partial class ProjectView : UserControl
+public partial class MethodView : UserControl
 {
-    public ProjectView()
+    public MethodView()
     {
         InitializeComponent();
     }

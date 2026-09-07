@@ -1,60 +1,562 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-  <Style Selector="TextBlock.h1">
-    <Setter Property="FontSize" Value="18" />
+  <!-- ===================== text roles ===================== -->
+  <Style Selector="TextBlock">
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="Foreground" Value="{DynamicResource OdInk}" />
+  </Style>
+  <Style Selector="TextBlock.eyebrow">
+    <Setter Property="FontSize" Value="11" />
     <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="LetterSpacing" Value="1.1" />
+    <Setter Property="Foreground" Value="{DynamicResource OdInkMuted}" />
     <Setter Property="Margin" Value="0,0,0,6" />
   </Style>
-  <Style Selector="TextBlock.h2">
-    <Setter Property="FontSize" Value="13" />
+  <Style Selector="TextBlock.muted">
+    <Setter Property="Foreground" Value="{DynamicResource OdInkMuted}" />
+  </Style>
+  <Style Selector="TextBlock.faint">
+    <Setter Property="Foreground" Value="{DynamicResource OdInkFaint}" />
+  </Style>
+  <Style Selector="TextBlock.hint">
+    <Setter Property="Foreground" Value="{DynamicResource OdInkMuted}" />
+    <Setter Property="FontSize" Value="11" />
+  </Style>
+  <Style Selector="TextBlock.strong">
     <Setter Property="FontWeight" Value="SemiBold" />
-    <Setter Property="Margin" Value="0,10,0,4" />
-    <Setter Property="Foreground" Value="{DynamicResource SystemControlHighlightAccentBrush}" />
+  </Style>
+  <Style Selector="TextBlock.warning">
+    <Setter Property="Foreground" Value="{DynamicResource OdWarning}" />
+  </Style>
+  <Style Selector="TextBlock.danger">
+    <Setter Property="Foreground" Value="{DynamicResource OdDanger}" />
+    <Setter Property="FontSize" Value="11" />
+  </Style>
+  <Style Selector="TextBlock.accent">
+    <Setter Property="Foreground" Value="{DynamicResource OdAccent}" />
+  </Style>
+  <Style Selector="TextBlock.title">
+    <Setter Property="FontSize" Value="15" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="TextBlock.wordmark">
+    <Setter Property="FontFamily" Value="{StaticResource OdWordmarkFont}" />
+    <Setter Property="FontSize" Value="34" />
+    <Setter Property="FontWeight" Value="Light" />
+    <Setter Property="LetterSpacing" Value="1.4" />
   </Style>
   <Style Selector="TextBlock.label">
+    <Setter Property="Foreground" Value="{DynamicResource OdInkMuted}" />
     <Setter Property="VerticalAlignment" Value="Center" />
-    <Setter Property="Margin" Value="0,0,8,0" />
-    <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+    <Setter Property="Margin" Value="0,0,10,0" />
   </Style>
-  <Style Selector="TextBlock.muted">
-    <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
-    <Setter Property="FontSize" Value="12" />
+  <Style Selector="TextBlock.mono">
+    <Setter Property="FontFamily" Value="{StaticResource OdMonoFont}" />
+    <Setter Property="FontSize" Value="11.5" />
   </Style>
   <Style Selector="TextBlock.badge">
+    <Setter Property="FontSize" Value="10.5" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource OdInkMuted}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Border.badge">
+    <Setter Property="Background" Value="{DynamicResource OdSurfaceAlt}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource OdLineStrong}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="9" />
+    <Setter Property="Padding" Value="7,1" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Border.badge.warn">
+    <Setter Property="Background" Value="{DynamicResource OdWarningSoft}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource OdWarning}" />
+  </Style>
+  <Style Selector="Border.badge.warn TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource OdWarning}" />
+  </Style>
+  <Style Selector="Border.badge.accent">
+    <Setter Property="Background" Value="{DynamicResource OdAccentSoft}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource OdAccentSoft}" />
+  </Style>
+  <Style Selector="Border.badge.accent TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource OdAccent}" />
+  </Style>
+  <Style Selector="Border.count">
+    <Setter Property="Background" Value="{DynamicResource OdAccentSoft}" />
+    <Setter Property="CornerRadius" Value="9" />
+    <Setter Property="Padding" Value="7,0" />
+    <Setter Property="MinWidth" Value="22" />
+    <Setter Property="Height" Value="18" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Border.count TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource OdAccent}" />
     <Setter Property="FontSize" Value="11" />
-    <Setter Property="Padding" Value="6,1" />
-    <Setter Property="Foreground" Value="#B45309" />
-    <Setter Property="Background" Value="#33F59E0B" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <!-- ===================== surfaces ===================== -->
+  <Style Selector="Border.panel">
+    <Setter Property="Background" Value="{DynamicResource OdSurface}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource OdLine}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="ClipToBounds" Value="True" />
   </Style>
   <Style Selector="Border.card">
-    <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+    <Setter Property="Background" Value="{DynamicResource OdSurface}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource OdLine}" />
     <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="16,12" />
+  </Style>
+  <Style Selector="Border.band">
+    <Setter Property="Background" Value="{DynamicResource OdCanvas}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource OdLine}" />
+    <Setter Property="BorderThickness" Value="0,0,0,1" />
+    <Setter Property="Padding" Value="8,5" />
+  </Style>
+  <Style Selector="Border.statusbar">
+    <Setter Property="Background" Value="{DynamicResource OdCanvas}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource OdLine}" />
+    <Setter Property="BorderThickness" Value="0,1,0,0" />
+    <Setter Property="Padding" Value="10,4" />
+  </Style>
+  <Style Selector="Border.hairline-top">
+    <Setter Property="BorderBrush" Value="{DynamicResource OdLine}" />
+    <Setter Property="BorderThickness" Value="0,1,0,0" />
+  </Style>
+  <Style Selector="Border.hairline-bottom">
+    <Setter Property="BorderBrush" Value="{DynamicResource OdLine}" />
+    <Setter Property="BorderThickness" Value="0,0,0,1" />
+  </Style>
+  <Style Selector="Border.section">
+    <Setter Property="BorderBrush" Value="{DynamicResource OdLine}" />
+    <Setter Property="BorderThickness" Value="0,1,0,0" />
+    <Setter Property="Padding" Value="0,10,0,4" />
+    <Setter Property="Margin" Value="0,10,0,0" />
+  </Style>
+  <Style Selector="Rectangle.vsep">
+    <Setter Property="Width" Value="1" />
+    <Setter Property="Height" Value="18" />
+    <Setter Property="Fill" Value="{DynamicResource OdLine}" />
+    <Setter Property="Margin" Value="6,0" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <!-- ===================== buttons ===================== -->
+  <Style Selector="Button">
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="MinHeight" Value="28" />
     <Setter Property="CornerRadius" Value="6" />
-    <Setter Property="Padding" Value="12" />
-    <Setter Property="Margin" Value="0,0,0,10" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Button.primary">
+    <Setter Property="Background" Value="{DynamicResource OdAccent}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource OdAccent}" />
+    <Setter Property="Foreground" Value="{DynamicResource OdAccentInk}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="Button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource OdAccentHover}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource OdAccentHover}" />
+    <Setter Property="Foreground" Value="{DynamicResource OdAccentInk}" />
+  </Style>
+  <Style Selector="Button.primary:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource OdAccentPress}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource OdAccentPress}" />
+    <Setter Property="Foreground" Value="{DynamicResource OdAccentInk}" />
+  </Style>
+  <Style Selector="Button.primary:disabled /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource OdLine}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource OdLine}" />
+    <Setter Property="Foreground" Value="{DynamicResource OdInkFaint}" />
+  </Style>
+
+  <!-- tool buttons: a band of type -->
+  <Style Selector="Button.tool, ToggleButton.tool">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Foreground" Value="{DynamicResource OdInkMuted}" />
+    <Setter Property="Padding" Value="8,3" />
+    <Setter Property="MinHeight" Value="26" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="FontSize" Value="13" />
+  </Style>
+  <Style Selector="Button.tool:pointerover /template/ ContentPresenter#PART_ContentPresenter, ToggleButton.tool:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource OdSurface}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource OdLine}" />
+    <Setter Property="Foreground" Value="{DynamicResource OdInk}" />
+  </Style>
+  <Style Selector="Button.tool:pressed /template/ ContentPresenter#PART_ContentPresenter, ToggleButton.tool:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource OdAccentSoft}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource OdAccentSoft}" />
+    <Setter Property="Foreground" Value="{DynamicResource OdAccent}" />
+  </Style>
+  <Style Selector="ToggleButton.tool:checked /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource OdAccentSoft}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource OdAccentSoft}" />
+    <Setter Property="Foreground" Value="{DynamicResource OdAccent}" />
+  </Style>
+  <Style Selector="ToggleButton.tool:checked">
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="ToggleButton.tool:checked:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource OdAccentSoft}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource OdAccent}" />
+    <Setter Property="Foreground" Value="{DynamicResource OdAccent}" />
+  </Style>
+  <Style Selector="Button.tool:disabled /template/ ContentPresenter#PART_ContentPresenter, ToggleButton.tool:disabled /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource OdInkFaint}" />
+  </Style>
+  <Style Selector="Button.tool.strong">
+    <Setter Property="Foreground" Value="{DynamicResource OdInk}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <!-- small icon-ish buttons (◀ ▶ ×) -->
+  <Style Selector="Button.icon">
+    <Setter Property="Padding" Value="6,2" />
+    <Setter Property="MinWidth" Value="26" />
+    <Setter Property="MinHeight" Value="26" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource OdInkMuted}" />
+  </Style>
+  <Style Selector="Button.icon:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource OdSurface}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource OdLine}" />
+    <Setter Property="Foreground" Value="{DynamicResource OdAccent}" />
+  </Style>
+
+  <!-- ===================== fields ===================== -->
+  <Style Selector="TextBox">
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="MinHeight" Value="28" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="TextBox.mono">
+    <Setter Property="FontFamily" Value="{StaticResource OdMonoFont}" />
+    <Setter Property="FontSize" Value="12" />
+  </Style>
+  <Style Selector="ComboBox">
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="MinHeight" Value="28" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+  </Style>
+  <Style Selector="ComboBox.compact">
+    <Setter Property="MinHeight" Value="26" />
+    <Setter Property="Padding" Value="8,1,4,1" />
+  </Style>
+  <Style Selector="NumericUpDown">
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="MinHeight" Value="28" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="BorderBrush" Value="{DynamicResource OdLineStrong}" />
+    <Setter Property="Background" Value="{DynamicResource OdSurface}" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
   </Style>
   <Style Selector="NumericUpDown.param">
     <Setter Property="Width" Value="150" />
-    <Setter Property="MinHeight" Value="28" />
     <Setter Property="HorizontalAlignment" Value="Left" />
     <Setter Property="FormatString" Value="0.######" />
+  </Style>
+  <Style Selector="NumericUpDown.small">
+    <Setter Property="Width" Value="84" />
+    <Setter Property="MinHeight" Value="26" />
+    <Setter Property="FormatString" Value="0.##" />
+  </Style>
+  <Style Selector="ComboBox.param">
+    <Setter Property="Width" Value="220" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
   </Style>
   <Style Selector="TextBox.param">
     <Setter Property="MinHeight" Value="28" />
   </Style>
-  <Style Selector="ComboBox.param">
-    <Setter Property="Width" Value="220" />
-    <Setter Property="MinHeight" Value="28" />
-    <Setter Property="HorizontalAlignment" Value="Left" />
+  <Style Selector="CheckBox">
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="MinHeight" Value="26" />
   </Style>
+  <Style Selector="CheckBox.compact">
+    <Setter Property="MinHeight" Value="24" />
+    <Setter Property="Padding" Value="6,0,0,0" />
+  </Style>
+  <Style Selector="RadioButton">
+    <Setter Property="FontSize" Value="13" />
+  </Style>
+  <Style Selector="ProgressBar">
+    <Setter Property="Foreground" Value="{DynamicResource OdAccent}" />
+    <Setter Property="Background" Value="{DynamicResource OdLine}" />
+    <Setter Property="MinHeight" Value="6" />
+    <Setter Property="CornerRadius" Value="3" />
+  </Style>
+
+  <!-- ===================== workspace tabs: an underline, not a folder tab ===================== -->
+  <Style Selector="TabControl">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Padding" Value="0" />
+  </Style>
+  <Style Selector="TabItem">
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="FontWeight" Value="Normal" />
+    <Setter Property="Foreground" Value="{DynamicResource OdInkMuted}" />
+    <Setter Property="Padding" Value="14,6,14,7" />
+    <Setter Property="MinHeight" Value="32" />
+    <Setter Property="Margin" Value="0" />
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="TabItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Foreground" Value="{DynamicResource OdInk}" />
+  </Style>
+  <Style Selector="TabItem:selected">
+    <Setter Property="Foreground" Value="{DynamicResource OdAccent}" />
+  </Style>
+  <Style Selector="TabItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Foreground" Value="{DynamicResource OdAccent}" />
+  </Style>
+  <Style Selector="TabItem /template/ Border#PART_SelectedPipe">
+    <Setter Property="Background" Value="{DynamicResource OdAccent}" />
+    <Setter Property="Height" Value="2" />
+    <Setter Property="Margin" Value="0" />
+    <Setter Property="CornerRadius" Value="0" />
+  </Style>
+  <Style Selector="TabControl.panel-tabs TabItem">
+    <Setter Property="Padding" Value="10,4,10,5" />
+    <Setter Property="MinHeight" Value="28" />
+    <Setter Property="FontSize" Value="12.5" />
+  </Style>
+  <Style Selector="TabControl /template/ ItemsPresenter#PART_ItemsPresenter">
+    <Setter Property="Margin" Value="0" />
+  </Style>
+
+  <!-- ===================== lists and trees ===================== -->
+  <Style Selector="ListBox">
+    <Setter Property="Background" Value="{DynamicResource OdSurface}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource OdLine}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="2" />
+  </Style>
+  <Style Selector="ListBox.flat">
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="ListBoxItem">
+    <Setter Property="Padding" Value="8,3" />
+    <Setter Property="MinHeight" Value="24" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="CornerRadius" Value="4" />
+  </Style>
+  <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource OdSurfaceAlt}" />
+  </Style>
+  <Style Selector="ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource OdAccentSoft}" />
+    <Setter Property="Foreground" Value="{DynamicResource OdInk}" />
+  </Style>
+  <Style Selector="ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource OdAccentSoft}" />
+  </Style>
+  <Style Selector="ListBoxItem:selected:focus /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource OdAccentSoft}" />
+  </Style>
+  <Style Selector="ListBoxItem.header">
+    <Setter Property="IsHitTestVisible" Value="False" />
+    <Setter Property="Focusable" Value="False" />
+    <Setter Property="MinHeight" Value="26" />
+    <Setter Property="Padding" Value="8,6,8,2" />
+  </Style>
+  <Style Selector="TreeView">
+    <Setter Property="Background" Value="{DynamicResource OdSurface}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource OdLine}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="8" />
+  </Style>
+  <Style Selector="TreeViewItem">
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="MinHeight" Value="24" />
+    <Setter Property="Padding" Value="2,1" />
+  </Style>
+  <Style Selector="TreeViewItem /template/ Border#PART_LayoutRoot">
+    <Setter Property="MinHeight" Value="24" />
+    <Setter Property="CornerRadius" Value="4" />
+  </Style>
+  <Style Selector="TreeViewItem:pointerover /template/ Border#PART_LayoutRoot">
+    <Setter Property="Background" Value="{DynamicResource OdSurfaceAlt}" />
+  </Style>
+  <Style Selector="TreeViewItem:selected /template/ Border#PART_LayoutRoot">
+    <Setter Property="Background" Value="{DynamicResource OdAccentSoft}" />
+  </Style>
+  <Style Selector="TreeViewItem:selected /template/ ContentPresenter#PART_HeaderPresenter">
+    <Setter Property="Foreground" Value="{DynamicResource OdInk}" />
+  </Style>
+  <Style Selector="TreeViewItem:selected:pointerover /template/ Border#PART_LayoutRoot">
+    <Setter Property="Background" Value="{DynamicResource OdAccentSoft}" />
+  </Style>
+  <Style Selector="TreeViewItem:selected:focus /template/ Border#PART_LayoutRoot">
+    <Setter Property="Background" Value="{DynamicResource OdAccentSoft}" />
+  </Style>
+  <Style Selector="TreeViewItem /template/ ToggleButton#PART_ExpandCollapseChevron">
+    <Setter Property="Foreground" Value="{DynamicResource OdInkMuted}" />
+  </Style>
+
+  <!-- ===================== tables ===================== -->
   <Style Selector="DataGrid">
-    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontSize" Value="12.5" />
     <Setter Property="RowHeight" Value="26" />
     <Setter Property="GridLinesVisibility" Value="Horizontal" />
     <Setter Property="HeadersVisibility" Value="Column" />
     <Setter Property="CanUserResizeColumns" Value="True" />
+    <Setter Property="CanUserReorderColumns" Value="False" />
     <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource OdLine}" />
+    <Setter Property="Background" Value="{DynamicResource OdSurface}" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource OdLine}" />
+    <Setter Property="VerticalGridLinesBrush" Value="{DynamicResource OdLine}" />
+    <Setter Property="ColumnHeaderHeight" Value="28" />
+    <Setter Property="ClipToBounds" Value="True" />
+  </Style>
+  <Style Selector="DataGridColumnHeader">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource OdInkMuted}" />
+    <Setter Property="Background" Value="{DynamicResource OdSurfaceAlt}" />
+    <Setter Property="Padding" Value="8,0" />
+    <Setter Property="MinHeight" Value="28" />
+    <Setter Property="SeparatorBrush" Value="{DynamicResource OdLine}" />
+    <Setter Property="AreSeparatorsVisible" Value="True" />
+  </Style>
+  <Style Selector="DataGridColumnHeader /template/ Grid#PART_ColumnHeaderRoot">
+    <Setter Property="Background" Value="{DynamicResource OdSurfaceAlt}" />
+  </Style>
+  <Style Selector="DataGridRow:nth-child(2n) /template/ Rectangle#BackgroundRectangle">
+    <Setter Property="Fill" Value="{DynamicResource OdSurfaceAlt}" />
+  </Style>
+  <Style Selector="DataGridRow:nth-child(2n+1) /template/ Rectangle#BackgroundRectangle">
+    <Setter Property="Fill" Value="{DynamicResource OdSurface}" />
+  </Style>
+  <Style Selector="DataGridRow:selected /template/ Rectangle#BackgroundRectangle">
+    <Setter Property="Fill" Value="{DynamicResource OdAccentSoft}" />
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+  <Style Selector="DataGridRow:pointerover /template/ Rectangle#BackgroundRectangle">
+    <Setter Property="Fill" Value="{DynamicResource OdAccentSoft}" />
+    <Setter Property="Opacity" Value="0.55" />
+  </Style>
+  <Style Selector="DataGridRow:selected:pointerover /template/ Rectangle#BackgroundRectangle">
+    <Setter Property="Fill" Value="{DynamicResource OdAccentSoft}" />
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+  <Style Selector="DataGridCell">
+    <Setter Property="FontSize" Value="12.5" />
+    <Setter Property="Padding" Value="6,0" />
+    <Setter Property="MinHeight" Value="26" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="DataGridCell:focus /template/ Grid#FocusVisual">
+    <Setter Property="IsVisible" Value="False" />
+  </Style>
+  <Style Selector="DataGridCell:current /template/ Grid#FocusVisual">
+    <Setter Property="IsVisible" Value="False" />
+  </Style>
+  <Style Selector="DataGridCell.num">
+    <Setter Property="HorizontalContentAlignment" Value="Right" />
+  </Style>
+  <Style Selector="DataGridCell TextBlock">
+    <Setter Property="FontSize" Value="12.5" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="DataGridCell ComboBox">
+    <Setter Property="MinHeight" Value="22" />
+    <Setter Property="Padding" Value="6,0,2,0" />
+    <Setter Property="FontSize" Value="12.5" />
+    <Setter Property="Margin" Value="0,1" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+  </Style>
+  <Style Selector="DataGridCell TextBox">
+    <Setter Property="MinHeight" Value="22" />
+    <Setter Property="Padding" Value="6,1" />
+    <Setter Property="FontSize" Value="12.5" />
+  </Style>
+  <Style Selector="DataGridCell CheckBox">
+    <Setter Property="MinHeight" Value="22" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+  </Style>
+
+  <!-- ===================== menus, splitters, misc ===================== -->
+  <Style Selector="Menu">
+    <Setter Property="Background" Value="{DynamicResource OdCanvas}" />
+    <Setter Property="Height" Value="30" />
+    <Setter Property="FontSize" Value="13" />
+  </Style>
+  <Style Selector="Menu > MenuItem">
+    <Setter Property="Padding" Value="10,0" />
+    <Setter Property="Foreground" Value="{DynamicResource OdInk}" />
+    <Setter Property="CornerRadius" Value="4" />
+  </Style>
+  <Style Selector="Menu > MenuItem:selected /template/ Border#PART_LayoutRoot">
+    <Setter Property="Background" Value="{DynamicResource OdAccentSoft}" />
+  </Style>
+  <Style Selector="Menu > MenuItem:selected /template/ ContentPresenter#PART_HeaderPresenter">
+    <Setter Property="Foreground" Value="{DynamicResource OdAccent}" />
+  </Style>
+  <Style Selector="MenuItem">
+    <Setter Property="FontSize" Value="13" />
+  </Style>
+  <Style Selector="MenuItem /template/ Border#PART_LayoutRoot">
+    <Setter Property="CornerRadius" Value="4" />
+  </Style>
+  <Style Selector="GridSplitter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}">
+          <Rectangle x:Name="PART_Line" Fill="{DynamicResource OdLine}" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+  <Style Selector="GridSplitter.vertical /template/ Rectangle#PART_Line">
+    <Setter Property="Width" Value="1" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="GridSplitter.horizontal /template/ Rectangle#PART_Line">
+    <Setter Property="Height" Value="1" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="GridSplitter:pointerover /template/ Rectangle#PART_Line">
+    <Setter Property="Fill" Value="{DynamicResource OdAccent}" />
+  </Style>
+  <Style Selector="Separator">
+    <Setter Property="Background" Value="{DynamicResource OdLine}" />
+  </Style>
+  <Style Selector="Expander">
+    <Setter Property="FontSize" Value="13" />
+  </Style>
+  <Style Selector="ToolTip">
+    <Setter Property="Background" Value="{DynamicResource OdSurface}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource OdLineStrong}" />
+    <Setter Property="Foreground" Value="{DynamicResource OdInk}" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Padding" Value="8,5" />
+    <Setter Property="CornerRadius" Value="6" />
+  </Style>
+  <Style Selector="ScrollViewer">
+    <Setter Property="AllowAutoHide" Value="True" />
+  </Style>
+  <Style Selector="ScrollBar">
+    <Setter Property="AllowAutoHide" Value="True" />
   </Style>
 </Styles>

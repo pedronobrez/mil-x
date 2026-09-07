@@ -1,0 +1,164 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:OpenDIAL.Desktop.ViewModels"
+             xmlns:views="using:OpenDIAL.Desktop.Views"
+             x:Class="OpenDIAL.Desktop.Views.MethodView"
+             x:DataType="vm:MethodViewModel">
+  <UserControl.Styles>
+    <Style Selector="Grid.form > TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource OdInkMuted}" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Margin" Value="0,0,12,0" />
+    </Style>
+    <Style Selector="Grid.form > NumericUpDown, Grid.form > ComboBox, Grid.form > TextBox, Grid.form > CheckBox">
+      <Setter Property="Margin" Value="0,3" />
+    </Style>
+    <Style Selector="Grid.form > NumericUpDown">
+      <Setter Property="Width" Value="150" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="FormatString" Value="0.######" />
+    </Style>
+    <Style Selector="Grid.form > ComboBox">
+      <Setter Property="Width" Value="250" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+    </Style>
+  </UserControl.Styles>
+  <DockPanel>
+    <Border DockPanel.Dock="Top" Classes="band">
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="0,0,4,0">
+          <TextBlock Classes="label" Text="Mode" />
+          <ComboBox Classes="compact" ItemsSource="{x:Static vm:MethodViewModel.Modes}" SelectedItem="{Binding Mode}" Width="100" />
+          <ToggleButton Classes="tool" Content="Advanced text" IsChecked="{Binding ShowAdvancedText}" ToolTip.Tip="Edit the console-compatible method file directly" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="2">
+          <Button Classes="tool" Content="Load method file…" Command="{Binding LoadMethodCommand}" />
+          <Button Classes="tool" Content="Save method file…" Command="{Binding SaveMethodCommand}" />
+          <Rectangle Classes="vsep" />
+          <Button Classes="tool" Content="Reset to defaults" Command="{Binding ResetDefaultsCommand}" />
+          <TextBlock Classes="muted" Text="{Binding Message}" VerticalAlignment="Center" Margin="10,0,0,0" />
+        </StackPanel>
+      </DockPanel>
+    </Border>
+    <Border DockPanel.Dock="Bottom" Classes="statusbar" Padding="16,6">
+      <TextBlock Classes="muted" Text="{Binding Summary}" />
+    </Border>
+
+    <Grid ColumnDefinitions="*,Auto" Margin="8">
+      <ScrollViewer Grid.Column="0">
+        <Border Classes="card" Margin="0,0,0,0" DataContext="{Binding Parameters}" Padding="20,14,20,18">
+          <Grid ColumnDefinitions="*,32,*">
+            <StackPanel Grid.Column="0">
+              <TextBlock Classes="eyebrow" Text="DATA TYPE" />
+              <Grid Classes="form" ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+                <TextBlock Grid.Row="0" Text="Ion mode" /><ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{x:Static vm:MethodParametersViewModel.IonPolarities}" SelectedItem="{Binding IonMode}" />
+                <TextBlock Grid.Row="1" Text="MS1 data type" /><ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{x:Static vm:MethodParametersViewModel.DataTypes}" SelectedItem="{Binding Ms1DataType}" />
+                <TextBlock Grid.Row="2" Text="MS2 data type" /><ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{x:Static vm:MethodParametersViewModel.DataTypes}" SelectedItem="{Binding Ms2DataType}" />
+                <TextBlock Grid.Row="3" Text="Acquisition (default)" /><ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{x:Static vm:MethodParametersViewModel.AcquisitionModes}" SelectedItem="{Binding AcquisitionType}" />
+                <TextBlock Grid.Row="4" Text="Target omics" /><ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{x:Static vm:MethodParametersViewModel.OmicsTargets}" SelectedItem="{Binding TargetOmics}" />
+              </Grid>
+
+              <Border Classes="section"><TextBlock Classes="eyebrow" Text="DATA COLLECTION" /></Border>
+              <Grid Classes="form" ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+                <TextBlock Grid.Row="0" Text="RT begin (min)" /><NumericUpDown Grid.Row="0" Grid.Column="1" Value="{Binding RetentionTimeBegin}" Minimum="0" Increment="0.5" />
+                <TextBlock Grid.Row="1" Text="RT end (min)" /><NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding RetentionTimeEnd}" Minimum="0" Increment="0.5" />
+                <TextBlock Grid.Row="2" Text="MS1 mass range begin" /><NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding Ms1MassRangeBegin}" Minimum="0" Increment="10" />
+                <TextBlock Grid.Row="3" Text="MS1 mass range end" /><NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding Ms1MassRangeEnd}" Minimum="0" Increment="10" />
+                <TextBlock Grid.Row="4" Text="MS2 mass range begin" /><NumericUpDown Grid.Row="4" Grid.Column="1" Value="{Binding Ms2MassRangeBegin}" Minimum="0" Increment="10" />
+                <TextBlock Grid.Row="5" Text="MS2 mass range end" /><NumericUpDown Grid.Row="5" Grid.Column="1" Value="{Binding Ms2MassRangeEnd}" Minimum="0" Increment="10" />
+                <TextBlock Grid.Row="6" Text="MS1 centroid tolerance (Da)" /><NumericUpDown Grid.Row="6" Grid.Column="1" Value="{Binding Ms1CentroidTolerance}" Minimum="0" Increment="0.001" />
+                <TextBlock Grid.Row="7" Text="MS2 centroid tolerance (Da)" /><NumericUpDown Grid.Row="7" Grid.Column="1" Value="{Binding Ms2CentroidTolerance}" Minimum="0" Increment="0.005" />
+              </Grid>
+
+              <Border Classes="section"><TextBlock Classes="eyebrow" Text="PEAK DETECTION" /></Border>
+              <Grid Classes="form" ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+                <TextBlock Grid.Row="0" Text="Smoothing method" /><ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{x:Static vm:MethodParametersViewModel.SmoothingKinds}" SelectedItem="{Binding SmoothingMethod}" />
+                <TextBlock Grid.Row="1" Text="Smoothing level" /><NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding SmoothingLevel}" Minimum="0" Increment="1" FormatString="0" />
+                <TextBlock Grid.Row="2" Text="Minimum peak width (scans)" /><NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding MinimumPeakWidth}" Minimum="1" Increment="1" FormatString="0" />
+                <TextBlock Grid.Row="3" Text="Minimum peak height" /><NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding MinimumPeakHeight}" Minimum="0" Increment="500" FormatString="0" />
+                <TextBlock Grid.Row="4" Text="Mass slice width (Da)" /><NumericUpDown Grid.Row="4" Grid.Column="1" Value="{Binding MassSliceWidth}" Minimum="0" Increment="0.01" />
+                <TextBlock Grid.Row="5" Text="Max charge number" /><NumericUpDown Grid.Row="5" Grid.Column="1" Value="{Binding MaxChargeNumber}" Minimum="1" Increment="1" FormatString="0" />
+                <TextBlock Grid.Row="6" Text="Searched adduct ions" /><TextBox Grid.Row="6" Grid.Column="1" Text="{Binding SearchedAdductIons}" />
+              </Grid>
+
+              <Border Classes="section"><TextBlock Classes="eyebrow" Text="DECONVOLUTION" /></Border>
+              <Grid Classes="form" ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto,Auto">
+                <TextBlock Grid.Row="0" Text="Sigma window value" /><NumericUpDown Grid.Row="0" Grid.Column="1" Value="{Binding SigmaWindowValue}" Minimum="0" Increment="0.1" />
+                <TextBlock Grid.Row="1" Text="MS/MS amplitude cutoff" /><NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding AmplitudeCutoff}" Minimum="0" Increment="10" />
+                <TextBlock Grid.Row="2" Text="Keep isotope range (Da)" /><NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding KeepIsotopeRange}" Minimum="0" Increment="0.1" />
+                <CheckBox Grid.Row="3" Grid.Column="1" Content="Exclude fragments after precursor" IsChecked="{Binding ExcludeAfterPrecursor}" />
+              </Grid>
+
+              <StackPanel IsVisible="{Binding IsGcms}">
+                <Border Classes="section"><TextBlock Classes="eyebrow" Text="GC-MS" /></Border>
+                <Grid Classes="form" ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto,Auto">
+                  <TextBlock Grid.Row="0" Text="Retention type" /><ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{x:Static vm:MethodParametersViewModel.RetentionKinds}" SelectedItem="{Binding RetentionType}" />
+                  <TextBlock Grid.Row="1" Text="RI compound type" /><ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{x:Static vm:MethodParametersViewModel.RiCompoundKinds}" SelectedItem="{Binding RiCompoundType}" />
+                  <TextBlock Grid.Row="2" Text="Alignment index type" /><ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{x:Static vm:MethodParametersViewModel.RetentionKinds}" SelectedItem="{Binding AlignmentIndexType}" />
+                  <TextBlock Grid.Row="3" Text="RI dictionary table" /><TextBox Grid.Row="3" Grid.Column="1" Text="{Binding RiIndexFilePaths}" Watermark="TSV: raw file path ⇥ RI dictionary path" />
+                </Grid>
+              </StackPanel>
+            </StackPanel>
+
+            <StackPanel Grid.Column="2">
+              <TextBlock Classes="eyebrow" Text="IDENTIFICATION" />
+              <Grid Classes="form" ColumnDefinitions="200,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+                <TextBlock Grid.Row="0" Text="MSP spectral library" />
+                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding MspFilePath}" Watermark="Path to a .msp / .msp2 library" />
+                <Button Grid.Row="0" Grid.Column="2" Content="Browse…" Margin="6,0,0,0" Command="{Binding $parent[UserControl].DataContext.BrowseMspCommand}" />
+                <TextBlock Grid.Row="1" Text="Text library (optional)" />
+                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding TextDbFilePath}" Watermark="RT / m/z text library" />
+                <Button Grid.Row="1" Grid.Column="2" Content="Browse…" Margin="6,0,0,0" Command="{Binding $parent[UserControl].DataContext.BrowseTextDbCommand}" />
+                <TextBlock Grid.Row="2" Text="MS1 tolerance (Da)" /><NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding Ms1ToleranceForAnnotation}" Minimum="0" Increment="0.001" />
+                <TextBlock Grid.Row="3" Text="MS2 tolerance (Da)" /><NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding Ms2ToleranceForAnnotation}" Minimum="0" Increment="0.005" />
+                <TextBlock Grid.Row="4" Text="RT tolerance (min)" /><NumericUpDown Grid.Row="4" Grid.Column="1" Value="{Binding RtToleranceForAnnotation}" Minimum="0" Increment="0.1" />
+                <TextBlock Grid.Row="5" Text="Total score cutoff (%)" /><NumericUpDown Grid.Row="5" Grid.Column="1" Value="{Binding TotalScoreCutoff}" Minimum="0" Maximum="100" Increment="5" />
+                <TextBlock Grid.Row="6" Text="Weighted dot product cutoff" /><NumericUpDown Grid.Row="6" Grid.Column="1" Value="{Binding WeightedDotProductCutoff}" Minimum="0" Maximum="1" Increment="0.05" />
+                <TextBlock Grid.Row="7" Text="Simple dot product cutoff" /><NumericUpDown Grid.Row="7" Grid.Column="1" Value="{Binding SimpleDotProductCutoff}" Minimum="0" Maximum="1" Increment="0.05" />
+                <TextBlock Grid.Row="8" Text="Reverse dot product cutoff" /><NumericUpDown Grid.Row="8" Grid.Column="1" Value="{Binding ReverseDotProductCutoff}" Minimum="0" Maximum="1" Increment="0.05" />
+                <TextBlock Grid.Row="9" Text="Matched peaks cutoff" /><NumericUpDown Grid.Row="9" Grid.Column="1" Value="{Binding MatchedPeaksPercentageCutoff}" Minimum="0" Maximum="1" Increment="0.05" />
+                <TextBlock Grid.Row="10" Text="Minimum spectrum match" /><NumericUpDown Grid.Row="10" Grid.Column="1" Value="{Binding MinimumSpectrumMatch}" Minimum="0" Increment="1" />
+                <CheckBox Grid.Row="11" Grid.Column="1" Content="Use RT for scoring" IsChecked="{Binding UseRetentionInformationForScoring}" />
+                <CheckBox Grid.Row="12" Grid.Column="1" Content="Use RT for filtering" IsChecked="{Binding UseRetentionInformationForFiltering}" />
+                <CheckBox Grid.Row="13" Grid.Column="1" Content="Only report top hit" IsChecked="{Binding OnlyReportTopHit}" />
+              </Grid>
+
+              <Border Classes="section"><TextBlock Classes="eyebrow" Text="ALIGNMENT" /></Border>
+              <Grid Classes="form" ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+                <CheckBox Grid.Row="0" Grid.Column="1" Content="Align after peak picking" IsChecked="{Binding TogetherWithAlignment}" />
+                <TextBlock Grid.Row="1" Text="Reference file ID" /><NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding AlignmentReferenceFileId}" Minimum="0" Increment="1" FormatString="0" />
+                <TextBlock Grid.Row="2" Text="RT tolerance (min)" /><NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding RtToleranceForAlignment}" Minimum="0" Increment="0.05" />
+                <TextBlock Grid.Row="3" Text="MS1 tolerance (Da)" /><NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding Ms1ToleranceForAlignment}" Minimum="0" Increment="0.005" />
+                <TextBlock Grid.Row="4" Text="RT factor" /><NumericUpDown Grid.Row="4" Grid.Column="1" Value="{Binding RtFactorForAlignment}" Minimum="0" Maximum="1" Increment="0.1" />
+                <TextBlock Grid.Row="5" Text="MS1 factor" /><NumericUpDown Grid.Row="5" Grid.Column="1" Value="{Binding Ms1FactorForAlignment}" Minimum="0" Maximum="1" Increment="0.1" />
+                <TextBlock Grid.Row="6" Text="Peak count filter (%)" /><NumericUpDown Grid.Row="6" Grid.Column="1" Value="{Binding PeakCountFilter}" Minimum="0" Maximum="100" Increment="5" />
+                <TextBlock Grid.Row="7" Text="N % detected in one group" /><NumericUpDown Grid.Row="7" Grid.Column="1" Value="{Binding NPercentDetectedInOneGroup}" Minimum="0" Maximum="100" Increment="5" />
+                <CheckBox Grid.Row="8" Grid.Column="1" Content="Gap filling by compulsion" IsChecked="{Binding GapFillingByCompulsion}" />
+              </Grid>
+
+              <Border Classes="section"><TextBlock Classes="eyebrow" Text="EXPORT AND PROCESS" /></Border>
+              <Grid Classes="form" ColumnDefinitions="200,*" RowDefinitions="Auto,Auto">
+                <CheckBox Grid.Row="0" Grid.Column="1" Content="Export QA height matrix (.qa.tsv)" IsChecked="{Binding IsHeightMatrixExport}" />
+                <TextBlock Grid.Row="1" Text="Number of threads" /><NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding NumberOfThreads}" Minimum="1" Increment="1" FormatString="0" />
+              </Grid>
+            </StackPanel>
+          </Grid>
+        </Border>
+      </ScrollViewer>
+
+      <!-- advanced text -->
+      <Border Grid.Column="1" Classes="panel" Width="460" Margin="8,0,0,0" IsVisible="{Binding ShowAdvancedText}">
+        <DockPanel>
+          <Border DockPanel.Dock="Top" Padding="12,10,12,6">
+            <StackPanel Spacing="4">
+              <TextBlock Classes="eyebrow" Text="METHOD FILE TEXT" Margin="0" />
+              <TextBlock Classes="hint" Text="Console-compatible method file. Edits are applied to the form when the box loses focus; unknown keys are kept." TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+          <TextBlock DockPanel.Dock="Bottom" Classes="danger" Text="{Binding Parameters.TextError}" Margin="12,4,12,8" TextWrapping="Wrap" IsVisible="{Binding Parameters.TextError, Converter={x:Static views:Converters.NotEmpty}}" />
+          <TextBox Classes="mono" Text="{Binding Parameters.MethodText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" AcceptsReturn="True" TextWrapping="NoWrap" BorderThickness="0" CornerRadius="0" Margin="6,0,6,6" VerticalContentAlignment="Top" />
+        </DockPanel>
+      </Border>
+    </Grid>
+  </DockPanel>
+</UserControl>

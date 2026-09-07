@@ -55,7 +55,7 @@ public sealed class BarChart : ChartBase
         var map = new Dictionary<string, Color>(StringComparer.Ordinal);
         foreach (var g in (Items ?? Array.Empty<BarItem>()).Select(i => i.Group).Distinct())
         {
-            map[g] = Palette[map.Count % Palette.Length];
+            map[g] = SeriesColor(map.Count);
         }
         return map;
     }

@@ -289,11 +289,21 @@ public static class ResultLoader
             foreach (var spot in container.AlignmentSpotProperties)
             {
                 var match = spot.MatchResults?.Representative;
-                var heights = (spot.AlignedPeakProperties ?? new List<AlignmentChromPeakFeature>())
+                var aligned = spot.AlignedPeakProperties ?? new List<AlignmentChromPeakFeature>();
+                var heights = aligned
                     .Select(p =>
                     {
                         var info = byId.TryGetValue(p.FileID, out var s) ? s : new SampleInfo(p.FileID, p.FileName, string.Empty, string.Empty);
                         return new SampleValue(p.FileID, info.FileName, info.Class, p.PeakHeightTop);
+                    })
+                    .ToList();
+                var samplePeaks = aligned
+                    .Select(p =>
+                    {
+                        var info = byId.TryGetValue(p.FileID, out var s) ? s : new SampleInfo(p.FileID, p.FileName, string.Empty, string.Empty);
+                        return new AlignedSamplePeak(p.FileID, info.FileName, info.Class, info.SampleType,
+                            p.ChromXsTop?.RT?.Value ?? double.NaN, p.ChromXsLeft?.RT?.Value ?? double.NaN, p.ChromXsRight?.RT?.Value ?? double.NaN,
+                            p.Mass, p.PeakHeightTop, p.PeakAreaAboveZero, p.PeakShape?.SignalToNoise ?? 0, p.MasterPeakID < 0);
                     })
                     .ToList();
                 spots.Add(new AlignmentSpotRow
@@ -307,7 +317,12 @@ public static class ResultLoader
                     FillPercent = spot.FillParcentage * 100.0,
                     Score = match is null || match.IsUnknown ? 0 : match.TotalScore,
                     Adduct = spot.AdductType?.AdductIonName ?? string.Empty,
+                    Ontology = spot.Ontology ?? string.Empty,
+                    Formula = spot.Formula?.FormulaString ?? string.Empty,
+                    InChIKey = spot.InChIKey ?? string.Empty,
+                    SignalToNoiseAverage = spot.SignalToNoiseAve,
                     SampleHeights = heights,
+                    SamplePeaks = samplePeaks,
                     MatchResult = match is null || match.IsUnknown ? null : match,
                 });
             }
@@ -366,8 +381,10 @@ public static class ResultLoader
                 var s = samples[c - sampleStart];
                 heights.Add(new SampleValue(s.FileId, s.FileName, s.Class, D(cells, c)));
             }
+            var samplePeaks = heights.Select(h => new AlignedSamplePeak(h.FileId, h.FileName, h.Class, samples[h.FileId].SampleType, D(cells, rtCol), double.NaN, double.NaN, D(cells, mzCol), h.Height, double.NaN, double.NaN, false)).ToList();
             spots.Add(new AlignmentSpotRow
             {
+                SamplePeaks = samplePeaks,
                 Id = (int)D(cells, idCol),
                 Name = S(cells, nameCol),
                 Rt = D(cells, rtCol),

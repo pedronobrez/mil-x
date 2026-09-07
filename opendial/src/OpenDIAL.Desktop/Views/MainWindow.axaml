@@ -2,42 +2,168 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:OpenDIAL.Desktop.ViewModels"
         xmlns:views="using:OpenDIAL.Desktop.Views"
+        xmlns:svc="using:OpenDIAL.Desktop.Services"
         x:Class="OpenDIAL.Desktop.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="{Binding Title}"
-        Width="1380" Height="900" MinWidth="960" MinHeight="600"
+        Width="1650" Height="1000" MinWidth="1100" MinHeight="680"
+        FontSize="13"
+        Background="{DynamicResource OdCanvas}"
         WindowStartupLocation="CenterScreen">
-  <DockPanel>
-    <Menu DockPanel.Dock="Top">
-      <MenuItem Header="_File">
-        <MenuItem Header="Open results _folder…" Command="{Binding OpenResultsFolderCommand}" />
-        <MenuItem Header="Open ._mdproject…" Command="{Binding OpenProjectFileCommand}" />
-        <Separator />
-        <MenuItem Header="_Run pipeline" Command="{Binding RunPipelineCommand}" />
-        <Separator />
-        <MenuItem Header="_Settings…" Click="OnSettingsClick" />
-        <Separator />
-        <MenuItem Header="E_xit" Click="OnExitClick" />
-      </MenuItem>
-      <MenuItem Header="_Help">
-        <MenuItem Header="_About OpenDIAL" Click="OnAboutClick" />
-      </MenuItem>
-    </Menu>
+  <Window.KeyBindings>
+    <KeyBinding Gesture="Cmd+1" Command="{Binding SelectWorkspaceCommand}" CommandParameter="0" />
+    <KeyBinding Gesture="Cmd+2" Command="{Binding SelectWorkspaceCommand}" CommandParameter="1" />
+    <KeyBinding Gesture="Cmd+3" Command="{Binding SelectWorkspaceCommand}" CommandParameter="2" />
+    <KeyBinding Gesture="Cmd+4" Command="{Binding SelectWorkspaceCommand}" CommandParameter="3" />
+    <KeyBinding Gesture="Ctrl+1" Command="{Binding SelectWorkspaceCommand}" CommandParameter="0" />
+    <KeyBinding Gesture="Ctrl+2" Command="{Binding SelectWorkspaceCommand}" CommandParameter="1" />
+    <KeyBinding Gesture="Ctrl+3" Command="{Binding SelectWorkspaceCommand}" CommandParameter="2" />
+    <KeyBinding Gesture="Ctrl+4" Command="{Binding SelectWorkspaceCommand}" CommandParameter="3" />
+    <KeyBinding Gesture="Cmd+S" Command="{Binding SaveProjectCommand}" />
+    <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveProjectCommand}" />
+    <KeyBinding Gesture="Cmd+N" Command="{Binding NewProjectCommand}" />
+    <KeyBinding Gesture="Cmd+O" Command="{Binding OpenProjectCommand}" />
+    <KeyBinding Gesture="Cmd+R" Command="{Binding ProcessBatchCommand}" />
+    <KeyBinding Gesture="Cmd+L" Command="{Binding ToggleLogCommand}" />
+  </Window.KeyBindings>
 
-    <Border DockPanel.Dock="Bottom" Padding="10,4" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
-      <TextBlock Text="{Binding GlobalStatus}" Classes="muted" />
+  <DockPanel>
+    <!-- menu -->
+    <Border DockPanel.Dock="Top" Classes="hairline-bottom" Background="{DynamicResource OdCanvas}">
+      <Menu>
+        <MenuItem Header="_File">
+          <MenuItem Header="New project…" Command="{Binding NewProjectCommand}" InputGesture="Cmd+N" />
+          <MenuItem Header="Open project…" Command="{Binding OpenProjectCommand}" InputGesture="Cmd+O" />
+          <MenuItem Header="Open results folder…" Command="{Binding OpenResultsFolderCommand}" />
+          <MenuItem Header="Recent projects" ItemsSource="{Binding RecentProjects}" IsEnabled="{Binding RecentProjects.Count}">
+            <MenuItem.Styles>
+              <Style Selector="MenuItem > MenuItem" x:DataType="svc:RecentProject">
+                <Setter Property="Header" Value="{Binding Name}" />
+                <Setter Property="ToolTip.Tip" Value="{Binding Path}" />
+                <Setter Property="Command" Value="{Binding $parent[Window].DataContext.OpenRecentCommand}" />
+                <Setter Property="CommandParameter" Value="{Binding Path}" />
+              </Style>
+            </MenuItem.Styles>
+          </MenuItem>
+          <Separator />
+          <MenuItem Header="Save project" Command="{Binding SaveProjectCommand}" InputGesture="Cmd+S" />
+          <MenuItem Header="Save project as…" Command="{Binding SaveProjectAsCommand}" />
+          <Separator />
+          <MenuItem Header="Add data files…" Command="{Binding Samples.AddFilesCommand}" />
+          <MenuItem Header="Add folder…" Command="{Binding Samples.AddFolderCommand}" />
+          <MenuItem Header="Close project" Command="{Binding CloseProjectCommand}" />
+          <Separator />
+          <MenuItem Header="Settings…" Command="{Binding OpenSettingsCommand}" />
+          <Separator />
+          <MenuItem Header="Quit" Click="OnExitClick" InputGesture="Cmd+Q" />
+        </MenuItem>
+        <MenuItem Header="_View">
+          <MenuItem Header="Log" Command="{Binding ToggleLogCommand}" InputGesture="Cmd+L">
+            <MenuItem.Icon>
+              <CheckBox IsChecked="{Binding ShowLog}" IsHitTestVisible="False" BorderThickness="0" Margin="0" Padding="0" MinHeight="0" />
+            </MenuItem.Icon>
+          </MenuItem>
+          <MenuItem Header="Progress band" Command="{Binding HideProgressBandCommand}" IsVisible="{Binding ShowProgressBand}" />
+          <Separator />
+          <MenuItem Header="Explorer: uncheck all channels" Command="{Binding Explorer.UncheckAllCommand}" />
+          <MenuItem Header="Explorer: show TIC of every sample" Command="{Binding Explorer.CheckAllTicCommand}" />
+          <MenuItem Header="Explorer: collapse tree" Command="{Binding Explorer.CollapseAllCommand}" />
+        </MenuItem>
+        <MenuItem Header="_Process">
+          <MenuItem Header="Process batch" Command="{Binding ProcessBatchCommand}" InputGesture="Cmd+R" />
+          <MenuItem Header="Cancel run" Command="{Binding CancelRunCommand}" IsEnabled="{Binding Run.IsRunning}" />
+          <Separator />
+          <MenuItem Header="Re-export alignment matrix…" Command="{Binding ReexportCommand}" />
+          <MenuItem Header="Open output folder" Command="{Binding OpenOutputFolderCommand}" />
+          <MenuItem Header="Choose output folder…" Command="{Binding BrowseOutputCommand}" />
+          <Separator />
+          <MenuItem Header="Load method file…" Command="{Binding Method.LoadMethodCommand}" />
+          <MenuItem Header="Save method file…" Command="{Binding Method.SaveMethodCommand}" />
+        </MenuItem>
+        <MenuItem Header="_Workspace">
+          <MenuItem Header="Explorer" Command="{Binding SelectWorkspaceCommand}" CommandParameter="0" InputGesture="Cmd+1" />
+          <MenuItem Header="Analytics" Command="{Binding SelectWorkspaceCommand}" CommandParameter="1" InputGesture="Cmd+2" />
+          <MenuItem Header="Method" Command="{Binding SelectWorkspaceCommand}" CommandParameter="2" InputGesture="Cmd+3" />
+          <MenuItem Header="Samples" Command="{Binding SelectWorkspaceCommand}" CommandParameter="3" InputGesture="Cmd+4" />
+        </MenuItem>
+        <MenuItem Header="_Help">
+          <MenuItem Header="About OpenDIAL" Command="{Binding OpenAboutCommand}" />
+        </MenuItem>
+      </Menu>
     </Border>
 
-    <TabControl SelectedIndex="{Binding SelectedTab, Mode=TwoWay}" Padding="0">
-      <TabItem Header="1. Project">
-        <views:ProjectView DataContext="{Binding Project}" />
-      </TabItem>
-      <TabItem Header="2. Run">
-        <views:RunView DataContext="{Binding Run}" />
-      </TabItem>
-      <TabItem Header="3. Results">
-        <views:ResultsView DataContext="{Binding Results}" />
-      </TabItem>
-    </TabControl>
+    <!-- status bar -->
+    <Border DockPanel.Dock="Bottom" Classes="statusbar">
+      <DockPanel>
+        <TextBlock DockPanel.Dock="Right" Classes="muted" Text="{Binding OutputFolder}" TextTrimming="CharacterEllipsis" MaxWidth="520" Margin="16,0,0,0" ToolTip.Tip="Results folder" />
+        <TextBlock Classes="muted" Text="{Binding Status}" TextTrimming="CharacterEllipsis" />
+      </DockPanel>
+    </Border>
+
+    <!-- log panel -->
+    <Border DockPanel.Dock="Bottom" Classes="hairline-top" IsVisible="{Binding ShowLog}" Height="170" Background="{DynamicResource OdSurface}">
+      <DockPanel>
+        <Border DockPanel.Dock="Top" Classes="hairline-bottom" Padding="10,4">
+          <DockPanel>
+            <Button DockPanel.Dock="Right" Classes="icon" Content="✕" Command="{Binding ToggleLogCommand}" ToolTip.Tip="Hide the log (Cmd+L)" />
+            <TextBlock Classes="eyebrow" Text="LOG" Margin="0" VerticalAlignment="Center" />
+            <TextBlock Classes="muted" Text="{Binding Run.StatusText}" Margin="14,0,0,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+          </DockPanel>
+        </Border>
+        <ListBox x:Name="LogList" Classes="flat" ItemsSource="{Binding LogLines}" FontFamily="{StaticResource OdMonoFont}" FontSize="11.5" SelectionMode="Multiple">
+          <ListBox.Styles>
+            <Style Selector="ListBoxItem">
+              <Setter Property="Padding" Value="10,1" />
+              <Setter Property="MinHeight" Value="18" />
+            </Style>
+          </ListBox.Styles>
+        </ListBox>
+      </DockPanel>
+    </Border>
+
+    <!-- workspace tabs -->
+    <Border DockPanel.Dock="Top" Classes="hairline-bottom" Background="{DynamicResource OdCanvas}">
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6" Margin="0,0,10,0" VerticalAlignment="Center">
+          <Border Classes="badge accent" IsVisible="{Binding HasResults}">
+            <TextBlock Classes="badge" Text="results loaded" />
+          </Border>
+          <TextBlock Classes="muted" Text="{Binding ProjectName}" VerticalAlignment="Center" />
+        </StackPanel>
+        <TabControl x:Name="WorkspaceTabs" SelectedIndex="{Binding SelectedWorkspace, Mode=TwoWay}" Margin="6,0,0,0">
+          <TabItem Header="Explorer" />
+          <TabItem Header="Analytics" />
+          <TabItem Header="Method" />
+          <TabItem Header="Samples" />
+        </TabControl>
+      </DockPanel>
+    </Border>
+
+    <!-- progress band (modal-free) -->
+    <Border DockPanel.Dock="Top" Classes="hairline-bottom" Background="{DynamicResource OdAccentSoft}" Padding="12,6" IsVisible="{Binding ShowProgressBand}">
+      <DockPanel>
+        <Button DockPanel.Dock="Right" Content="Cancel" Command="{Binding CancelRunCommand}" IsVisible="{Binding Run.IsRunning}" MinWidth="80" Margin="12,0,0,0" />
+        <Button DockPanel.Dock="Right" Classes="icon" Content="✕" Command="{Binding HideProgressBandCommand}" IsVisible="{Binding !Run.IsRunning}" Margin="12,0,0,0" />
+        <StackPanel Spacing="4">
+          <DockPanel>
+            <TextBlock DockPanel.Dock="Right" Classes="muted" Text="{Binding Run.Progress, StringFormat={}{0:F0} %}" />
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <TextBlock Classes="strong" Text="{Binding Run.Stage}" />
+              <TextBlock Classes="muted" Text="{Binding Run.CurrentFile}" />
+              <TextBlock Classes="muted" Text="{Binding Run.StatusText}" TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+          </DockPanel>
+          <ProgressBar Minimum="0" Maximum="100" Value="{Binding Run.Progress}" Height="6" />
+        </StackPanel>
+      </DockPanel>
+    </Border>
+
+    <!-- workspaces -->
+    <Panel>
+      <views:ExplorerView DataContext="{Binding Explorer}" IsVisible="{Binding $parent[Window].DataContext.SelectedWorkspace, Converter={x:Static views:Converters.EqualsInt}, ConverterParameter=0}" />
+      <views:AnalyticsView DataContext="{Binding Analytics}" IsVisible="{Binding $parent[Window].DataContext.SelectedWorkspace, Converter={x:Static views:Converters.EqualsInt}, ConverterParameter=1}" />
+      <views:MethodView DataContext="{Binding Method}" IsVisible="{Binding $parent[Window].DataContext.SelectedWorkspace, Converter={x:Static views:Converters.EqualsInt}, ConverterParameter=2}" />
+      <views:SamplesView DataContext="{Binding Samples}" IsVisible="{Binding $parent[Window].DataContext.SelectedWorkspace, Converter={x:Static views:Converters.EqualsInt}, ConverterParameter=3}" />
+    </Panel>
   </DockPanel>
 </Window>

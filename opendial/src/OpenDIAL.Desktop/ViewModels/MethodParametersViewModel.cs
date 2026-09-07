@@ -30,6 +30,47 @@ public sealed class MethodParametersViewModel : ViewModelBase
 
     public MethodParameters Model => _model;
 
+    /// <summary>Raised after any change of the model (form edit or text edit).</summary>
+    public event EventHandler? Changed;
+
+    /// <summary>Number of "Key: value" lines that differ from the defaults for the current mode.</summary>
+    public int ChangedFromDefaults
+    {
+        get
+        {
+            var defaults = ParseLines(new MethodParameters().ToMethodFileText(_mode));
+            var current = ParseLines(_model.ToMethodFileText(_mode));
+            var n = 0;
+            foreach (var (k, v) in current)
+            {
+                if (!defaults.TryGetValue(k, out var d) || !string.Equals(d, v, StringComparison.Ordinal)) n++;
+            }
+            return n;
+        }
+    }
+
+    /// <summary>One-line summary: "LC-MS · DDA · positive · 12 parameters changed from defaults".</summary>
+    public string Summary
+    {
+        get
+        {
+            var n = ChangedFromDefaults;
+            var changed = n == 0 ? "defaults" : n == 1 ? "1 parameter changed from defaults" : $"{n} parameters changed from defaults";
+            var lib = string.IsNullOrWhiteSpace(_model.MspFilePath) ? "no library" : Path.GetFileName(_model.MspFilePath);
+            return $"{(_mode == IonizationMode.GCMS ? "GC-MS" : "LC-MS")} · {_model.AcquisitionType} · {_model.IonMode.ToString().ToLowerInvariant()} · {lib} · {changed}";
+        }
+    }
+
+    private static Dictionary<string, string> ParseLines(string text)
+    {
+        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var line in text.Split('\n'))
+        {
+            if (MethodFileParser.TryReadFieldValues(line, out var k, out var v)) map[k] = v;
+        }
+        return map;
+    }
+
     /// <summary>The ionization mode only affects which sections are emitted in the text.</summary>
     public IonizationMode Mode
     {
@@ -86,6 +127,7 @@ public sealed class MethodParametersViewModel : ViewModelBase
         {
             _syncingFromText = false;
         }
+        Changed?.Invoke(this, EventArgs.Empty);
     }
 
     private void RegenerateText()
@@ -99,6 +141,25 @@ public sealed class MethodParametersViewModel : ViewModelBase
         {
             _syncingFromText = false;
         }
+        OnPropertyChanged(nameof(Summary));
+        OnPropertyChanged(nameof(ChangedFromDefaults));
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>Replaces the model from method-file text (used when a project is opened).</summary>
+    public void LoadText(string text)
+    {
+        try
+        {
+            _model = MethodParameters.FromMethodFileText(text);
+            TextError = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            TextError = ex.Message;
+        }
+        RefreshAll();
+        RegenerateText();
     }
 
     private void Set<T>(T current, T value, Action<T> assign, [CallerMemberName] string? name = null)

@@ -87,7 +87,7 @@ public sealed class SpectrumChart : ChartBase
     {
         var zero = ty(0);
         var measuredColor = AccentColor;
-        var referenceColor = Color.Parse("#E15759");
+        var referenceColor = Categorical[0];
 
         if (Peaks is { Count: > 0 } peaks)
         {
@@ -106,7 +106,7 @@ public sealed class SpectrumChart : ChartBase
         if (!double.IsNaN(PrecursorMz) && PrecursorMz >= xMin && PrecursorMz <= xMax)
         {
             var px = tx(PrecursorMz);
-            var pen = new Pen(new SolidColorBrush(Color.Parse("#59A14F")), 1, dashStyle: DashStyle.Dot);
+            var pen = new Pen(new SolidColorBrush(Categorical[1]), 1, dashStyle: DashStyle.Dot);
             ctx.DrawLine(pen, new Point(px, plot.Y), new Point(px, plot.Bottom));
             var tri = new StreamGeometry();
             using (var g = tri.Open())
@@ -116,14 +116,14 @@ public sealed class SpectrumChart : ChartBase
                 g.LineTo(new Point(px + 5, zero - 1));
                 g.EndFigure(true);
             }
-            ctx.DrawGeometry(new SolidColorBrush(Color.Parse("#59A14F")), null, tri);
+            ctx.DrawGeometry(new SolidColorBrush(Categorical[1]), null, tri);
         }
     }
 
     private void DrawSticks(DrawingContext ctx, Rect plot, Func<double, double> tx, Func<double, double> ty, IReadOnlyList<Point> peaks, double scale, Color color,
         double xMin, double xMax, bool mirrored)
     {
-        var pen = new Pen(new SolidColorBrush(color), 1.2);
+        var pen = new Pen(new SolidColorBrush(color), Compact ? 1 : 1.2);
         var zero = ty(0);
         var visible = new List<(double X, double Y)>();
         foreach (var p in peaks)
@@ -140,8 +140,8 @@ public sealed class SpectrumChart : ChartBase
         foreach (var (x, y) in visible.OrderByDescending(v => Math.Abs(v.Y)).Take(Math.Max(0, TopLabels)))
         {
             var px = tx(x);
-            if (placed.Any(q => Math.Abs(q - px) < 34)) continue;
-            var ft = MakeText(x.ToString("F4", CultureInfo.InvariantCulture), 9.5, labelBrush);
+            if (placed.Any(q => Math.Abs(q - px) < 48)) continue;
+            var ft = MakeText(x.ToString("F4", CultureInfo.InvariantCulture), Compact ? 9 : 9.5, labelBrush);
             var py = mirrored ? ty(y) + 2 : ty(y) - ft.Height - 2;
             var lx = Math.Clamp(px - ft.Width / 2, plot.X, plot.Right - ft.Width);
             ctx.DrawText(ft, new Point(lx, py));

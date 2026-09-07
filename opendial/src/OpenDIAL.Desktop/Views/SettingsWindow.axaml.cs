@@ -1,5 +1,7 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Styling;
 using OpenDIAL.Desktop.Services;
 
 namespace OpenDIAL.Desktop.Views;
@@ -8,9 +10,7 @@ public partial class SettingsWindow : Window
 {
     private readonly SettingsService? _settings;
 
-    public SettingsWindow() : this(null)
-    {
-    }
+    public SettingsWindow() : this(null) { }
 
     public SettingsWindow(SettingsService? settings)
     {
@@ -24,20 +24,30 @@ public partial class SettingsWindow : Window
             DockerImage.Text = v.DockerImage;
             CacheFolder.Text = v.ConversionCacheFolder;
             SettingsPath.Text = "Stored in " + settings.FilePath;
+            ThemeBox.SelectedIndex = settings.Current.Theme switch { "Light" => 1, "Dark" => 2, _ => 0 };
         }
+    }
+
+    public static void ApplyTheme(string theme)
+    {
+        if (Application.Current is null) return;
+        Application.Current.RequestedThemeVariant = theme switch
+        {
+            "Light" => ThemeVariant.Light,
+            "Dark" => ThemeVariant.Dark,
+            _ => ThemeVariant.Default,
+        };
     }
 
     private async void OnBrowseMsconvert(object? sender, RoutedEventArgs e)
     {
-        var dialogs = new FileDialogService(this);
-        var files = await dialogs.PickFilesAsync("Locate msconvert", new[] { "*" }, allowMultiple: false);
+        var files = await new FileDialogService(this).PickFilesAsync("Locate msconvert", new[] { "*" }, allowMultiple: false);
         if (files.Count > 0) MsconvertPath.Text = files[0];
     }
 
     private async void OnBrowseCache(object? sender, RoutedEventArgs e)
     {
-        var dialogs = new FileDialogService(this);
-        var folder = await dialogs.PickFolderAsync("Choose the conversion cache folder");
+        var folder = await new FileDialogService(this).PickFolderAsync("Choose the conversion cache folder");
         if (folder is not null) CacheFolder.Text = folder;
     }
 
@@ -50,6 +60,8 @@ public partial class SettingsWindow : Window
             v.UseDocker = UseDocker.IsChecked == true;
             v.DockerImage = string.IsNullOrWhiteSpace(DockerImage.Text) ? "chambm/pwiz-skyline-i-agree-to-the-vendor-licenses" : DockerImage.Text.Trim();
             v.ConversionCacheFolder = CacheFolder.Text?.Trim() ?? string.Empty;
+            _settings.Current.Theme = (ThemeBox.SelectedItem as ComboBoxItem)?.Tag as string ?? "System";
+            ApplyTheme(_settings.Current.Theme);
             try
             {
                 await _settings.SaveAsync();

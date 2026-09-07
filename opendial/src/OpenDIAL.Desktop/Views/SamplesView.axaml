@@ -1,0 +1,86 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:OpenDIAL.Desktop.ViewModels"
+             xmlns:views="using:OpenDIAL.Desktop.Views"
+             x:Class="OpenDIAL.Desktop.Views.SamplesView"
+             x:DataType="vm:SamplesViewModel">
+  <DockPanel>
+    <Border DockPanel.Dock="Top" Classes="band">
+      <StackPanel Orientation="Horizontal" Spacing="2">
+        <Button Classes="tool strong" Content="Add data files…" Command="{Binding AddFilesCommand}" />
+        <Button Classes="tool" Content="Add folder…" Command="{Binding AddFolderCommand}" />
+        <Button Classes="tool" Content="Remove" Command="{Binding RemoveSelectedCommand}" />
+        <Button Classes="tool" Content="Clear all" Command="{Binding ClearAllCommand}" IsEnabled="{Binding HasSamples}" />
+        <Rectangle Classes="vsep" />
+        <TextBlock Classes="label" Text="Set type of selected" Margin="6,0,6,0" />
+        <ComboBox Classes="compact" ItemsSource="{x:Static vm:SamplesViewModel.SampleTypes}" SelectedItem="{Binding TypeToApply}" Width="120" />
+        <Button Classes="tool" Content="Apply" Command="{Binding ApplyTypeCommand}" />
+        <Rectangle Classes="vsep" />
+        <TextBlock Classes="label" Text="Set class of selected" Margin="6,0,6,0" />
+        <AutoCompleteBox Text="{Binding ClassToApply}" ItemsSource="{Binding ClassNames}" Width="150" MinHeight="26" FilterMode="StartsWith" Watermark="class name" />
+        <Button Classes="tool" Content="Apply" Command="{Binding ApplyClassCommand}" />
+        <TextBlock Classes="muted" Text="{Binding Message}" VerticalAlignment="Center" Margin="12,0,0,0" />
+      </StackPanel>
+    </Border>
+    <Border DockPanel.Dock="Bottom" Classes="statusbar" Padding="16,6">
+      <TextBlock Classes="muted" Text="{Binding StatusLine}" />
+    </Border>
+
+    <Panel Margin="8">
+      <DataGrid x:Name="Grid" ItemsSource="{Binding Samples}" SelectedItem="{Binding SelectedSample, Mode=TwoWay}" AutoGenerateColumns="False" IsReadOnly="False"
+                SelectionMode="Extended" CanUserSortColumns="False" SelectionChanged="OnSelectionChanged">
+        <DataGrid.Columns>
+          <DataGridTextColumn Header="#" Binding="{Binding AnalyticalOrder}" Width="46" IsReadOnly="True" />
+          <DataGridTemplateColumn Header="Use" Width="52">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:InputFileViewModel">
+                <CheckBox Classes="compact" IsChecked="{Binding Included, Mode=TwoWay}" HorizontalAlignment="Center" Padding="0" />
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+          <DataGridTemplateColumn Header="File" Width="230">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:InputFileViewModel">
+                <TextBlock Text="{Binding FileName}" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Tooltip}" Margin="6,0" />
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+          <DataGridTextColumn Header="Sample" Binding="{Binding Name}" Width="170" />
+          <DataGridTemplateColumn Header="Type" Width="120">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:InputFileViewModel">
+                <ComboBox Classes="compact" ItemsSource="{x:Static vm:InputFileViewModel.SampleTypes}" SelectedItem="{Binding SampleType, Mode=TwoWay}" Margin="3,1" />
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+          <DataGridTextColumn Header="Class" Binding="{Binding Class}" Width="120" />
+          <DataGridTemplateColumn Header="Acquisition" Width="118">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:InputFileViewModel">
+                <ComboBox Classes="compact" ItemsSource="{x:Static vm:InputFileViewModel.AcquisitionModes}" SelectedItem="{Binding Acquisition, Mode=TwoWay}" Margin="3,1" />
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+          <DataGridTextColumn Header="Order" Binding="{Binding AnalyticalOrder}" Width="70" />
+          <DataGridTextColumn Header="Batch" Binding="{Binding Batch}" Width="70" />
+          <DataGridTextColumn Header="Dilution" Binding="{Binding Dilution}" Width="84" />
+          <DataGridTextColumn Header="Comment" Binding="{Binding Comment}" Width="*" />
+          <DataGridTemplateColumn Header="Format" Width="150" IsReadOnly="True">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:InputFileViewModel">
+                <Border Classes="badge" Classes.warn="{Binding BadgeIsWarning}" HorizontalAlignment="Left" Margin="6,0">
+                  <TextBlock Classes="badge" Text="{Binding Badge}" />
+                </Border>
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+        </DataGrid.Columns>
+      </DataGrid>
+      <StackPanel IsVisible="{Binding !HasSamples}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8" IsHitTestVisible="False">
+        <TextBlock Classes="wordmark" Text="OpenDIAL" HorizontalAlignment="Center" Foreground="{DynamicResource OdInkFaint}" />
+        <TextBlock Classes="muted" Text="Add data files to start a batch, or create a project with File ▸ New project…" HorizontalAlignment="Center" />
+        <TextBlock Classes="hint" Text="mzML, ABF, CDF and IBF open directly; Thermo .raw, Agilent/Bruker .d and Sciex .wiff go through msconvert (Settings)." HorizontalAlignment="Center" />
+      </StackPanel>
+    </Panel>
+  </DockPanel>
+</UserControl>

@@ -72,6 +72,13 @@ public sealed record SampleInfo(int FileId, string FileName, string Class, strin
 
 public readonly record struct SampleValue(int FileId, string FileName, string Class, double Height);
 
+/// <summary>The peak of one sample inside an alignment spot (NaN fields when only heights are known).</summary>
+public sealed record AlignedSamplePeak(int FileId, string FileName, string Class, string SampleType, double Rt, double RtLeft, double RtRight, double Mz,
+    double Height, double Area, double SignalToNoise, bool IsGapFilled)
+{
+    public bool HasPeak => Height > 0 && !double.IsNaN(Rt);
+}
+
 /// <summary>One alignment spot with its per-sample intensities.</summary>
 public sealed class AlignmentSpotRow
 {
@@ -85,6 +92,12 @@ public sealed class AlignmentSpotRow
     public double Score { get; init; }
     public string Adduct { get; init; } = string.Empty;
     public IReadOnlyList<SampleValue> SampleHeights { get; init; } = Array.Empty<SampleValue>();
+    /// <summary>Per-sample peak details (RT, integration range, height, area, S/N, gap-filled) in file order.</summary>
+    public IReadOnlyList<AlignedSamplePeak> SamplePeaks { get; init; } = Array.Empty<AlignedSamplePeak>();
+    public string Ontology { get; init; } = string.Empty;
+    public string Formula { get; init; } = string.Empty;
+    public string InChIKey { get; init; } = string.Empty;
+    public double SignalToNoiseAverage { get; init; }
     public bool IsAnnotated => !string.IsNullOrEmpty(Name) && !Name.StartsWith("Unknown", StringComparison.OrdinalIgnoreCase) && !Name.StartsWith("w/o", StringComparison.OrdinalIgnoreCase);
     public MsScanMatchResult? MatchResult { get; init; }
 }
