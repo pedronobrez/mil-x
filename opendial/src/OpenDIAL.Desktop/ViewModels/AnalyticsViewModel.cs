@@ -466,13 +466,49 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
         return to > from;
     }
 
-    /// <summary>The chromatograms the review grid already drew, which is what an integration reads.</summary>
-    private Dictionary<int, IReadOnlyList<ChromatogramPoint>> GridChromatograms()
+    /// <summary>
+    /// The chromatograms an integration reads. The review grid loads them one sample at a time, so a
+    /// reviewer who acts before it has finished would otherwise re-integrate only the samples already
+    /// drawn and leave the rest on their old boundaries. Anything missing is fetched here first.
+    /// </summary>
+    private async Task<Dictionary<int, IReadOnlyList<ChromatogramPoint>>> ChromatogramsAsync(AlignmentSpotRow spot, IReadOnlyCollection<int>? fileIds)
     {
         var map = new Dictionary<int, IReadOnlyList<ChromatogramPoint>>();
-        foreach (var (fileId, panel) in _allPanels)
+        var wanted = spot.SamplePeaks.Select(p => p.FileId).Where(id => fileIds is null || fileIds.Contains(id)).ToList();
+        var missing = new List<int>();
+        foreach (var id in wanted)
         {
-            if (panel.FullTrace.Count > 0) map[fileId] = panel.FullTrace.Select(p => new ChromatogramPoint(p.X, p.Y)).ToList();
+            if (_allPanels.TryGetValue(id, out var panel) && panel.FullTrace.Count > 0)
+            {
+                map[id] = panel.FullTrace.Select(p => new ChromatogramPoint(p.X, p.Y)).ToList();
+            }
+            else
+            {
+                missing.Add(id);
+            }
+        }
+        if (missing.Count == 0) return map;
+
+        Summary = $"Reading the chromatogram of {missing.Count} sample(s) still loading…";
+        var tol = Ms1Tolerance;
+        foreach (var id in missing)
+        {
+            var bean = _session?.AnalysisFiles.FirstOrDefault(b => b.AnalysisFileId == id);
+            if (string.IsNullOrEmpty(bean?.AnalysisFilePath)) continue;
+            try
+            {
+                var raw = await _cache.GetAsync(bean.AnalysisFilePath);
+                var ms1 = _cache.Channels(bean.AnalysisFilePath, raw).FirstOrDefault(c => c.Kind == RawChannelKind.Ms1);
+                if (ms1 is null) continue;
+                var eic = await Task.Run(() => RawExplorer.Xic(raw, ms1.SpectrumIndices, spot.Mz, tol));
+                var points = eic.Points.Select(q => new ChromatogramPoint(q.Rt, q.Intensity)).ToList();
+                map[id] = points;
+                if (_allPanels.TryGetValue(id, out var panel)) panel.FullTrace = points.Select(q => new Point(q.Rt, q.Intensity)).ToList();
+            }
+            catch (Exception)
+            {
+                // a sample whose raw file cannot be read is reported as skipped by the integration
+            }
         }
         return map;
     }
@@ -497,10 +533,10 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
             Summary = "Set a retention window first: shift-drag a panel, or type the two values.";
             return;
         }
-        var chromatograms = GridChromatograms();
+        var chromatograms = await ChromatogramsAsync(row.Spot, fileIds);
         if (chromatograms.Count == 0)
         {
-            Summary = "The chromatograms are still loading.";
+            Summary = "No chromatogram could be read for the requested sample(s).";
             return;
         }
         try

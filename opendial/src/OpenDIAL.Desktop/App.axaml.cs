@@ -167,6 +167,49 @@ public partial class App : Application
                                 await Task.Delay(1500);
                                 break;
                             }
+                            case "reintegrate-demo":
+                            {
+                                // Drives a real re-integration through the same commands the buttons
+                                // use, and prints what changed so the run can be checked from outside.
+                                vm.Analytics.AnnotationFilter = "Confident";
+                                await Task.Delay(1500);
+                                var demoRow = vm.Analytics.IonRows.OrderByDescending(r => r.Score).FirstOrDefault();
+                                if (demoRow is null) { Console.WriteLine("[demo] no annotated feature"); break; }
+                                vm.Analytics.SelectedRow = demoRow;
+                                for (var wait = 0; wait < 120 && (vm.Analytics.IsGridBusy || vm.Analytics.Panels.Count == 0); wait++)
+                                {
+                                    await Task.Delay(2000);   // let every sample's chromatogram load
+                                }
+                                var spot = demoRow.Spot;
+                                Console.WriteLine($"[demo] feature #{demoRow.Id} {demoRow.DisplayName} RT {demoRow.Rt:F3} m/z {demoRow.Mz:F4}");
+                                Console.WriteLine($"[demo] before: mean height {spot.AverageHeight:N0}, fill {spot.FillPercent:F0} %");
+                                foreach (var p in spot.SamplePeaks)
+                                {
+                                    Console.WriteLine($"[demo]   {p.FileName,-28} height {p.Height,12:N0}  area {p.Area,14:N0}  window {p.RtLeft:F3}-{p.RtRight:F3}");
+                                }
+                                var half = spot.SamplePeaks.FirstOrDefault(p => p.HasPeak);
+                                if (half is null) { Console.WriteLine("[demo] no detected peak"); break; }
+                                var centre = half.Rt;
+                                var width = Math.Max(0.02, (half.RtRight - half.RtLeft) / 4.0);
+                                vm.Analytics.SetIntegrationWindow(centre - width, centre + width);
+                                Console.WriteLine($"[demo] applying window {centre - width:F3}-{centre + width:F3} min to every sample");
+                                await vm.Analytics.ReintegrateAllCommand.ExecuteAsync(null);
+                                await Task.Delay(2500);
+                                var after = vm.Analytics.SelectedRow?.Spot;
+                                if (after is not null)
+                                {
+                                    Console.WriteLine($"[demo] after : mean height {after.AverageHeight:N0}, fill {after.FillPercent:F0} %");
+                                    foreach (var p in after.SamplePeaks)
+                                    {
+                                        Console.WriteLine($"[demo]   {p.FileName,-28} height {p.Height,12:N0}  area {p.Area,14:N0}  window {p.RtLeft:F3}-{p.RtRight:F3}");
+                                    }
+                                }
+                                Console.WriteLine($"[demo] status: {vm.Analytics.Summary}");
+                                vm.Analytics.SaveCurationCommand.Execute(null);
+                                await Task.Delay(4000);
+                                Console.WriteLine($"[demo] save  : {vm.Analytics.Summary}");
+                                break;
+                            }
                             case "review-peaks":
                             {
                                 // an annotated feature with the integrate strip in view
