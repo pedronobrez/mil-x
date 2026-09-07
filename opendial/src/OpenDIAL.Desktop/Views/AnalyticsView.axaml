@@ -183,6 +183,21 @@
                       <Button Classes="icon" Content="▶" Command="{Binding NextPageCommand}" />
                     </StackPanel>
                   </Border>
+                  <Border DockPanel.Dock="Top" Classes="hairline-bottom" Padding="0,0,0,6" Margin="0,0,0,6">
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                      <TextBlock Classes="eyebrow" Text="INTEGRATE" Margin="0,0,4,0" VerticalAlignment="Center" />
+                      <TextBox Text="{Binding IntegrationFrom}" Watermark="from" Width="80" />
+                      <TextBlock Classes="label" Text="to" VerticalAlignment="Center" />
+                      <TextBox Text="{Binding IntegrationTo}" Watermark="to" Width="80" />
+                      <TextBlock Classes="label" Text="min" VerticalAlignment="Center" Margin="0,0,4,0" />
+                      <Button Classes="tool strong" Content="Apply to all" Command="{Binding ReintegrateAllCommand}" ToolTip.Tip="Re-integrate this feature over the window in every sample" />
+                      <Button Classes="tool" Content="This sample" Command="{Binding ReintegrateSampleCommand}" ToolTip.Tip="Re-integrate only the sample in focus" />
+                      <Button Classes="tool" Content="Reset" Command="{Binding ResetIntegrationWindowCommand}" ToolTip.Tip="Put the current peak's own boundaries back in the boxes" />
+                      <Rectangle Classes="vsep" />
+                      <Button Classes="tool" Content="Split isomer" Command="{Binding SplitIsomerCommand}" ToolTip.Tip="Copy the feature so two co-eluting compounds can be integrated and named apart" />
+                      <TextBlock Classes="hint" Text="{Binding IntegrationHint}" VerticalAlignment="Center" Margin="8,0,0,0" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                  </Border>
                   <Panel>
                     <ItemsControl ItemsSource="{Binding Panels}">
                       <ItemsControl.ItemsPanel>
@@ -195,7 +210,7 @@
                           <Border Margin="3" BorderBrush="{DynamicResource OdLine}" BorderThickness="1" CornerRadius="6" ClipToBounds="True">
                             <c:LineChart Compact="True" Series="{Binding Series}" Windows="{Binding Windows}" Title="{Binding Title}" MarkerX="{Binding MarkerRt}"
                                          FixedXMin="{Binding FixedXMin}" FixedXMax="{Binding FixedXMax}" FixedYMax="{Binding FixedYMax}" IsHighlighted="{Binding IsSelected}"
-                                         AutoZoomToHighlight="False" ShowLegend="False" PointClicked="OnPanelClicked" ChartDoubleClicked="OnPanelDoubleClicked" />
+                                         AutoZoomToHighlight="False" ShowLegend="False" PointClicked="OnPanelClicked" ChartDoubleClicked="OnPanelDoubleClicked" RangeSelected="OnRangeSelected" />
                           </Border>
                         </DataTemplate>
                       </ItemsControl.ItemTemplate>
@@ -347,7 +362,7 @@
                 <TextBlock Classes="title" Text="{Binding Title}" VerticalAlignment="Center" />
               </DockPanel>
             </Border>
-            <c:LineChart Series="{Binding Series}" Windows="{Binding Windows}" MarkerX="{Binding MarkerRt}" FixedXMin="{Binding FixedXMin}" FixedXMax="{Binding FixedXMax}" AutoZoomToHighlight="False" ShowLegend="False" Margin="4" />
+            <c:LineChart Series="{Binding Series}" Windows="{Binding Windows}" MarkerX="{Binding MarkerRt}" FixedXMin="{Binding FixedXMin}" FixedXMax="{Binding FixedXMax}" AutoZoomToHighlight="False" ShowLegend="False" Margin="4" RangeSelected="OnRangeSelected" />
           </DockPanel>
         </Border>
       </Panel>

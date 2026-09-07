@@ -89,6 +89,7 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     private int _gridVersion;
     private readonly Dictionary<int, ReviewPanelViewModel> _allPanels = new();
     private CurationStore? _curation;
+    private AlignmentResultContainer? _container;
     private List<SpotRowViewModel> _allRows = new();
     private bool _suspendFilter;
 
@@ -132,6 +133,12 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     [ObservableProperty] private int _rejectedCount;
     [ObservableProperty] private int _reviewedCount;
     [ObservableProperty] private bool _curationDirty;
+    [ObservableProperty] private bool _peaksEdited;
+
+    // manual re-integration
+    [ObservableProperty] private string _integrationFrom = string.Empty;
+    [ObservableProperty] private string _integrationTo = string.Empty;
+    [ObservableProperty] private string _integrationHint = "Shift-drag a panel to set the window.";
 
     // candidates of the selected feature
     [ObservableProperty] private IReadOnlyList<AnnotationCandidate> _candidates = Array.Empty<AnnotationCandidate>();
@@ -198,7 +205,9 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
         _allRows = new List<SpotRowViewModel>();
         IonRows.Clear();
         _curation = null;
+        _container = null;
         CurationDirty = false;
+        PeaksEdited = false;
         Candidates = Array.Empty<AnnotationCandidate>();
         IsotopePeaks = Array.Empty<Point>();
         HasResults = false;
@@ -229,6 +238,7 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
             _spots = table.Spots;
             _samples = table.Samples;
             _curation = CurationStore.Load(session.AlignmentFile.FilePath);
+            _container = table.Container;
             _allRows = _spots.Select(s => new SpotRowViewModel(s, _curation)).ToList();
             AnnotatedCount = _spots.Count(s => s.IsAnnotated);
             UnknownCount = _spots.Count - AnnotatedCount;
@@ -348,6 +358,11 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
         if (!ReferenceEquals(target, SelectedFeaturePoint)) SelectedFeaturePoint = target;
     }
 
+    partial void OnPeaksEditedChanged(bool value)
+    {
+        if (value) CurationDirty = true;
+    }
+
     partial void OnSelectedFeaturePointChanged(ScatterPoint? value)
     {
         if (value?.Tag is SpotRowViewModel row && !ReferenceEquals(row, SelectedRow)) SelectedRow = row;
@@ -375,6 +390,7 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
         Candidates = value.Spot.Candidates;
         SelectedCandidate = Candidates.FirstOrDefault(c => c.IsRepresentative) ?? Candidates.FirstOrDefault();
         ScoreRows = BuildScoreRows(value.Spot);
+        ResetIntegrationWindow();
         SampleBars = value.Spot.SamplePeaks
             .Select(p => new BarItem(p.FileName, double.IsNaN(p.Height) ? 0 : p.Height, string.IsNullOrEmpty(p.Class) ? "(none)" : p.Class))
             .ToList();
@@ -414,6 +430,132 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
             rows.Add(new ScoreRow("Lipid evidence", level));
         }
         return rows;
+    }
+
+
+    // ---------------------------------------------------------------- manual peak editing
+
+    /// <summary>Fills the integration boxes from the peak of the sample in focus.</summary>
+    [RelayCommand]
+    private void ResetIntegrationWindow()
+    {
+        var peak = SelectedSampleRow?.Peak ?? SelectedRow?.Spot.SamplePeaks.FirstOrDefault(p => p.HasPeak);
+        if (peak is null || double.IsNaN(peak.RtLeft) || double.IsNaN(peak.RtRight))
+        {
+            IntegrationFrom = IntegrationTo = string.Empty;
+            return;
+        }
+        IntegrationFrom = peak.RtLeft.ToString("F3", CultureInfo.InvariantCulture);
+        IntegrationTo = peak.RtRight.ToString("F3", CultureInfo.InvariantCulture);
+    }
+
+    /// <summary>Called when the reviewer drags a window across one of the review panels.</summary>
+    public void SetIntegrationWindow(double from, double to)
+    {
+        if (double.IsNaN(from) || double.IsNaN(to) || to <= from) return;
+        IntegrationFrom = from.ToString("F3", CultureInfo.InvariantCulture);
+        IntegrationTo = to.ToString("F3", CultureInfo.InvariantCulture);
+        IntegrationHint = $"Window {from:F3}–{to:F3} min. Apply it to this sample or to all of them.";
+    }
+
+    private bool TryIntegrationWindow(out double from, out double to)
+    {
+        from = to = double.NaN;
+        if (!double.TryParse(IntegrationFrom?.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out from)) return false;
+        if (!double.TryParse(IntegrationTo?.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out to)) return false;
+        return to > from;
+    }
+
+    /// <summary>The chromatograms the review grid already drew, which is what an integration reads.</summary>
+    private Dictionary<int, IReadOnlyList<ChromatogramPoint>> GridChromatograms()
+    {
+        var map = new Dictionary<int, IReadOnlyList<ChromatogramPoint>>();
+        foreach (var (fileId, panel) in _allPanels)
+        {
+            if (panel.FullTrace.Count > 0) map[fileId] = panel.FullTrace.Select(p => new ChromatogramPoint(p.X, p.Y)).ToList();
+        }
+        return map;
+    }
+
+    [RelayCommand]
+    private Task ReintegrateAll() => ReintegrateAsync(null);
+
+    [RelayCommand]
+    private Task ReintegrateSample() => ReintegrateAsync(SelectedSampleRow is null ? null : new[] { SelectedSampleRow.Peak.FileId });
+
+    private async Task ReintegrateAsync(IReadOnlyCollection<int>? fileIds)
+    {
+        var row = SelectedRow;
+        if (row?.Spot.Spot is null) return;
+        if (_container is null)
+        {
+            Summary = "This result was opened from an export, so its peaks cannot be edited.";
+            return;
+        }
+        if (!TryIntegrationWindow(out var from, out var to))
+        {
+            Summary = "Set a retention window first: shift-drag a panel, or type the two values.";
+            return;
+        }
+        var chromatograms = GridChromatograms();
+        if (chromatograms.Count == 0)
+        {
+            Summary = "The chromatograms are still loading.";
+            return;
+        }
+        try
+        {
+            var result = PeakEditor.Reintegrate(row.Spot.Spot, chromatograms, from, to, fileIds);
+            PeaksEdited = true;
+            var scope = fileIds is null ? "all samples" : SelectedSampleRow?.Peak.FileName ?? "one sample";
+            Summary = $"Re-integrated {from:F3}–{to:F3} min over {scope}: {result.SamplesChanged} changed, {result.SamplesSkipped} skipped · mean height {result.HeightAverage:N0} · fill {result.FillPercent:F0} %";
+            IntegrationHint = "Edited. Save review writes it back to the alignment files.";
+            await ReloadSpotsAsync(row.Id);
+        }
+        catch (Exception ex)
+        {
+            Summary = "Re-integration failed: " + ex.Message;
+        }
+    }
+
+    /// <summary>
+    /// Copies the feature so two compounds under one peak can be integrated and named apart. The copy
+    /// lands next to the original; give each its own window with the integration controls.
+    /// </summary>
+    [RelayCommand]
+    private async Task SplitIsomer()
+    {
+        var row = SelectedRow;
+        if (row?.Spot.Spot is null || _container is null)
+        {
+            Summary = "This result was opened from an export, so its features cannot be split.";
+            return;
+        }
+        try
+        {
+            var clone = PeakEditor.SplitIsomer(_container, row.Spot.Spot);
+            PeaksEdited = true;
+            Summary = $"Feature #{row.Id} copied to #{clone.MasterAlignmentID}. Give each copy its own integration window, then name them.";
+            await ReloadSpotsAsync(clone.MasterAlignmentID);
+        }
+        catch (Exception ex)
+        {
+            Summary = "The feature could not be split: " + ex.Message;
+        }
+    }
+
+    /// <summary>Rebuilds the table from the container after a hand edit, keeping the reviewer in place.</summary>
+    private async Task ReloadSpotsAsync(int selectId)
+    {
+        if (_session?.AlignmentFile is null || _curation is null) return;
+        var table = await ResultLoader.LoadAlignmentTableAsync(_session.AlignmentFile, _session.AnalysisFiles, _container);
+        _spots = table.Spots;
+        _allRows = _spots.Select(s => new SpotRowViewModel(s, _curation)).ToList();
+        AnnotatedCount = _spots.Count(s => s.IsAnnotated);
+        UnknownCount = _spots.Count - AnnotatedCount;
+        RebuildRows();
+        var target = IonRows.FirstOrDefault(r => r.Id == selectId);
+        if (target is not null) SelectedRow = target;
     }
 
     // ---------------------------------------------------------------- curation
@@ -536,7 +678,14 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
         {
             _curation.Save();
             CurationDirty = false;
-            Summary = $"Review saved to {Path.GetFileName(_curation.TagFilePath)} (MS-DIAL reads this file too).";
+            var message = $"Review saved to {Path.GetFileName(_curation.TagFilePath)} (MS-DIAL reads this file too).";
+            if (PeaksEdited && _container is not null && _session?.AlignmentFile is not null)
+            {
+                PeakEditor.Save(_container, _session.AlignmentFile);
+                PeaksEdited = false;
+                message += " Edited peaks written back to the alignment files; the originals are kept beside them as .before-curation.";
+            }
+            Summary = message;
         }
         catch (Exception ex)
         {

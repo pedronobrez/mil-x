@@ -167,6 +167,13 @@ public partial class App : Application
                                 await Task.Delay(1500);
                                 break;
                             }
+                            case "review-peaks":
+                            {
+                                // an annotated feature with the integrate strip in view
+                                vm.Analytics.AnnotationFilter = "Confident";
+                                await Task.Delay(2500);
+                                break;
+                            }
                             case "review-map":
                             {
                                 // the review workspace with a class filter on and the feature map open

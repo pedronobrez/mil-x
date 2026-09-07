@@ -142,12 +142,16 @@ public sealed class AlignmentSpotRow
 
 public sealed class AlignmentTable
 {
-    public AlignmentTable(IReadOnlyList<SampleInfo> samples, IReadOnlyList<AlignmentSpotRow> spots, string source)
+    public AlignmentTable(IReadOnlyList<SampleInfo> samples, IReadOnlyList<AlignmentSpotRow> spots, string source, AlignmentResultContainer? container = null)
     {
         Samples = samples;
         Spots = spots;
         Source = source;
+        Container = container;
     }
+
+    /// <summary>The loaded alignment result, when it came from the binary files: what a hand edit changes and saves.</summary>
+    public AlignmentResultContainer? Container { get; }
 
     public IReadOnlyList<SampleInfo> Samples { get; }
     public IReadOnlyList<AlignmentSpotRow> Spots { get; }

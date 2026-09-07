@@ -83,10 +83,40 @@ to it in the ion table.
 **Samples**, **Statistics**, **Trend** — the per-sample numbers, the per-class mean, standard
 deviation and %CV, and any metric against injection order for a drift check.
 
+## Re-integrating a peak by hand
+
+Automatic integration gets shoulders, tailing and split peaks wrong often enough that a result is
+not finished until the worst of them have been redrawn. The **integrate** strip sits above the peak
+panels:
+
+![re-integrating a feature](images/review-integrate.png)
+
+Shift-drag across any panel to draw the window — the panel you dragged on becomes the sample in
+focus — or type the two retention times. Then **Apply to all** re-integrates the feature in every
+sample, or **This sample** in the one in focus. **Reset** puts the current peak's own boundaries
+back in the boxes.
+
+Height becomes the apex inside the window, area the trapezoid under the trace, and the
+baseline-corrected area subtracts the straight line joining the two edges — the same definitions
+the run itself used, so a redrawn peak stays comparable with the ones beside it. The feature's own
+mean height, fill percentage, mean retention time and peak width follow, and it is marked as
+manually modified for quantification, which is the flag MS-DIAL exports.
+
+## Splitting co-eluting isomers
+
+When one aligned feature holds two compounds, **Split isomer** copies it in place. The copy sits
+right after the original with its own id, carries a comment saying where it came from, and starts
+as an exact duplicate. Give each copy its own integration window with the strip above, then name
+them from the ion table or the candidate list. This is MS-DIAL's "duplicate peak spot" workflow.
+
+Both edits change the alignment result itself, not a sidecar. **Save review** writes the container
+back through MS-DIAL's own serialiser, so the edited result opens in MS-DIAL and feeds the
+exporters unchanged. The files as they were before the first edit of the session are kept beside
+them with a `.before-curation` suffix.
+
 ## What is not here yet
 
-Manual re-integration of a peak (MS-DIAL's peak-curation window), splitting one aligned feature into
-two for co-eluting isomers, re-searching the library from inside the application with different
-tolerances, and the statistics windows (principal components, clustering, molecular networking).
-The candidate list covers the common case of the automatic annotation picking the wrong record,
-which is what re-searching is usually for.
+Re-searching the library from inside the application with different tolerances, and the statistics
+windows (principal components, clustering, molecular networking). The candidate list covers the
+common case of the automatic annotation picking the wrong record, which is what re-searching is
+usually for.

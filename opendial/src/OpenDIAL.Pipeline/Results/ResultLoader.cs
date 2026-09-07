@@ -276,12 +276,20 @@ public static class ResultLoader
     // ------------------------------------------------------------------ alignment
 
     public static Task<AlignmentTable> LoadAlignmentTableAsync(AlignmentFileBean alignmentFile, IReadOnlyList<AnalysisFileBean> files, CancellationToken ct = default)
+        => LoadAlignmentTableAsync(alignmentFile, files, null, ct);
+
+    /// <summary>
+    /// Reads the alignment result into table rows. Pass <paramref name="loaded"/> to rebuild the rows
+    /// from a container already in memory, which is what a hand edit needs: the edits live in that
+    /// object and re-reading the files would throw them away.
+    /// </summary>
+    public static Task<AlignmentTable> LoadAlignmentTableAsync(AlignmentFileBean alignmentFile, IReadOnlyList<AnalysisFileBean> files, AlignmentResultContainer? loaded, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(alignmentFile);
         return Task.Run(() =>
         {
             ct.ThrowIfCancellationRequested();
-            var container = AlignmentResultContainer.Load(alignmentFile);
+            var container = loaded ?? AlignmentResultContainer.Load(alignmentFile);
             if (container?.AlignmentSpotProperties is null)
             {
                 var tsv = Path.Combine(Path.GetDirectoryName(alignmentFile.FilePath) ?? string.Empty, alignmentFile.FileName + ".mdalign");
@@ -347,7 +355,7 @@ public static class ResultLoader
                     Candidates = BuildCandidates(spot.MatchResults, match),
                 });
             }
-            return new AlignmentTable(samples, spots, "container");
+            return new AlignmentTable(samples, spots, "container", container);
         }, ct);
     }
 
