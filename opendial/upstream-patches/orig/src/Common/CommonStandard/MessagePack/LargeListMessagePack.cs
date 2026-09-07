@@ -131,28 +131,19 @@ namespace CompMs.Common.MessagePack {
 
         static bool FillFromStream(Stream input, ref byte[] buffer, int offset, int readSize)
         {
-            // OpenDIAL: Stream.Read is allowed to return fewer bytes than asked for, and the
-            // DeflateStream inside a ZipArchive — which is how a .mdproject stores its databases —
-            // does so routinely on a large entry. The single Read this used to do left the tail of
-            // the buffer unfilled, and the caller then handed the whole buffer to the unsafe LZ4
-            // decoder, which walked past the valid data and took the process down with an
-            // AccessViolationException that no catch block can stop. Read to completion instead.
             int length = 0;
-            while (length < readSize)
+            int read;
+            if ((read = input.Read(buffer, offset, readSize)) > 0)
             {
-                var read = input.Read(buffer, offset + length, readSize - length);
-                if (read <= 0) break;
                 length += read;
+                // Console.WriteLine("read length: " + length);
+                if (length == buffer.Length)
+                {
+                    MessagePackBinary.FastResize(ref buffer, length * 2);
+                }
+                return true;
             }
-            if (length <= 0)
-            {
-                return false;
-            }
-            if (length == buffer.Length)
-            {
-                MessagePackBinary.FastResize(ref buffer, length * 2);
-            }
-            return true;
+            return false;
         }
 
 
