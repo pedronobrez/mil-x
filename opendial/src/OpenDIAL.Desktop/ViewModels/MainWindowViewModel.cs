@@ -33,6 +33,11 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         Method = new MethodViewModel(settings, dialogs);
         Explorer = new ExplorerViewModel(RawCache);
         Analytics = new AnalyticsViewModel(RawCache) { ProcessBatchCommand = ProcessBatchCommand };
+        Statistics = new StatisticsViewModel(dialogs)
+        {
+            // clicking a node of the molecular network opens that feature in the ion table
+            RequestShowFeature = id => { SelectedWorkspace = 1; Analytics.SelectFeature(id); },
+        };
         Run = new RunViewModel();
         Samples.Changed += (_, _) => { if (!_loading) IsDirty = true; };
         Method.Changed += (_, _) => { if (!_loading) IsDirty = true; Samples.DefaultAcquisition = Method.Parameters.AcquisitionType; };
@@ -49,6 +54,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     public MethodViewModel Method { get; }
     public ExplorerViewModel Explorer { get; }
     public AnalyticsViewModel Analytics { get; }
+    public StatisticsViewModel Statistics { get; }
     public RunViewModel Run { get; }
     public ObservableCollection<RecentProject> RecentProjects { get; } = new();
     public ObservableCollection<string> LogLines => Run.LogLines;
@@ -107,6 +113,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         _loading = true;
         Results = null;
         Analytics.Clear();
+        Statistics.Clear();
         Explorer.Clear();
         RawCache.Clear();
         Samples.Load(Array.Empty<InputFileViewModel>());
@@ -260,6 +267,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             {
                 Explorer.Load(Samples.Samples.ToList(), Results);
                 await Analytics.LoadAsync(Results);
+                Statistics.Load(Results, Analytics.AllSpots, Analytics.Samples);
                 SelectedWorkspace = 1;
                 Status = $"Opened {Results.AnalysisFiles.Count} file(s) from {Results.Folder}";
             }
@@ -407,6 +415,27 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         }
     }
 
+    /// <summary>Writes the reviewed ion table, filter and curation included.</summary>
+    [RelayCommand]
+    private async Task ExportReviewedTableAsync()
+    {
+        if (Results is null || !Analytics.HasResults) { Status = "Process the batch (or open results) before exporting."; return; }
+        var suggested = (string.IsNullOrEmpty(ProjectName) ? "alignment" : ProjectName) + "_reviewed.txt";
+        var path = await _dialogs.SaveFileAsync("Export the reviewed table", suggested, "txt", OutputFolder);
+        if (path is null) return;
+        try
+        {
+            Status = "Exporting the reviewed table…";
+            var count = await Analytics.ExportReviewedTableAsync(path, areas: false);
+            Status = $"{count} feature(s) written to {path}";
+        }
+        catch (Exception ex)
+        {
+            Status = "Export failed: " + ex.Message;
+            await _messages.ShowErrorAsync("Export failed", ex.Message);
+        }
+    }
+
     [RelayCommand]
     private async Task ExportOpenQuantAsync()
     {
@@ -541,6 +570,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         RawCache.Clear();
         Explorer.Load(Samples.Samples.ToList(), Results);
         await Analytics.LoadAsync(Results);
+        Statistics.Load(Results, Analytics.AllSpots, Analytics.Samples);
         Status = $"Run finished in {result.Elapsed:mm\\:ss} — {result.ExportedFiles.Count} files exported to {result.OutputFolder}";
         if (!string.IsNullOrEmpty(ProjectPath))
         {

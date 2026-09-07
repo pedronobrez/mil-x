@@ -130,8 +130,15 @@ back through MS-DIAL's own serialiser, so the edited result opens in MS-DIAL and
 exporters unchanged. The files as they were before the first edit of the session are kept beside
 them with a `.before-curation` suffix.
 
+## Taking the review out
+
+`Export reviewed table` writes the features the filter is showing, in table order, with the identity
+columns, the per-injection values, and the review as columns of its own: reviewed, tags, comment,
+manually annotated, manually quantified. MS-DIAL's own alignment export has no tag column — it folds
+the tags into the free-text comment and cannot express "reviewed" at all — so this is the file to
+take to a spreadsheet or a statistics script.
+
 ## What is not here yet
 
-The statistics windows: principal components, hierarchical clustering and molecular networking.
-Curation also does not reach the exported matrices yet — tags and comments live in the tag file and
-its sidecar, not in the columns of an exported result.
+Supervised statistics (partial least squares) and batch correction; see
+[STATISTICS.md](STATISTICS.md) for what the dataset-wide workspace does cover.

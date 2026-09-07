@@ -11,7 +11,9 @@ unchanged; the Windows-only pieces are replaced:
   original dll for `.ibf`/`.cdf`/`.imzML`.
 * **`MSDIALCUI` console** – built and published as a self-contained macOS ARM64/x64 or Linux binary.
 * **`OpenDIAL.Desktop`** – a new Avalonia desktop application that shares OpenQuant's design language
-  and shell (Explorer / Analytics / Method / Samples workspaces, same palette, light and dark).
+  and shell (Explorer / Analytics / Method / Samples / Statistics workspaces, same palette, light and dark),
+  with MS-DIAL's review loop: an ion table, its five curation tags, manual re-integration and isomer
+  splitting, a library re-search, and the multivariate views.
 * **`OpenDIAL.Interop.OpenQuant`** – export aligned features as an OpenQuant component table and import
   an OpenQuant `.oqproj` batch, so discovery in OpenDIAL flows into targeted quantitation in OpenQuant.
 * **`OpenDIAL.Pipeline`** – headless orchestration library shared by the GUI and tests.
@@ -57,6 +59,7 @@ A TripleTOF `.wiff` opened natively in the Explorer:
 Documentation: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (reverse-engineering report),
 [docs/SCIEX-IDA.md](docs/SCIEX-IDA.md) (how SCIEX IDA is read, and how a run compares with MS-DIAL),
 [docs/REVIEW-WORKFLOW.md](docs/REVIEW-WORKFLOW.md) (the ion table, the tags and the review panels),
+[docs/STATISTICS.md](docs/STATISTICS.md) (principal components, clustering, molecular network),
 [docs/PORTING.md](docs/PORTING.md) (status, vendor formats, limitations),
 [docs/OPENQUANT-ALIGNMENT.md](docs/OPENQUANT-ALIGNMENT.md) (what is shared with OpenQuant),
 [docs/adr/](docs/adr/) (decisions), [upstream-patches/](upstream-patches/README.md)

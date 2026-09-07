@@ -167,6 +167,25 @@ public partial class App : Application
                                 await Task.Delay(1500);
                                 break;
                             }
+                            case "stats-cluster":
+                            case "stats-network":
+                            {
+                                var statsTabs = Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(window).OfType<Avalonia.Controls.TabControl>().FirstOrDefault(t => t.Name == "StatsTabs");
+                                if (Environment.GetEnvironmentVariable("OPENDIAL_SNAPSHOT_ACTION") == "stats-network")
+                                {
+                                    if (statsTabs is not null) statsTabs.SelectedIndex = 2;
+                                    await Task.Delay(800);
+                                    await vm.Statistics.BuildNetworkCommand.ExecuteAsync(null);
+                                    Console.WriteLine("[stats] " + vm.Statistics.NetworkLabel);
+                                    await Task.Delay(2500);
+                                }
+                                else
+                                {
+                                    if (statsTabs is not null) statsTabs.SelectedIndex = 1;
+                                    await Task.Delay(2000);
+                                }
+                                break;
+                            }
                             case "search-demo":
                             {
                                 // Runs a real library re-search through the same command the button uses.

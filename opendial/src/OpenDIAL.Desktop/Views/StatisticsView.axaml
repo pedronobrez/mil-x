@@ -1,0 +1,108 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:OpenDIAL.Desktop.ViewModels"
+             xmlns:c="using:OpenDIAL.Desktop.Controls"
+             x:Class="OpenDIAL.Desktop.Views.StatisticsView"
+             x:DataType="vm:StatisticsViewModel">
+  <!--
+    The dataset seen whole: where the injections fall against each other, how they group, and which
+    features fragment alike. One options band drives all three, because they are three readings of
+    the same matrix.
+  -->
+  <DockPanel>
+    <Border DockPanel.Dock="Top" Classes="band">
+      <DockPanel>
+        <TextBlock DockPanel.Dock="Right" Classes="muted" Text="{Binding Summary}" VerticalAlignment="Center" Margin="12,0,4,0" TextTrimming="CharacterEllipsis" />
+        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+          <TextBlock Classes="label" Text="Value" />
+          <ComboBox Classes="compact" ItemsSource="{x:Static vm:StatisticsViewModel.ValueKinds}" SelectedItem="{Binding ValueKind}" Width="96" />
+          <TextBlock Classes="label" Text="Transform" Margin="6,0,0,0" />
+          <ComboBox Classes="compact" ItemsSource="{x:Static vm:StatisticsViewModel.Transforms}" SelectedItem="{Binding Transform}" Width="96" />
+          <TextBlock Classes="label" Text="Scaling" Margin="6,0,0,0" />
+          <ComboBox Classes="compact" ItemsSource="{x:Static vm:StatisticsViewModel.Scalings}" SelectedItem="{Binding Scaling}" Width="180"
+                    ToolTip.Tip="Unit variance gives every feature the same weight; centre only lets the abundant ones lead" />
+          <CheckBox Classes="compact" Content="Annotated only" IsChecked="{Binding AnnotatedOnly}" Margin="6,0,0,0" />
+          <Button Classes="tool strong" Content="Recompute" Command="{Binding ComputeCommand}" IsEnabled="{Binding HasResults}" />
+          <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" Width="70" Height="3" VerticalAlignment="Center" />
+        </StackPanel>
+      </DockPanel>
+    </Border>
+
+    <Panel Margin="8">
+      <TextBlock Classes="faint" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasResults}"
+                 Text="Process a batch of two or more injections, or open a project, to see the dataset as a whole." />
+
+      <TabControl x:Name="StatsTabs" Classes="panel-tabs" IsVisible="{Binding HasResults}">
+        <!-- principal components -->
+        <TabItem Header="Principal components">
+          <Grid Margin="0,6,0,0" ColumnDefinitions="*,6,*" RowDefinitions="*">
+            <Border Grid.Column="0" Classes="panel">
+              <DockPanel Margin="6">
+                <TextBlock DockPanel.Dock="Top" Classes="eyebrow" Text="SCORES · ONE POINT PER INJECTION" Margin="4,4,4,6" />
+                <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,6,4,0" TextWrapping="Wrap"
+                           Text="Replicates of a class should sit together and the classes apart. An injection that lands among the wrong group, or far from everything, is the first to check." />
+                <c:ScatterChart Items="{Binding Scores}" XLabel="PC1" YLabel="PC2" />
+              </DockPanel>
+            </Border>
+            <GridSplitter Grid.Column="1" Classes="vertical" ResizeDirection="Columns" />
+            <Border Grid.Column="2" Classes="panel">
+              <DockPanel Margin="6">
+                <TextBlock DockPanel.Dock="Top" Classes="eyebrow" Text="LOADINGS · ONE POINT PER FEATURE" Margin="4,4,4,6" />
+                <Border DockPanel.Dock="Bottom" Padding="4,6,4,0">
+                  <DockPanel>
+                    <DataGrid DockPanel.Dock="Right" Width="230" ItemsSource="{Binding Variance}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" MaxHeight="110">
+                      <DataGrid.Columns>
+                        <DataGridTextColumn Header="Component" Binding="{Binding Component}" Width="*" />
+                        <DataGridTextColumn Header="%" Binding="{Binding Percent, StringFormat={}{0:F1}}" Width="60" />
+                        <DataGridTextColumn Header="Cum." Binding="{Binding Cumulative, StringFormat={}{0:F1}}" Width="60" />
+                      </DataGrid.Columns>
+                    </DataGrid>
+                    <TextBlock Classes="hint" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,10,0"
+                               Text="A feature far from the centre in the direction that separates the groups is what drives them apart. Coloured by lipid class." />
+                  </DockPanel>
+                </Border>
+                <c:ScatterChart Items="{Binding Loadings}" XLabel="PC1 loading" YLabel="PC2 loading" />
+              </DockPanel>
+            </Border>
+          </Grid>
+        </TabItem>
+
+        <!-- hierarchical clustering -->
+        <TabItem Header="Clustering">
+          <Border Classes="panel" Margin="0,6,0,0">
+            <DockPanel Margin="10">
+              <TextBlock DockPanel.Dock="Top" Classes="hint" Text="{Binding ClusterLabel}" Margin="0,0,0,8" />
+              <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="0,8,0,0" TextWrapping="Wrap"
+                         Text="Injections join at the height where their profiles stop agreeing. Replicates of a class should join low and the blanks should hang off on their own; one that joins the wrong group is a mix-up or a bad run." />
+              <c:Dendrogram Root="{Binding ClusterRoot}" />
+            </DockPanel>
+          </Border>
+        </TabItem>
+
+        <!-- molecular network -->
+        <TabItem Header="Molecular network">
+          <Border Classes="panel" Margin="0,6,0,0">
+            <DockPanel Margin="6">
+              <Border DockPanel.Dock="Top" Classes="hairline-bottom" Padding="4,2,4,8" Margin="0,0,0,6">
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                  <TextBlock Classes="label" Text="Similarity ≥" VerticalAlignment="Center" />
+                  <TextBox Text="{Binding NetworkCutoff}" Width="62" />
+                  <TextBlock Classes="label" Text="fragment tol." VerticalAlignment="Center" Margin="6,0,0,0" />
+                  <TextBox Text="{Binding NetworkTolerance}" Width="62" />
+                  <CheckBox Classes="compact" Content="Show unlinked" IsChecked="{Binding ShowUnconnected}" ToolTip.Tip="Also draw the features joined to nothing; off by default because they crowd out the clusters" />
+                  <Button Classes="tool strong" Content="Build network" Command="{Binding BuildNetworkCommand}" IsEnabled="{Binding !IsBuildingNetwork}" />
+                  <Button Classes="tool" Content="Export for Cytoscape…" Command="{Binding ExportNetworkCommand}" />
+                  <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBuildingNetwork}" Width="80" Height="3" VerticalAlignment="Center" />
+                  <TextBlock Classes="hint" Text="{Binding NetworkLabel}" VerticalAlignment="Center" Margin="8,0,0,0" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+              </Border>
+              <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,6,4,0" TextWrapping="Wrap"
+                         Text="Features whose product spectra look alike are joined. One lipid class fragments the same way and forms a cluster, so a feature named as one class sitting inside another's cluster is worth a second look, and an unknown next to a named cluster is a candidate for the same family. Click a node to open it in the ion table." />
+              <c:NetworkGraph Network="{Binding NetworkResult}" SelectedFeatureId="{Binding SelectedNetworkFeature, Mode=TwoWay}" />
+            </DockPanel>
+          </Border>
+        </TabItem>
+      </TabControl>
+    </Panel>
+  </DockPanel>
+</UserControl>

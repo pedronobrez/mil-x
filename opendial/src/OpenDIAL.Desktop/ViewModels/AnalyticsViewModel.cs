@@ -199,6 +199,29 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     [ObservableProperty] private IReadOnlyList<ScatterPoint> _metricPoints = Array.Empty<ScatterPoint>();
     [ObservableProperty] private ScatterPoint? _selectedMetricPoint;
 
+    /// <summary>Every aligned feature, filter or no filter: what the dataset-wide views read.</summary>
+    public IReadOnlyList<AlignmentSpotRow> AllSpots => _spots;
+    public IReadOnlyList<SampleInfo> Samples => _samples;
+
+    /// <summary>Brings one feature into view by id, clearing the filter when it hides it.</summary>
+    public void SelectFeature(int id)
+    {
+        var row = IonRows.FirstOrDefault(r => r.Id == id);
+        if (row is null)
+        {
+            var hidden = _allRows.FirstOrDefault(r => r.Id == id);
+            if (hidden is null) return;
+            FilterText = string.Empty;
+            AnnotationFilter = "All";
+            TagFilter = "All";
+            OntologyFilter = "All";
+            MsmsOnly = MolecularIonOnly = ManuallyModifiedOnly = false;
+            RebuildRows();
+            row = IonRows.FirstOrDefault(r => r.Id == id);
+        }
+        if (row is not null) SelectedRow = row;
+    }
+
     public string OutputFolder => _session?.Folder ?? string.Empty;
     public ResultSession? Session => _session;
 
@@ -273,6 +296,28 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
             HasResults = true;
             Summary = "Alignment could not be loaded: " + ex.Message;
         }
+    }
+
+    /// <summary>
+    /// Fills the ion table straight from rows and a curation store, with no processed run behind it.
+    /// The headless interface tests use this: they are about the table, the filters and the tagging,
+    /// not about reading raw files.
+    /// </summary>
+    internal void LoadForTest(IReadOnlyList<AlignmentSpotRow> spots, IReadOnlyList<SampleInfo> samples, CurationStore store)
+    {
+        _spots = spots;
+        _samples = samples;
+        _curation = store;
+        _allRows = spots.Select(s => new SpotRowViewModel(s, store)).ToList();
+        AnnotatedCount = spots.Count(s => s.IsAnnotated);
+        UnknownCount = spots.Count - AnnotatedCount;
+        HasResults = true;
+        Ontologies.Clear();
+        Ontologies.Add("All");
+        foreach (var o in spots.Select(s => s.Ontology).Where(o => !string.IsNullOrWhiteSpace(o)).Distinct().OrderBy(o => o, StringComparer.OrdinalIgnoreCase)) Ontologies.Add(o);
+        OntologyFilter = "All";
+        RebuildRows();
+        SelectedRow = IonRows.FirstOrDefault();
     }
 
     partial void OnFilterTextChanged(string value) => RebuildRows();
@@ -1118,6 +1163,17 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     private void OpenOutputFolder()
     {
         if (_session is not null) ShellService.Open(_session.Folder);
+    }
+
+    /// <summary>
+    /// Writes the reviewed table as the ion table is showing it: the filter decides which features
+    /// go, and the tags, comments and hand edits go with them. MS-DIAL's own export folds tags into
+    /// the comment and cannot express "reviewed" at all, so these are columns of their own.
+    /// </summary>
+    public Task<int> ExportReviewedTableAsync(string path, bool areas)
+    {
+        var options = new CurationExportOptions(areas ? ExportValue.Area : ExportValue.Height);
+        return CurationExporter.WriteFileAsync(path, ListedSpots, _samples, _curation, options);
     }
 
     /// <summary>The features the ion table is currently showing, in table order: what an export writes.</summary>

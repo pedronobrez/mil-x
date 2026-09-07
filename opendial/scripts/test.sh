@@ -14,6 +14,8 @@ dotnet test "$ROOT/tests/OpenDIAL.RawData.Tests/OpenDIAL.RawData.Tests.csproj" -
 echo "[test] OpenQuant interop + SCIEX plugin tests"
 dotnet test "$ROOT/tests/OpenDIAL.Interop.OpenQuant.Tests/OpenDIAL.Interop.OpenQuant.Tests.csproj" -c Release --nologo -v minimal -p:UseOpenRawData=true
 dotnet test "$ROOT/tests/OpenDIAL.Plugins.SciexWiff.Tests/OpenDIAL.Plugins.SciexWiff.Tests.csproj" -c Release --nologo -v minimal
+echo "[test] headless interface tests (the real views, no display)"
+dotnet test "$ROOT/tests/OpenDIAL.Desktop.Tests/OpenDIAL.Desktop.Tests.csproj" -c Release --nologo -v minimal -p:UseOpenRawData=true
 
 if [ -f "$ROOT/tests/OpenDIAL.Pipeline.Tests/OpenDIAL.Pipeline.Tests.csproj" ]; then
   echo "[test] OpenDIAL.Pipeline tests"

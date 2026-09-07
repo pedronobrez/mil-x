@@ -33,6 +33,7 @@
           <Button Classes="tool strong" Content="Process batch" Command="{Binding $parent[Window].DataContext.ProcessBatchCommand}" ToolTip.Tip="Run the pipeline on the current batch (Cmd+R)" />
           <Button Classes="tool" Content="Re-export…" Command="{Binding $parent[Window].DataContext.ReexportCommand}" IsEnabled="{Binding HasResults}" />
           <Button Classes="tool" Content="Export to OpenQuant…" Command="{Binding $parent[Window].DataContext.ExportOpenQuantCommand}" IsEnabled="{Binding HasResults}" ToolTip.Tip="Write the listed features as an OpenQuant component CSV (precursor, fragment, RT window)" />
+          <Button Classes="tool" Content="Export reviewed table…" Command="{Binding $parent[Window].DataContext.ExportReviewedTableCommand}" IsEnabled="{Binding HasResults}" ToolTip.Tip="Write the features the filter is showing, with their tags, comments and hand edits as columns" />
           <Button Classes="tool" Content="Open output folder" Command="{Binding OpenOutputFolderCommand}" IsEnabled="{Binding HasResults}" />
           <Rectangle Classes="vsep" />
           <Button Classes="tool" Command="{Binding SaveCurationCommand}" IsEnabled="{Binding HasResults}"

@@ -16,10 +16,12 @@
     <KeyBinding Gesture="Cmd+2" Command="{Binding SelectWorkspaceCommand}" CommandParameter="1" />
     <KeyBinding Gesture="Cmd+3" Command="{Binding SelectWorkspaceCommand}" CommandParameter="2" />
     <KeyBinding Gesture="Cmd+4" Command="{Binding SelectWorkspaceCommand}" CommandParameter="3" />
+    <KeyBinding Gesture="Cmd+5" Command="{Binding SelectWorkspaceCommand}" CommandParameter="4" />
     <KeyBinding Gesture="Ctrl+1" Command="{Binding SelectWorkspaceCommand}" CommandParameter="0" />
     <KeyBinding Gesture="Ctrl+2" Command="{Binding SelectWorkspaceCommand}" CommandParameter="1" />
     <KeyBinding Gesture="Ctrl+3" Command="{Binding SelectWorkspaceCommand}" CommandParameter="2" />
     <KeyBinding Gesture="Ctrl+4" Command="{Binding SelectWorkspaceCommand}" CommandParameter="3" />
+    <KeyBinding Gesture="Ctrl+5" Command="{Binding SelectWorkspaceCommand}" CommandParameter="4" />
     <KeyBinding Gesture="Cmd+S" Command="{Binding SaveProjectCommand}" />
     <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveProjectCommand}" />
     <KeyBinding Gesture="Cmd+N" Command="{Binding NewProjectCommand}" />
@@ -88,6 +90,7 @@
           <MenuItem Header="Analytics" Command="{Binding SelectWorkspaceCommand}" CommandParameter="1" InputGesture="Cmd+2" />
           <MenuItem Header="Method" Command="{Binding SelectWorkspaceCommand}" CommandParameter="2" InputGesture="Cmd+3" />
           <MenuItem Header="Samples" Command="{Binding SelectWorkspaceCommand}" CommandParameter="3" InputGesture="Cmd+4" />
+          <MenuItem Header="Statistics" Command="{Binding SelectWorkspaceCommand}" CommandParameter="4" InputGesture="Cmd+5" />
         </MenuItem>
         <MenuItem Header="_Help">
           <MenuItem Header="About OpenDIAL" Command="{Binding OpenAboutCommand}" />
@@ -138,6 +141,7 @@
           <TabItem Header="Analytics" />
           <TabItem Header="Method" />
           <TabItem Header="Samples" />
+          <TabItem Header="Statistics" />
         </TabControl>
       </DockPanel>
     </Border>
@@ -167,6 +171,7 @@
       <views:AnalyticsView DataContext="{Binding Analytics}" IsVisible="{Binding $parent[Window].DataContext.SelectedWorkspace, Converter={x:Static views:Converters.EqualsInt}, ConverterParameter=1}" />
       <views:MethodView DataContext="{Binding Method}" IsVisible="{Binding $parent[Window].DataContext.SelectedWorkspace, Converter={x:Static views:Converters.EqualsInt}, ConverterParameter=2}" />
       <views:SamplesView DataContext="{Binding Samples}" IsVisible="{Binding $parent[Window].DataContext.SelectedWorkspace, Converter={x:Static views:Converters.EqualsInt}, ConverterParameter=3}" />
+      <views:StatisticsView DataContext="{Binding Statistics}" IsVisible="{Binding $parent[Window].DataContext.SelectedWorkspace, Converter={x:Static views:Converters.EqualsInt}, ConverterParameter=4}" />
     </Panel>
   </DockPanel>
 </Window>

@@ -45,7 +45,7 @@ public sealed class MiniBars : Control
             var value = Math.Max(0, items[i].Mean);
             var barHeight = Math.Max(1.0, value / max * (height - 3));
             var x = i * (barWidth + gap);
-            var color = ChartBase.ColorForIndex(_dark, i);
+            var color = ChartPalette.ForIndex(_dark, i);
             context.FillRectangle(new SolidColorBrush(color), new Rect(x, baseline - barHeight, barWidth, barHeight));
         }
     }
