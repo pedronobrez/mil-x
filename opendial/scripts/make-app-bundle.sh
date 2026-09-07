@@ -116,8 +116,15 @@ xattr -cr "$APP"
 codesign --force --deep --sign - --timestamp=none "$APP" 2>/dev/null
 codesign --verify --deep "$APP" && echo "[bundle] signature ok (ad-hoc)"
 
-# let Finder pick up the new icon and document bindings straight away
-/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$APP" 2>/dev/null || true
+# Let Finder pick up the new icon and document bindings straight away — but only while there is no
+# installed copy. Two registered bundles both claim .odproj and Finder then picks either one.
+LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
+if [ -d /Applications/OpenDIAL.app ]; then
+  "$LSREGISTER" -u "$APP" 2>/dev/null || true
+  echo "[bundle] /Applications/OpenDIAL.app owns the document types; copy this build over it to update"
+else
+  "$LSREGISTER" -f "$APP" 2>/dev/null || true
+fi
 touch "$APP"
 
 echo "[bundle] done: $APP"

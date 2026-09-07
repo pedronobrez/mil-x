@@ -32,8 +32,13 @@ bash opendial/scripts/make-app-bundle.sh # -> opendial/dist/OpenDIAL.app (double
 
 `scripts/make-app-bundle.sh` publishes the application, draws the icon (`tools/make_icon.py`) and
 assembles `dist/OpenDIAL.app` — self-contained, with the SCIEX plugin, ad-hoc signed so Apple
-Silicon will run it. Drag it to `/Applications`. The bundle is not notarised, so the very first
-launch has to be right-click ▸ **Open** ▸ **Open**; every launch after that is a normal double-click.
+Silicon will run it. Install it with `ditto dist/OpenDIAL.app /Applications/OpenDIAL.app`, which
+keeps the signature intact. A locally built bundle carries no quarantine flag, so it launches
+straight away; a copy that travels through a download or an AirDrop is quarantined, and that
+one needs right-click ▸ **Open** ▸ **Open** once, because the bundle is not notarised.
+
+While `/Applications/OpenDIAL.app` exists the packaging script leaves the document types to it
+and unregisters the copy in `dist/`, so Finder never has two bundles claiming the same files.
 
 Finder hands documents to the application, on a cold start and while it is already running:
 `.odproj` and `.mdproject` projects open as projects, `.oqproj` imports an OpenQuant batch, and a raw
