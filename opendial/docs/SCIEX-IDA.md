@@ -89,9 +89,36 @@ export converted by `tools/msdial_param_to_method.py`, compared with `tools/Resu
 | aligned features | 1 731 | 1 611 |
 | aligned features matched | — | 1 462 |
 
-What still differs is annotation naming. Both runs load the same 449 627-record library and use the
-same search cut-offs, but MS-DIAL applies lipid-specific name refinement that OpenDIAL only partly
-reproduces: of the confident annotations on matched features, 61 names are identical and 24 are the
-same lipid written differently (`Cer d14:0/12:0` against `Cer d12:0/14:0`, `LPC 16:0` against
-`LPC 16:0/0:0`). Most of the remaining disagreement is in MS-DIAL's `low score:` suggestions, where
-a mass alone chooses between hundreds of library entries.
+## Annotation naming, and why the two runs still disagree
+
+The lipid name a result carries is not the library record's name. MS-DIAL rewrites it from the
+fragments it observed (`MsReferenceScorer.ValidateOnLipidomics`), so the same record becomes
+`LPC 16:0` at species level and `LPC 16:0/0:0` once a chain is supported. OpenDIAL runs that same
+upstream code, and it agrees: of the 1 462 aligned features the two runs share, exactly **3** carry
+a different name while both sides scored the *same* library record, and those three flip in both
+directions (one run says `LPC 16:0`, the other `LPC 16:0/0:0`, and on the next feature they swap).
+There is no naming rule left to port.
+
+What does differ is which record is scored, and that traces to the library. The reference project
+registers its database as `POS_GLDB_260406_2`, which is not the `Pos_GLDB_v0-1-0-alpha.msp` used
+here. `ResultCompare --check-library <project> <library.msp>` asks whether a library could have
+produced a run's annotations at all, by mass rather than by name:
+
+| Run | annotations | with no record within 0.01 Da in `Pos_GLDB_v0-1-0-alpha.msp` |
+| --- | --- | --- |
+| MS-DIAL, April | 4 007 | 1 681 (42 %) |
+| OpenDIAL, this library | 2 613 | 255 (10 %) |
+
+Two out of five MS-DIAL annotations are at masses this library cannot reach. `NAE 12:0` and
+`NAE 18:2`, which it assigned, are absent from the file altogether; `MG 6:0` is present but at
+208.15433 while MS-DIAL assigned it to a peak at 208.17080, sixteen millidaltons away.
+
+That difference then propagates. The representative injection of an aligned feature is the one with
+the highest total match score (`DataObjConverter.GetRepresentativePeak`), so different library
+scores move it: the two runs pick the same injection for only 328 of the 1 462 shared features, and
+566 of the 674 name disagreements are features whose name comes from a different injection.
+
+To compare annotation properly, point OpenDIAL at the same library build the Windows project used.
+Peak detection, MS/MS assignment and deconvolution do not depend on it and already agree: the
+deconvoluted MS/MS spectra of shared peaks match one for one, with a peak-count and base-peak ratio
+of 1.000 at both the 10th and 90th percentile.

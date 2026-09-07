@@ -47,12 +47,14 @@ internal static class Program
         var provider = new AnalystWiffDataProvider(OpenFileMode.ReadOnlyShared);
         try {
             var ms = AnalystDataProviderFactory.CreateBatch(path, provider).GetSample(0).MassSpectrometerSample;
-            var exp = ms.GetMSExperiment(0);
+            var expIndex = int.TryParse(Environment.GetEnvironmentVariable("WIFFPROBE_EXPERIMENT"), out var ei) ? ei : 0;
+            var exp = ms.GetMSExperiment(expIndex);
             var cycles = new[] { 60, 120, 240, 360 };
             foreach (var cycle in cycles) {
                 if (cycle >= exp.Details.NumberOfScans) continue;
                 var spectrum = exp.GetMassSpectrum(cycle);
                 var profilePoints = spectrum.NumDataPoints;
+                if (profilePoints == 0) { Console.WriteLine($"cycle {cycle}: not triggered"); continue; }
 
                 // SCIEX centroids
                 var sciex = exp.GetPeakArray(cycle).Cast<object>().ToArray();
