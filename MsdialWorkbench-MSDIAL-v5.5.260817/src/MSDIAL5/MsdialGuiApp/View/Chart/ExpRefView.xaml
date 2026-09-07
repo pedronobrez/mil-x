@@ -1,0 +1,155 @@
+﻿<UserControl x:Class="CompMs.App.Msdial.View.Chart.ExpRefView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:CompMs.App.Msdial.View.Chart"
+             xmlns:common="clr-namespace:CompMs.CommonMVVM;assembly=CommonMVVM"
+             mc:Ignorable="d" 
+             xmlns:vm="clr-namespace:CompMs.App.Msdial.ViewModel.Imms"
+             Name="ExpRefPlot"
+             d:DesignHeight="600" d:DesignWidth="370"
+             d:DataContext="{d:DesignInstance Type={x:Type vm:ImmsAnalysisViewModel}}">
+    <d:DesingerProperties.DesignStyle>
+        <Style TargetType="UserControl">
+            <Setter Property="Background" Value="White"/>
+        </Style>
+    </d:DesingerProperties.DesignStyle>
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Msdial;component/View/ChartStyles.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/Msdial;component/View/MainWindowStyle.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <Style TargetType="Button" x:Key="IconButton">
+                <Setter Property="Height" Value="32"/>
+                <Setter Property="Width" Value="32"/>
+                <Setter Property="Margin" Value="4"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="ContentTemplate">
+                    <Setter.Value>
+                        <DataTemplate>
+                            <Image Source="{Binding Path=Content, RelativeSource={RelativeSource TemplatedParent}}"/>
+                        </DataTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Margin="8,4,0,4" Orientation="Horizontal">
+
+            <RadioButton Name="Button_ShowCentroid"
+                         Content="/Resources/RawChromatogram.ico"
+                         ToolTip="Show centroid spectra vs. reference spectra"
+                         Style="{StaticResource IconRadioButton}"/>
+
+            <RadioButton Name="Button_ShowDeconvolution"
+                         IsChecked="True"
+                         Content="/Resources/Deconvoluted.ico"
+                         ToolTip="Show deconvoluted spectra vs. reference spectra"
+                         Style="{StaticResource IconRadioButton}"/>
+
+            <CheckBox VerticalAlignment="Center"
+                      Margin="8,0,0,0"
+                      Content="Raw (dashed)"
+                      ToolTip="Overlay raw spectrum as dashed line on Q1Dec/Deconvolution views"
+                      IsChecked="{Binding RawDecSpectrumsViewModel.IsRawSpectrumOverlayVisible.Value, Mode=TwoWay}"/>
+
+            <Button Name="Button_CompoundSearchPeakViewer"
+                    Command="{Binding SearchCompoundCommand, Mode=OneTime}"
+                    Content="/Resources/CompoundSearchIcon.ico"
+                    ToolTip="Compound search"
+                    Style="{StaticResource IconButton}"/>
+            <Grid Height="32" Margin="0,4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="12" />
+                </Grid.ColumnDefinitions>
+                <Button Margin="4,0,0,0" 
+                            Command="{Binding GoToMsfinderCommand, FallbackValue={x:Static common:NeverCommand.Instance}}"
+                            Background="AliceBlue"
+                            BorderThickness="1,1,0,1"
+                        BorderBrush="#FFA0A0A0"
+                            Width="Auto"
+                            HorizontalContentAlignment="Stretch"
+                            HorizontalAlignment="Stretch"
+                            Grid.Column="0">
+                    <Image Source="/Resources/msfinder_icon.ico" Margin="-2,0"/>
+                    <Button.Resources>
+                        <Style TargetType="Border">
+                            <Setter Property="CornerRadius" Value="5,0,0,5"/>
+                        </Style>
+                    </Button.Resources>
+                </Button>
+                <ToggleButton x:Name="MSFinderSettingPopupToggle"
+                              Background="AliceBlue"
+                              BorderBrush="#FFA0A0A0"
+                              Grid.Column="1"
+                              Padding="1">
+                    <ToggleButton.Style>
+                        <Style TargetType="ToggleButton">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ElementName=MSFINDERPopup, Path=IsOpen}" Value="True">
+                                    <Setter Property="IsHitTestVisible" Value="False"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ToggleButton.Style>
+                    <ToggleButton.Resources>
+                        <Style TargetType="Border">
+                            <Setter Property="CornerRadius" Value="0,5,5,0"/>
+                        </Style>
+                    </ToggleButton.Resources>
+                    <StackPanel>
+                        <TextBlock Text="&#xE70D;" FontFamily="Segoe MDL2 Assets" FontSize="8"/>
+                        <Popup x:Name="MSFINDERPopup" StaysOpen="False" IsOpen="{Binding IsChecked, ElementName=MSFinderSettingPopupToggle}" PlacementTarget="{Binding ElementName=MSFinderSettingPopupToggle}" Placement="Bottom">
+                            <ItemsControl Background="WhiteSmoke" BorderBrush="Gray" BorderThickness="1">
+                                <MenuItem Header="MS-FINDER search" Command="{Binding GoToMsfinderCommand, FallbackValue={x:Static common:NeverCommand.Instance}}"/>
+                                <MenuItem Header="Parameter setting" Command="{Binding ShowMsfinderSettingCommand, FallbackValue={x:Static common:NeverCommand.Instance}}"/>
+                                <MenuItem Header="Use external MS-FINDER" Command="{Binding GoToExternalMsfinderCommand, FallbackValue={x:Static common:NeverCommand.Instance}}"/>
+                            </ItemsControl>
+                        </Popup>
+                    </StackPanel>
+                </ToggleButton>
+            </Grid>
+
+
+            <Button Name="Button_MolecularNetworkPeakViewer"
+                    Command="{Binding SearchAnalysisSpectrumByMoleculerNetworkingCommand}"
+                    Content="/Resources/MolecularNetworking.ico"
+                    ToolTip="Molecular-spectrum networking for selected peak spot"
+                    Style="{StaticResource IconButton}"/>
+
+            <Button Name="Button_BinVestigateSearchPeakViewer"
+                    Content="/Resources/BinVestigate.ico"
+                    ToolTip="BinVestigate search"
+                    Style="{StaticResource IconButton}"/>
+
+            <Button Name="Button_LipoqualityDbSearchPeakViewer"
+                    Content="/Resources/Lipoquality.ico"
+                    ToolTip="Show lipoquality database (developing, and the result of mouse experiments can be shown now.)"
+                    Style="{StaticResource IconButton}"/>
+        </StackPanel>
+
+        <Grid DataContext="{Binding RawDecSpectrumsViewModel}" Grid.Row="1" Margin="0,0,8,0"
+             xmlns:behavior="clr-namespace:CompMs.CommonMVVM.Behaviors;assembly=CommonMVVM"
+             behavior:ObserveKeyboardFocusBehavior.ObserveAction="{Binding FocusAction, Mode=OneWay}">
+
+            <local:MsSpectrumView DataContext="{Binding RawRefSpectrumViewModels}"
+                                  Visibility="{Binding IsChecked,
+                                                       ElementName=Button_ShowCentroid,
+                                                       Converter={StaticResource BooleanToVisibility}}"/>
+            <local:MsSpectrumView DataContext="{Binding DecRefSpectrumViewModels}"
+                                  Visibility="{Binding IsChecked,
+                                                       ElementName=Button_ShowDeconvolution,
+                                                       Converter={StaticResource BooleanToVisibility}}"/>
+        </Grid>
+    </Grid>
+</UserControl>

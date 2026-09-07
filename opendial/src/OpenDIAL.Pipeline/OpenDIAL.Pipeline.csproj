@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>OpenDIAL.Pipeline</RootNamespace>
+    <AssemblyName>OpenDIAL.Pipeline</AssemblyName>
+    <Configurations>Debug;Release;Debug vendor unsupported;Release vendor unsupported</Configurations>
+    <Description>Orchestration library for OpenDIAL, an open port of the MS-DIAL 5 processing pipeline (LGPL-3.0).</Description>
+    <NoWarn>$(NoWarn);CS0618</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\MsdialWorkbench-MSDIAL-v5.5.260817\src\Common\CommonStandard\CommonStandard.csproj" />
+    <ProjectReference Include="..\..\..\MsdialWorkbench-MSDIAL-v5.5.260817\src\MSDIAL5\MsdialCore\MsdialCore.csproj" />
+    <ProjectReference Include="..\..\..\MsdialWorkbench-MSDIAL-v5.5.260817\src\MSDIAL5\MsdialLcMsApi\MsdialLcMsApi.csproj" />
+    <ProjectReference Include="..\..\..\MsdialWorkbench-MSDIAL-v5.5.260817\src\MSDIAL5\MsdialGcMsApi\MsdialGcMsApi.csproj" />
+    <ProjectReference Include="..\..\..\MsdialWorkbench-MSDIAL-v5.5.260817\src\MSDIAL5\MsdialIntegrate\MsdialIntegrate.csproj" />
+    <ProjectReference Include="..\OpenDIAL.RawData\OpenDIAL.RawData.csproj" />
+  </ItemGroup>
+
+</Project>

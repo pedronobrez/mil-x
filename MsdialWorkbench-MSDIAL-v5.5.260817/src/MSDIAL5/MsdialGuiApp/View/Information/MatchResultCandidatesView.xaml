@@ -1,0 +1,70 @@
+﻿<UserControl x:Class="CompMs.App.Msdial.View.Information.MatchResultCandidatesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:m="clr-namespace:CompMs.App.Msdial.Model.Information"
+             xmlns:vm="clr-namespace:CompMs.App.Msdial.ViewModel.Information"
+             xmlns:result="clr-namespace:CompMs.Common.DataObj.Result;assembly=Common"
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance Type={x:Type vm:MatchResultCandidatesViewModel}}"
+             d:DesignHeight="240" d:DesignWidth="360">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Msdial;component/View/MainWindowStyle.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <ListBox ItemsSource="{Binding Candidates.Value}"
+             SelectedItem="{Binding SelectedCandidate.Value, Mode=TwoWay}">
+        <ListBox.ItemContainerStyle>
+            <Style TargetType="ListBoxItem">
+                <Setter Property="BorderBrush" Value="LightGray"/>
+                <Setter Property="BorderThickness" Value="1"/>
+            </Style>
+        </ListBox.ItemContainerStyle>
+        <ListBox.ItemTemplate>
+            <DataTemplate DataType="{x:Type m:ReferedReference}">
+                <DataTemplate.Resources>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="TextBlock.FontWeight" Value="Normal"/>
+                        <Style.Triggers>
+                            <DataTrigger Value="True">
+                                <DataTrigger.Binding>
+                                    <MultiBinding Converter="{StaticResource AreEquals}">
+                                        <Binding Path="MatchResult"/>
+                                        <Binding Path="DataContext.(vm:MatchResultCandidatesViewModel.Representative).Value"
+                                                 RelativeSource="{RelativeSource AncestorType=ListBox}"/>
+                                    </MultiBinding>
+                                </DataTrigger.Binding>
+                                <DataTrigger.Setters>
+                                    <Setter Property="TextBlock.FontWeight" Value="Bold"/>
+                                </DataTrigger.Setters>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataTemplate.Resources>
+                <StackPanel>
+                    <TextBlock>
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="{}{0} (m/z diff={1:F5} mDa)">
+                                <Binding Path="MatchResult.Name" Mode="OneTime" TargetNullValue="Unknown"/>
+                                <Binding Path="MzDiff" Mode="OneTime"/>
+                            </MultiBinding> 
+                        </TextBlock.Text>
+                    </TextBlock>
+                    <TextBlock>
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="{}Library name: {0} (score={1:F4})">
+                                <Binding Path="Reference.Name" Mode="OneTime" TargetNullValue="Unknown"/>
+                                <Binding Path="MatchResult.TotalScore" Mode="OneTime"/>
+                            </MultiBinding> 
+                        </TextBlock.Text>
+                    </TextBlock>
+                    <TextBlock Text="{Binding Path=MatchResult.AnnotatorID, StringFormat=Annotation method: {0}, Mode=OneTime, TargetNullValue=No information}"/>
+                </StackPanel>
+            </DataTemplate>
+        </ListBox.ItemTemplate>
+    </ListBox>
+</UserControl>

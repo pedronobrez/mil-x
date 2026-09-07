@@ -1,0 +1,29 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="OpenDIAL.Desktop.Views.SettingsWindow"
+        Title="OpenDIAL settings" Width="640" Height="360" CanResize="False"
+        WindowStartupLocation="CenterOwner">
+  <DockPanel Margin="16">
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,12,0,0">
+      <Button Content="Cancel" Click="OnCancel" MinWidth="90" />
+      <Button Content="Save" Click="OnSave" MinWidth="90" Classes="accent" />
+    </StackPanel>
+    <StackPanel Spacing="8">
+      <TextBlock Classes="h1" Text="Vendor format conversion (msconvert bridge)" />
+      <TextBlock Classes="muted" TextWrapping="Wrap"
+                 Text="Thermo .raw, Agilent/Bruker .d and Sciex .wiff/.wiff2 are converted to mzML with ProteoWizard msconvert before processing. Configure a native msconvert executable or use the Docker image. These values are handed to OpenDIAL.RawData's conversion service." />
+      <Grid ColumnDefinitions="150,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto" Margin="0,8,0,0">
+        <TextBlock Grid.Row="0" Classes="label" Text="msconvert path" />
+        <TextBox Grid.Row="0" Grid.Column="1" x:Name="MsconvertPath" Watermark="/usr/local/bin/msconvert or C:\...\msconvert.exe" />
+        <Button Grid.Row="0" Grid.Column="2" Content="Browse…" Margin="6,0,0,0" Click="OnBrowseMsconvert" />
+        <CheckBox Grid.Row="1" Grid.Column="1" x:Name="UseDocker" Content="Use Docker instead of a native msconvert" Margin="0,8,0,0" />
+        <TextBlock Grid.Row="2" Classes="label" Text="Docker image" Margin="0,8,8,0" />
+        <TextBox Grid.Row="2" Grid.Column="1" x:Name="DockerImage" Margin="0,8,0,0" />
+        <TextBlock Grid.Row="3" Classes="label" Text="Conversion cache" Margin="0,8,8,0" />
+        <TextBox Grid.Row="3" Grid.Column="1" x:Name="CacheFolder" Margin="0,8,0,0" Watermark="Empty = next to the source file" />
+        <Button Grid.Row="3" Grid.Column="2" Content="Browse…" Margin="6,8,0,0" Click="OnBrowseCache" />
+      </Grid>
+      <TextBlock x:Name="SettingsPath" Classes="muted" Margin="0,8,0,0" />
+    </StackPanel>
+  </DockPanel>
+</Window>

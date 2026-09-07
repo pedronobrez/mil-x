@@ -1,0 +1,18 @@
+bin/
+obj/
+build/
+dist/
+*.user
+*.swp
+.DS_Store
+TestResults/
+# synthetic data outputs (the generator recreates them)
+testdata/**/out*/
+testdata/**/*.dcl
+testdata/**/*.pai2
+testdata/**/*.arf*
+testdata/**/*.aef
+testdata/**/*.mddata
+testdata/**/*.msp2*
+testdata/**/*_tags.xml
+testdata/**/*.rtc

@@ -1,0 +1,84 @@
+--- a/src/MSDIAL5/MsdialCore/MsdialCore.csproj
++++ b/src/MSDIAL5/MsdialCore/MsdialCore.csproj
+@@ -6,17 +6,23 @@
+     <Configurations>Debug;Release;Debug vendor unsupported;Release vendor unsupported</Configurations>
+     <LangVersion>12</LangVersion>
+     <Nullable>annotations</Nullable>
++    <!-- OpenDIAL: path of the open raw data project (override with -p:OpenDialRawDataProject=...) -->
++    <DefineConstants Condition="'$(UseOpenRawData)' == 'true'">$(DefineConstants);OPENDIAL_SQLITE</DefineConstants>
++    <OpenDialRawDataProject Condition="'$(OpenDialRawDataProject)' == ''">$(MSBuildThisFileDirectory)..\..\..\..\opendial\src\OpenDIAL.RawData\OpenDIAL.RawData.csproj</OpenDialRawDataProject>
+   </PropertyGroup>
+ 
+   <ItemGroup>
+     <PackageReference Include="Accord" Version="3.8.0" />
+     <PackageReference Include="Accord.Math" Version="3.8.0" />
+     <PackageReference Include="Accord.Statistics" Version="3.8.0" />
+-	  <PackageReference Include="RawDataHandler" Version="1.3.9725.140" Condition="'$(Configuration)'=='Release'" />
+-	  <PackageReference Include="RawDataHandler" Version="1.3.*-*" Condition="'$(Configuration)'=='Debug'" />
+-	  <PackageReference Include="RawDataHandler-Vendor-UnSupported" Version="1.3.*-*" Condition="'$(Configuration)'=='Debug vendor unsupported'" />
+-	  <PackageReference Include="RawDataHandler-Vendor-UnSupported" Version="1.3.*" Condition="'$(Configuration)'=='Release vendor unsupported'" />
+-	  <PackageReference Include="System.Data.SQLite.Core" Version="1.0.112.2" />
++    <!-- OpenDIAL: the closed RawDataHandler package is only referenced when UseOpenRawData is not set.
++         Build with -p:UseOpenRawData=true to use the open, cross-platform OpenDIAL.RawData project instead. -->
++	  <PackageReference Include="RawDataHandler" Version="1.3.9725.140" Condition="'$(UseOpenRawData)' != 'true' AND '$(Configuration)'=='Release'" />
++	  <PackageReference Include="RawDataHandler" Version="1.3.*-*" Condition="'$(UseOpenRawData)' != 'true' AND '$(Configuration)'=='Debug'" />
++	  <PackageReference Include="RawDataHandler-Vendor-UnSupported" Version="1.3.*-*" Condition="'$(UseOpenRawData)' != 'true' AND '$(Configuration)'=='Debug vendor unsupported'" />
++	  <PackageReference Include="RawDataHandler-Vendor-UnSupported" Version="1.3.*" Condition="'$(UseOpenRawData)' != 'true' AND '$(Configuration)'=='Release vendor unsupported'" />
++	  <PackageReference Include="System.Data.SQLite.Core" Version="1.0.112.2" Condition="'$(UseOpenRawData)' != 'true'" />
++	  <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.10" Condition="'$(UseOpenRawData)' == 'true'" />
+     <PackageReference Include="System.IO.Compression" Version="4.3.0" />
+     <PackageReference Include="System.Net.Http" Version="4.3.4" />
+   </ItemGroup>
+@@ -43,6 +49,7 @@
+   <ItemGroup>
+     <ProjectReference Include="..\..\Common\CommonStandard\CommonStandard.csproj" />
+     <ProjectReference Include="..\..\Common\spectra-hash\splash\Splash.csproj" />
++    <ProjectReference Include="$(OpenDialRawDataProject)" Condition="'$(UseOpenRawData)' == 'true'" />
+   </ItemGroup>
+ 
+ </Project>
+--- a/src/MSDIAL5/MsdialCore/DataObj/EadLipidSqliteDatabase.cs
++++ b/src/MSDIAL5/MsdialCore/DataObj/EadLipidSqliteDatabase.cs
+@@ -7,7 +7,15 @@
+ using CompMs.MsdialCore.Algorithm.Annotation;
+ using System;
+ using System.Collections.Generic;
++#if OPENDIAL_SQLITE
++// OpenDIAL: Microsoft.Data.Sqlite ships native SQLite for osx-arm64/linux-arm64; the ADO.NET surface used here is identical.
++using Microsoft.Data.Sqlite;
++using SQLiteConnection = Microsoft.Data.Sqlite.SqliteConnection;
++using SQLiteConnectionStringBuilder = Microsoft.Data.Sqlite.SqliteConnectionStringBuilder;
++using SQLiteDataReader = Microsoft.Data.Sqlite.SqliteDataReader;
++#else
+ using System.Data.SQLite;
++#endif
+ using System.IO;
+ using System.Linq;
+ using System.Threading;
+--- a/tests/MSDIAL5/MsdialCoreTestApp/Program.cs
++++ b/tests/MSDIAL5/MsdialCoreTestApp/Program.cs
+@@ -8,6 +8,13 @@
+ namespace CompMs.App.MsdialConsole;
+ class Program {
+     public static Task<int> Main(string[] args) {
++        // OpenDIAL: MS-DIAL parses numbers with the current culture in many places (method files,
++        // MSP libraries, mzML cvParam values). Force the invariant culture so results do not depend
++        // on the OS locale (e.g. decimal comma locales silently produce zero peaks).
++        System.Globalization.CultureInfo.DefaultThreadCurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
++        System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = System.Globalization.CultureInfo.InvariantCulture;
++        System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
++        System.Globalization.CultureInfo.CurrentUICulture = System.Globalization.CultureInfo.InvariantCulture;
+         // gcms
+         // args = new string[] {
+         //     "gcms"
+--- a/tests/MSDIAL5/MsdialCoreTestApp/Parser/AnalysisFilesParser.cs
++++ b/tests/MSDIAL5/MsdialCoreTestApp/Parser/AnalysisFilesParser.cs
+@@ -179,7 +179,7 @@
+                     AcquisitionType = afAcqType,
+                     DeconvolutionFilePath = Path.Combine(fileDir, afFilename + "_" + dtString + ".dcl"),
+                     PeakAreaBeanInformationFilePath = Path.Combine(fileDir, afFilename + "_" + dtString + ".pai"),
+-                    RetentionTimeCorrectionBean = new RetentionTimeCorrectionBean(fileDir + "\\" + afFilename + "_" + dtString + ".rtc"),
++                    RetentionTimeCorrectionBean = new RetentionTimeCorrectionBean(Path.Combine(fileDir, afFilename + "_" + dtString + ".rtc")), // OpenDIAL: portable path
+                     AnalysisBatch = afBatch,
+                     DilutionFactor = afInjectVolume
+                 });

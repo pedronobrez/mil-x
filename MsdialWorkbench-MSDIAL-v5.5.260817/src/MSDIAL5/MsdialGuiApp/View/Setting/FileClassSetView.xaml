@@ -1,0 +1,62 @@
+﻿<UserControl x:Class="CompMs.App.Msdial.View.Setting.FileClassSetView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:converter="clr-namespace:CompMs.Graphics.Converter;assembly=ChartDrawing"
+             xmlns:ui="clr-namespace:CompMs.Graphics.UI;assembly=ChartDrawing"
+             xmlns:behavior="clr-namespace:CompMs.Graphics.Behavior;assembly=ChartDrawing"
+             xmlns:vm="clr-namespace:CompMs.App.Msdial.ViewModel.Setting"
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance Type={x:Type vm:FileClassSetViewModel}}"
+             d:Background="White"
+             d:DesignHeight="450" d:DesignWidth="400">
+    <UserControl.Resources>
+        <converter:StringToColorConverter x:Key="StringToColorConverter"/>
+        <Style TargetType="DataGrid">
+            <Setter Property="CanUserAddRows" Value="False"/>
+            <Setter Property="CanUserDeleteRows" Value="False"/>
+            <Setter Property="CanUserReorderColumns" Value="False"/>
+            <Setter Property="CanUserSortColumns" Value="True"/>
+            <Setter Property="AutoGenerateColumns" Value="False"/>
+            <Setter Property="SelectionUnit" Value="Cell"/>
+            <Setter Property="behavior:DataGridCommitBehavior.Enable" Value="True"/>
+            <Setter Property="behavior:DataGridPasteBehavior.Enable" Value="True"/>
+        </Style>
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+    </UserControl.Resources>
+    <DataGrid ItemsSource="{Binding FileClassProperties}">
+        <DataGrid.Columns>
+            <DataGridTextColumn Header="Class name"
+                                Binding="{Binding Name}"
+                                IsReadOnly="True"
+                                Width="*"/>
+            <DataGridTemplateColumn Header="Color" Width="*">
+                <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate DataType="{x:Type vm:FileClassPropertyViewModel}">
+                        <ui:CompositeColorPicker SelectedColor="{Binding Color.Value, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                                 ContentWidth="256" ContentHeight="232">
+                            <ui:CompositeColorPickerItem Label="List">
+                                <ui:ListColorPicker/>
+                            </ui:CompositeColorPickerItem>
+                            <ui:CompositeColorPickerItem Label="HSV">
+                                <ui:HsvColorPicker/>
+                            </ui:CompositeColorPickerItem>
+                            <ui:CompositeColorPickerItem Label="RGB">
+                                <ui:RgbColorPicker/>
+                            </ui:CompositeColorPickerItem>
+                        </ui:CompositeColorPicker>
+                    </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+                <DataGridTemplateColumn.ClipboardContentBinding>
+                    <Binding Path="Color.Value" Converter="{StaticResource StringToColorConverter}" />
+                </DataGridTemplateColumn.ClipboardContentBinding>
+            </DataGridTemplateColumn>
+            <DataGridTextColumn Header="Order"
+                                Binding="{Binding Order.Value, UpdateSourceTrigger=PropertyChanged}"
+                                Width="*"/>
+        </DataGrid.Columns>
+    </DataGrid>
+</UserControl>

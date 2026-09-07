@@ -1,0 +1,43 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:OpenDIAL.Desktop.ViewModels"
+        xmlns:views="using:OpenDIAL.Desktop.Views"
+        x:Class="OpenDIAL.Desktop.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="{Binding Title}"
+        Width="1380" Height="900" MinWidth="960" MinHeight="600"
+        WindowStartupLocation="CenterScreen">
+  <DockPanel>
+    <Menu DockPanel.Dock="Top">
+      <MenuItem Header="_File">
+        <MenuItem Header="Open results _folder…" Command="{Binding OpenResultsFolderCommand}" />
+        <MenuItem Header="Open ._mdproject…" Command="{Binding OpenProjectFileCommand}" />
+        <Separator />
+        <MenuItem Header="_Run pipeline" Command="{Binding RunPipelineCommand}" />
+        <Separator />
+        <MenuItem Header="_Settings…" Click="OnSettingsClick" />
+        <Separator />
+        <MenuItem Header="E_xit" Click="OnExitClick" />
+      </MenuItem>
+      <MenuItem Header="_Help">
+        <MenuItem Header="_About OpenDIAL" Click="OnAboutClick" />
+      </MenuItem>
+    </Menu>
+
+    <Border DockPanel.Dock="Bottom" Padding="10,4" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <TextBlock Text="{Binding GlobalStatus}" Classes="muted" />
+    </Border>
+
+    <TabControl SelectedIndex="{Binding SelectedTab, Mode=TwoWay}" Padding="0">
+      <TabItem Header="1. Project">
+        <views:ProjectView DataContext="{Binding Project}" />
+      </TabItem>
+      <TabItem Header="2. Run">
+        <views:RunView DataContext="{Binding Run}" />
+      </TabItem>
+      <TabItem Header="3. Results">
+        <views:ResultsView DataContext="{Binding Results}" />
+      </TabItem>
+    </TabControl>
+  </DockPanel>
+</Window>

@@ -1,0 +1,279 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net48;net481;net472</TargetFrameworks>
+    <RootNamespace>Rfx.Riken.OsakaUniv</RootNamespace>
+    <AssemblyName>MSDIAL</AssemblyName>
+    <OutputType>WinExe</OutputType>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Configurations>Debug;Release;Debug vendor unsupported;Release vendor unsupported</Configurations>
+    <HighEntropyVA>false</HighEntropyVA>
+    <PublishUrl>..\publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>false</MapFileExtensions>
+    <TargetCulture>en</TargetCulture>
+    <ProductName>MsDial</ProductName>
+    <SuiteName>MsDial</SuiteName>
+    <CreateWebPageOnPublish>true</CreateWebPageOnPublish>
+    <WebPage>Ms-Dial.html</WebPage>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>3.0.0.%2a</ApplicationVersion>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <PublishWizardCompleted>true</PublishWizardCompleted>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <ApplicationIcon>Resources\msdial_icon.ico</ApplicationIcon>
+    <StartupObject>Rfx.Riken.OsakaUniv.App</StartupObject>
+    <AssemblyTitle>MSDIAL</AssemblyTitle>
+    <AssemblyDescription>Software for untargeted metabolomics</AssemblyDescription>
+    <AssemblyCompany>RIKEN</AssemblyCompany>
+    <AssemblyProduct>Rfx.Riken.OsakaUniv</AssemblyProduct>
+    <AssemblyCopyright>Copyright ©  2014-2018 Hiroshi Tsugawa. All rights reserved.</AssemblyCopyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="VersionUpdateNotificationService\**" />
+    <Compile Remove="VersionUpdateNotifierService\**" />
+    <EmbeddedResource Remove="VersionUpdateNotificationService\**" />
+    <EmbeddedResource Remove="VersionUpdateNotifierService\**" />
+    <None Remove="VersionUpdateNotificationService\**" />
+    <None Remove="VersionUpdateNotifierService\**" />
+    <Page Remove="VersionUpdateNotificationService\**" />
+    <Page Remove="VersionUpdateNotifierService\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Properties\Resources.Designer.cs">
+	  <DesignTime>True</DesignTime>
+	  <AutoGen>True</AutoGen>
+	  <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Parameter for LC\AnalysisParametersSettingVM.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="CytoscapeLocalBrowser\assembly\jquery-1.12.4.min.map" />
+    <None Include="CytoscapeLocalBrowser\assembly\jquery-3.3.1.min.map" />
+    <None Include="CytoscapeLocalBrowser\assembly\smiles-drawer.min.js.map" />
+    <None Include="Properties\app.manifest" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <AppDesigner Include="Properties\" />
+    <Resource Include="Resources\GlobalMapForAnimal.gpml">
+      <SubType>Designer</SubType>
+    </Resource>
+    <Resource Include="Resources\GlobalMapForPlant.gpml" />
+    <Resource Include="Resources\MetabolicMapForPlant.gpml" />
+    <Resource Include="Resources\MetabolicMapForAnimal.gpml" />
+    <Resource Include="Resources\LipidMapForPlant.gpml" />
+    <Resource Include="Resources\LipidMapForAnimal.gpml">
+      <SubType>Designer</SubType>
+    </Resource>
+    <None Include="App.config" />
+    <Resource Include="Resources\MS1Reset.ico" />
+    <Resource Include="Resources\MS2Reset.ico" />
+    <Resource Include="Resources\PairwiseplotReset.ico" />
+    <Resource Include="Resources\XicReset.ico" />
+    <Resource Include="Resources\Deconvoluted.ico" />
+    <Resource Include="Resources\RawAndDeconvo.ico" />
+    <Resource Include="Resources\RawChromatogram.ico" />
+    <Resource Include="Resources\CompoundSearchIcon.ico" />
+    <Resource Include="Resources\Fiehn GCMS MSP.txt" />
+    <Content Include="CytoscapeLocalBrowser\assembly\Chart.js" />
+    <Content Include="CytoscapeLocalBrowser\assembly\contextmenu.js" />
+    <Content Include="CytoscapeLocalBrowser\assembly\cytoscape.js" />
+    <Content Include="CytoscapeLocalBrowser\assembly\cytoscape.min.js" />
+    <Content Include="CytoscapeLocalBrowser\assembly\fakeLoader.css" />
+    <Content Include="CytoscapeLocalBrowser\assembly\fakeLoader.min.js" />
+    <Content Include="CytoscapeLocalBrowser\assembly\jquery-3.3.1.min.js" />
+    <Content Include="CytoscapeLocalBrowser\assembly\jquery-3.4.1.min.js" />
+    <Content Include="CytoscapeLocalBrowser\assembly\jquery-ui.structure.min.css" />
+    <Content Include="CytoscapeLocalBrowser\assembly\pathwaycode.js" />
+    <Content Include="CytoscapeLocalBrowser\data\elements.js" />
+    <Content Include="CytoscapeLocalBrowser\data\style.js" />
+    <Resource Include="Resources\CompoundTable.ico" />
+    <Resource Include="Resources\SpotRelation.ico" />
+    <Resource Include="Resources\Refresh.ico" />
+    <Resource Include="Resources\CorrDec.ico" />
+    <Resource Include="Resources\msdial_icon.ico" />
+    <Resource Include="Resources\msdial_icon.png" />
+    <Resource Include="Resources\msfinder_icon.ico" />
+    <Content Include="Resources\SQLite.Interop.dll" />
+    <Resource Include="Resources\Lipoquality.ico" />
+    <Resource Include="Resources\MolecularNetworking.ico" />
+    <Resource Include="CytoscapeLocalBrowser\assembly\images\iconHelp.png" />
+    <Resource Include="CytoscapeLocalBrowser\assembly\images\iconLink.png" />
+    <Resource Include="CytoscapeLocalBrowser\assembly\images\ui-bg_glass_75_d0e5f5_1x400.png" />
+    <Resource Include="CytoscapeLocalBrowser\assembly\images\ui-bg_glass_85_dfeffc_1x400.png" />
+    <Resource Include="CytoscapeLocalBrowser\assembly\images\ui-bg_glass_95_fef1ec_1x400.png" />
+    <Resource Include="CytoscapeLocalBrowser\assembly\images\ui-bg_gloss-wave_55_5c9ccc_500x100.png" />
+    <Resource Include="CytoscapeLocalBrowser\assembly\images\ui-bg_inset-hard_100_f5f8f9_1x100.png" />
+    <Resource Include="CytoscapeLocalBrowser\assembly\images\ui-bg_inset-hard_100_fcfdfd_1x100.png" />
+    <Resource Include="CytoscapeLocalBrowser\assembly\images\ui-icons_217bc0_256x240.png" />
+    <Resource Include="CytoscapeLocalBrowser\assembly\images\ui-icons_2e83ff_256x240.png" />
+    <Resource Include="CytoscapeLocalBrowser\assembly\images\ui-icons_469bdd_256x240.png" />
+    <Resource Include="CytoscapeLocalBrowser\assembly\images\ui-icons_6da8d5_256x240.png" />
+    <Resource Include="CytoscapeLocalBrowser\assembly\images\ui-icons_cd0a0a_256x240.png" />
+    <Resource Include="CytoscapeLocalBrowser\assembly\images\ui-icons_d8e7f3_256x240.png" />
+    <Resource Include="CytoscapeLocalBrowser\assembly\images\ui-icons_f9bd01_256x240.png" />
+    <Content Include="CytoscapeLocalBrowser\assembly\jquery-1.12.4.min.js" />
+    <Content Include="CytoscapeLocalBrowser\assembly\jquery-ui.min.css" />
+    <Content Include="CytoscapeLocalBrowser\assembly\jquery-ui.min.js" />
+    <Content Include="CytoscapeLocalBrowser\assembly\jquery-ui.theme.css" />
+    <Content Include="CytoscapeLocalBrowser\assembly\jquery-ui.theme.min.css" />
+    <Content Include="CytoscapeLocalBrowser\assembly\jquery.jqplot.css" />
+    <Content Include="CytoscapeLocalBrowser\assembly\jquery.jqplot.min.js" />
+    <Content Include="CytoscapeLocalBrowser\assembly\plugins\jqplot.barRenderer.min.js" />
+    <Content Include="CytoscapeLocalBrowser\assembly\plugins\jqplot.canvasAxisLabelRenderer.min.js" />
+    <Content Include="CytoscapeLocalBrowser\assembly\plugins\jqplot.canvasTextRenderer.min.js" />
+    <Content Include="CytoscapeLocalBrowser\assembly\plugins\jqplot.cursor.min.js" />
+    <Content Include="CytoscapeLocalBrowser\assembly\plugins\jqplot.enhancedLegendRenderer.min.js" />
+    <Content Include="CytoscapeLocalBrowser\assembly\plugins\jqplot.highlighter.min.js" />
+    <Content Include="CytoscapeLocalBrowser\assembly\plugins\jqplot.pointLabels.min.js" />
+    <Content Include="CytoscapeLocalBrowser\assembly\smiles-drawer.min.js" />
+    <Content Include="CytoscapeLocalBrowser\assembly\style.css" />
+    <Content Include="CytoscapeLocalBrowser\assembly\view.core.js" />
+    <Content Include="CytoscapeLocalBrowser\assembly\workingspace.js" />
+    <Content Include="CytoscapeLocalBrowser\MsdialCytoscapeViewer.html" />
+    <Resource Include="Resources\BinVestigate.ico" />
+    <Resource Include="Resources\Table.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BarChart\BarChart.csproj">
+      <Project>{a3ac4d50-9249-478d-be03-0465fd00ef2f}</Project>
+      <Name>BarChart</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BinVestigateRestApiStandard\BinVestigateRestApiStandard.csproj">
+      <Project>{56759084-f7c0-4aa6-ab4e-2f8e13927029}</Project>
+      <Name>BinVestigateRestApiStandard</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ChromatogramUI\Chromatogram.csproj">
+      <Project>{6dced6bb-4107-40c9-a9ef-d60658c385c0}</Project>
+      <Name>Chromatogram</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Common\CommonMVVM\CommonMVVM.csproj">
+      <Project>{d7bc52de-cdf0-4f78-b23e-ef2434d14029}</Project>
+      <Name>CommonMVVM</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Common\CommonStandard\CommonStandard.csproj">
+      <Project>{eb161441-a663-485f-8cd6-d1d5794f7ad9}</Project>
+      <Name>CommonStandard</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\DatabaseStandard\DatabaseStandard.csproj">
+      <Project>{ba6683c6-0cd8-4b04-b7dc-1a9eb5aa0b31}</Project>
+      <Name>DatabaseStandard</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\DataProcessingStandard\DataProcessingStandard.csproj">
+      <Project>{3c1f2344-609f-4939-a6be-2ae4327c26a0}</Project>
+      <Name>DataProcessingStandard</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\IsotopeRatioCalculatorStandard\IsotopeRatioCalculatorStandard.csproj">
+      <Project>{550a1e94-87d0-4244-8e25-23c7a4321a9a}</Project>
+      <Name>IsotopeRatioCalculatorStandard</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\MassSpectrogram\MassSpectrogram.csproj">
+      <Project>{9adb8ed7-1d30-45bf-8ac5-a3ccf19afd65}</Project>
+      <Name>MassSpectrogram</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Common\ChartDrawing\ChartDrawing.csproj">
+      <Project>{6131640b-30e6-4606-a394-be953590f3e9}</Project>
+      <Name>ChartDrawing</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\MathematicsStandard\MathematicsStandard.csproj">
+      <Project>{6edc27b3-4a32-4a20-99f9-035cddf9104f}</Project>
+      <Name>MathematicsStandard</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\MolecularFormulaFinderStandard\MolecularFormulaFinderStandard.csproj">
+      <Project>{48af1683-f885-4cfd-9171-5d0bfd023049}</Project>
+      <Name>MolecularFormulaFinderStandard</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\MolViewer\MolViewer.csproj">
+      <Project>{6d6e44ec-a467-461f-af6b-83a9d575ef76}</Project>
+      <Name>MolViewer</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\MonaExport\MonaExport.csproj">
+      <Project>{3232ef20-fadb-47c5-958f-4eab0eee2f91}</Project>
+      <Name>MonaExport</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\MonaRestApi\MonaRestApi.csproj">
+      <Project>{d4610dbd-360c-4310-8cb0-ffb9e24545c1}</Project>
+      <Name>MonaRestApi</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\MsdialCommon\MsdialCommon.csproj">
+      <Project>{049645f4-4ea5-41a2-b369-22d23fb09040}</Project>
+      <Name>MsdialCommon</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\MsdialGcmsProcessStandard\MsdialGcmsProcessStandard.csproj">
+      <Project>{ed56a430-b975-4073-b8a2-7115b4fd8fcc}</Project>
+      <Name>MsdialGcmsProcessStandard</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\MsdialLcmsProcessStandard\MsdialLcmsProcessStandard.csproj">
+      <Project>{f4b299d9-6dc4-4535-88c6-302c299a1aac}</Project>
+      <Name>MsdialLcmsProcessStandard</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\PairwisePlot\PairwisePlot.csproj">
+      <Project>{9f9ccfc8-5b22-4bce-81b1-04c09ec717d2}</Project>
+      <Name>PairwisePlot</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\PathwayMap\PathwayMap.csproj">
+      <Project>{7c8bf853-6f34-4cbd-bec9-6d1aea199947}</Project>
+      <Name>PathwayMap</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Common\spectra-hash\splash\Splash.csproj">
+      <Project>{8f90089f-df30-4353-833f-220ecac7c1cf}</Project>
+      <Name>Splash</Name>
+    </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Windows.Forms.DataVisualization" />
+    <PackageReference Include="Accord">
+      <Version>3.8.0</Version>
+    </PackageReference>
+    <PackageReference Include="Accord.Statistics">
+      <Version>3.8.0</Version>
+    </PackageReference>
+    <PackageReference Include="Extended.Wpf.Toolkit">
+      <Version>2.9.0</Version>
+    </PackageReference>
+    <PackageReference Include="gong-wpf-dragdrop">
+      <Version>1.1.0</Version>
+    </PackageReference>
+    <PackageReference Include="Newtonsoft.Json">
+      <Version>13.0.3</Version>
+    </PackageReference>
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <PropertyGroup>
+      <Lbm2Url>http://prime.psc.riken.jp/compms/msdial/download/lipidblast/Msp20221205132019_conventional_converted.lbm2</Lbm2Url>
+    </PropertyGroup>
+    <ItemGroup>
+      <_DeployToItem Include="$(TargetDir)\*.lbm*" />
+    </ItemGroup>
+    <DownloadFile SourceUrl="$(Lbm2Url)" DestinationFolder="$(TargetDir)" Condition="!Exists('%(_DeployToItem.FullPath)')" ContinueOnError="true"/>
+    <Exec Command="xcopy &quot;$(ProjectDir)CytoscapeLocalBrowser&quot; &quot;$(TargetDir)CytoscapeLocalBrowser&quot; /D/E/C/I/H/Y" />
+  </Target>
+</Project>

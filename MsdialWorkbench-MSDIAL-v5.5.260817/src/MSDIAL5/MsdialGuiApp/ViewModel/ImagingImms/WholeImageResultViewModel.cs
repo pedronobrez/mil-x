@@ -1,0 +1,52 @@
+﻿using CompMs.App.Msdial.Model.ImagingImms;
+using CompMs.App.Msdial.Model.Core;
+using CompMs.App.Msdial.ViewModel.Chart;
+using CompMs.App.Msdial.ViewModel.Core;
+using CompMs.App.Msdial.ViewModel.Imaging;
+using CompMs.App.Msdial.ViewModel.Imms;
+using CompMs.App.Msdial.ViewModel.Search;
+using CompMs.App.Msdial.ViewModel.Service;
+using CompMs.App.Msdial.ViewModel.Table;
+using CompMs.CommonMVVM;
+using CompMs.CommonMVVM.WindowService;
+using Reactive.Bindings;
+using Reactive.Bindings.Extensions;
+using Reactive.Bindings.Notifiers;
+using System.Reactive.Linq;
+using System.Windows.Input;
+
+namespace CompMs.App.Msdial.ViewModel.ImagingImms
+{
+    internal sealed class WholeImageResultViewModel : ViewModelBase, IResultViewModel
+    {
+        private readonly WholeImageResultModel _model;
+
+        public WholeImageResultViewModel(WholeImageResultModel model, FocusControlManager focusManager, IWindowService<PeakSpotTableViewModelBase> peakSpotTableService, IMessageBroker broker) {
+            _model = model ?? throw new System.ArgumentNullException(nameof(model));
+            var analysisViewModel = new ImmsAnalysisViewModel(model.AnalysisModel, peakSpotTableService, broker, focusManager).AddTo(Disposables);
+            AnalysisViewModel = analysisViewModel;
+
+            ImagingRoiViewModel = new ImagingRoiViewModel(model.ImagingRoiModel).AddTo(Disposables);
+            IntensityImagePlaceholder = model.IntensityImagePlaceholder.ObserveProperty(m => m.CurrentImage)
+                .Select(m => m is null ? null : new BitmapImageViewModel(m))
+                .DisposePreviousValue()
+                .ToReadOnlyReactivePropertySlim().AddTo(Disposables);
+        }
+
+        public ImmsAnalysisViewModel AnalysisViewModel { get; }
+        public AnalysisPeakPlotViewModel PeakPlotViewModel => AnalysisViewModel.PlotViewModel;
+        public ReadOnlyReactivePropertySlim<BitmapImageViewModel?> IntensityImagePlaceholder { get; }
+        public ImagingRoiViewModel ImagingRoiViewModel { get; }
+
+        public ICommand ShowIonTableCommand => AnalysisViewModel.ShowIonTableCommand;
+
+        public ICommand SearchCompoundCommand => AnalysisViewModel.SearchCompoundCommand;
+
+        // IResultViewModel
+        public IResultModel Model => ((IResultViewModel)AnalysisViewModel).Model;
+        public PeakSpotNavigatorViewModel PeakSpotNavigatorViewModel => AnalysisViewModel.PeakSpotNavigatorViewModel;
+        public ICommand SetUnknownCommand => AnalysisViewModel.SetUnknownCommand;
+        public UndoManagerViewModel UndoManagerViewModel => AnalysisViewModel.UndoManagerViewModel;
+        public ViewModelBase[] PeakDetailViewModels => AnalysisViewModel.PeakDetailViewModels;
+    }
+}

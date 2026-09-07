@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>12</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MSTest.TestFramework" Version="3.9.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Common\CommonStandardTestHelper\CommonStandardTestHelper.csproj" />
+    <ProjectReference Include="..\..\..\src\MSDIAL5\MsdialCore\MsdialCore.csproj" />
+  </ItemGroup>
+
+</Project>

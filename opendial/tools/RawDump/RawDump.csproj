@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    RawDump: tiny diagnostic CLI that opens a raw MS file through the
+    CompMs.RawDataHandler.Core.RawDataAccess API (whichever implementation is
+    referenced: the closed vendor-unsupported dll, or OpenDIAL.RawData) and
+    prints a deterministic summary of every spectrum. Used for parity testing
+    between readers:  RawDump file.mzML > a.txt  (closed)  vs  (open)  then diff.
+
+    Build against the OPEN reader (default):
+      dotnet run -c Release - - file.mzML
+    Build against the CLOSED reader:
+      dotnet run -c Release -p:UseClosedReader=true - - file.mzML
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>OpenDIAL.Tools.RawDump</RootNamespace>
+    <UseClosedReader Condition="'$(UseClosedReader)' == ''">false</UseClosedReader>
+    <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../MsdialWorkbench-MSDIAL-v5.5.260817/src/Common/CommonStandard/CommonStandard.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseClosedReader)' == 'true'">
+    <PackageReference Include="RawDataHandler-Vendor-UnSupported" Version="1.3.*" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseClosedReader)' != 'true'">
+    <ProjectReference Include="../../src/OpenDIAL.RawData/OpenDIAL.RawData.csproj" />
+  </ItemGroup>
+
+</Project>

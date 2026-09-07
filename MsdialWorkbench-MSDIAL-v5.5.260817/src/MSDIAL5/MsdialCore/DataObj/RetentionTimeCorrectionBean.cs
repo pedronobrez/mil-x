@@ -1,0 +1,448 @@
+﻿using CompMs.Common.Components;
+using CompMs.Common.Extension;
+using CompMs.Common.Interfaces;
+using CompMs.Common.Utility;
+using CompMs.MsdialCore.Algorithm;
+using MessagePack;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace CompMs.MsdialCore.DataObj
+{
+    public enum InterpolationMethod { Linear }
+    public enum ExtrapolationMethodBegin { UserSetting, FirstPoint, LinearExtrapolation }
+    public enum ExtrapolationMethodEnd { LastPoint, LinearExtrapolation }
+    public enum RtDiffCalcMethod { SampleMinusSampleAverage, SampleMinusReference }
+    public enum SampleListCellInfo { Normal, Zero, ManualModified, AutoModified }
+
+    [MessagePackObject]
+    public class RetentionTimeCorrectionBean
+    {
+        /// <summary>
+        /// This property is intended for MessagePack serialization only.
+        /// Do not use this property directly; instead, use <see cref="OriginalRt"/>.
+        /// 
+        /// This property exists solely for ensuring compatibility with older data.
+        /// </summary>
+        [Key(0)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public List<double> OriginalRtForSerialization {
+            get => originalRt;
+            set => originalRt = value;
+        }
+
+        [IgnoreMember]
+        public List<double> OriginalRt { 
+            get {
+                if (originalRt.IsEmptyOrNull()) {
+                    RetentionTimeCorrectionMethod.LoadRetentionCorrectionResult(this.RetentionTimeCorrectionResultFilePath, out List<double> originalRt, out List<double> rtDiff, out List<double> predictedRt);
+                    if (originalRt == null) {
+                        return null;
+                    }
+                    this.originalRt = originalRt;
+                    this.rtDiff = rtDiff;
+                    this.predictedRt = predictedRt;
+                    
+                }
+                return originalRt;
+            } 
+        }
+        private List<double> originalRt;
+
+        /// <summary>
+        /// This property is intended for MessagePack serialization only.
+        /// Do not use this property directly; instead, use <see cref="RtDiff"/>.
+        /// 
+        /// This property exists solely for ensuring compatibility with older data.
+        /// </summary>
+        [Key(1)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public List<double> RtDiffForSerialization {
+            get => rtDiff;
+            set => rtDiff = value;
+        }
+
+        [IgnoreMember]
+        public List<double> RtDiff { 
+            get {
+                if (rtDiff.IsEmptyOrNull()) {
+                    RetentionTimeCorrectionMethod.LoadRetentionCorrectionResult(this.RetentionTimeCorrectionResultFilePath, out List<double> originalRt, out List<double> rtDiff, out List<double> predictedRt);
+                    if (originalRt == null) {
+                        return null;
+                    }
+                    this.originalRt = originalRt;
+                    this.rtDiff = rtDiff;
+                    this.predictedRt = predictedRt;
+                }
+                return rtDiff;
+            } 
+        }
+        private List<double> rtDiff;
+
+        /// <summary>
+        /// This property is intended for MessagePack serialization only.
+        /// Do not use this property directly; instead, use <see cref="PredictedRt"/>.
+        /// 
+        /// This property exists solely for ensuring compatibility with older data.
+        /// </summary>
+        [Key(2)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public List<double> PredictedRtForSerialization {
+            get => predictedRt;
+            set => predictedRt = value;
+        }
+
+        [IgnoreMember]
+        public List<double> PredictedRt {
+            get {
+                if (predictedRt.IsEmptyOrNull()) {
+                    RetentionTimeCorrectionMethod.LoadRetentionCorrectionResult(this.RetentionTimeCorrectionResultFilePath, out List<double> originalRt, out List<double> rtDiff, out List<double> predictedRt);
+                    if (originalRt == null) {
+                        return null;
+                    }
+                    this.originalRt = originalRt;
+                    this.rtDiff = rtDiff;
+                    this.predictedRt = predictedRt;
+                }
+                return predictedRt;
+            }
+        }
+        private List<double> predictedRt;
+
+        [Key(3)]
+        public List<StandardPair> StandardList { get; set; } = new List<StandardPair>();
+        [Key(4)]
+        public bool isTarget { get; set; }
+        [Key(5)]
+        public string RetentionTimeCorrectionResultFilePath { get; set; } = string.Empty; // *.rtc
+
+        [IgnoreMember]
+        public bool IsLoaded => originalRt is not null;
+
+        [SerializationConstructor]
+        public RetentionTimeCorrectionBean() { }
+
+        public RetentionTimeCorrectionBean(string retentionTimeCorrectionResultFilePath) {
+            RetentionTimeCorrectionResultFilePath = retentionTimeCorrectionResultFilePath;
+        }
+
+        public RetentionTimeCorrectionBean(string retentionTimeCorrectionResultFilePath, List<double> originalRt) {
+            RetentionTimeCorrectionResultFilePath = retentionTimeCorrectionResultFilePath;
+            this.originalRt = originalRt;
+        }
+
+        public void ClearCache() {
+            this.originalRt = null;
+            this.rtDiff = null;
+            this.predictedRt = null;
+        }
+
+        public void UpdateRetentionCorrectionResult(List<double> originalRt, List<double> rtDiff, List<double> predictedRt) {
+            this.originalRt = originalRt;
+            this.rtDiff = rtDiff;
+            this.predictedRt = predictedRt;
+            RetentionTimeCorrectionMethod.SaveRetentionCorrectionResult(this.RetentionTimeCorrectionResultFilePath, originalRt, rtDiff, predictedRt);
+        }
+    }
+
+    [MessagePackObject]
+    public class StandardPair
+    {
+        [Key(0)]
+        public ChromatogramPeakFeature SamplePeakAreaBean { get; set; }
+        [Key(1)]
+        public MoleculeMsReference Reference { get; set; }
+        [Key(2)]
+        public List<ChromatogramPeak> Chromatogram { get; set; }
+        [IgnoreMember]
+        public double RtDiff { get { return (SamplePeakAreaBean.PeakFeature.ChromXsTop.Value - Reference.ChromXs.Value); } }
+        public void Write() {
+            Console.WriteLine("Name: " + Reference.Name + ", mass diff: " + (Math.Abs(SamplePeakAreaBean.PrecursorMz - Reference.PrecursorMz)) +
+                " Da (ref: " + Reference.PrecursorMz + ", act: " + SamplePeakAreaBean.PrecursorMz + "), RT diff: " +
+                RtDiff + " min (ref: " + Reference.ChromXs.Value + ", act: " + SamplePeakAreaBean.PeakFeature.ChromXsTop.Value + ")");
+        }
+    }
+
+    public enum RetentionTimeCorrectionPeakSelectionMode {
+        HighestIntensity,
+        ClosestToReferenceRt,
+        Weighted,
+    }
+
+    [MessagePackObject]
+    public class RetentionTimeCorrectionParam {
+
+        [Key(0)]
+        public bool ExcuteRtCorrection { get; set; } = false;
+        [Key(1)]
+        public InterpolationMethod InterpolationMethod { get; set; }
+        [Key(2)]
+        public ExtrapolationMethodBegin ExtrapolationMethodBegin { get; set; }
+        [Key(3)]
+        public ExtrapolationMethodEnd ExtrapolationMethodEnd { get; set; }
+        [Key(4)]
+        public double UserSettingIntercept { get; set; } = 0.0;
+        [Key(5)]
+        public RtDiffCalcMethod RtDiffCalcMethod { get; set; }
+        [Key(6)]
+        public bool doSmoothing { get; set; }
+        [Key(7)]
+        public RetentionTimeCorrectionPeakSelectionMode PeakSelectionMode { get; set; } = RetentionTimeCorrectionPeakSelectionMode.HighestIntensity;
+        [Key(8)]
+        public double PeakSelectionRtWeight { get; set; } = 0.5d;
+    }
+
+    [MessagePackObject]
+    public class RetentionTimeCorrectionCommon{
+        [Key(0)]
+        public RetentionTimeCorrectionParam RetentionTimeCorrectionParam { get; set; } = new RetentionTimeCorrectionParam();
+        [Key(1)]
+        public List<MoleculeMsReference> StandardLibrary { get; set; } = new List<MoleculeMsReference>();
+
+        // to keep manual modification results. foreach(var sample in SampleCellInfoListList){foreach(var std in sample){Console.Write("cell info: " + cell);}}
+        [Key(2)]
+        public List<List<SampleListCellInfo>> SampleCellInfoListList { get; set; } = new List<List<SampleListCellInfo>>();
+    }
+
+
+    public class CommonStdData
+    {
+        /// <summary>
+        /// Gets the reference standard that this summary entry corresponds to.
+        /// </summary>
+        public MoleculeMsReference Reference { get; set; }
+        /// <summary>
+        /// Gets the chromatogram snapshots collected for this standard.
+        /// </summary>
+        public List<IReadOnlyList<IChromatogramPeak>> Chromatograms { get; set; } = new List<IReadOnlyList<IChromatogramPeak>>();
+        /// <summary>
+        /// Gets the sample peak heights collected for this standard.
+        /// </summary>
+        public List<double> PeakHeightList { get; set; } = new List<double>();
+        /// <summary>
+        /// Gets the sample peak areas collected for this standard.
+        /// </summary>
+        public List<double> PeakAreaList { get; set; } = new List<double>();
+        /// <summary>
+        /// Gets the sample peak widths collected for this standard.
+        /// </summary>
+        public List<double> PeakWidthList { get; set; } = new List<double>();
+        /// <summary>
+        /// Gets the detected m/z values collected for this standard.
+        /// </summary>
+        public List<double> MzList { get; set; } = new List<double>();
+        /// <summary>
+        /// Gets the detected retention times collected for this standard.
+        /// </summary>
+        public List<double> RetentionTimeList { get; set; } = new List<double>();
+        /// <summary>
+        /// Gets the average retention time across all matched samples.
+        /// </summary>
+        public float AverageRetentionTime { get; set; }
+        /// <summary>
+        /// Gets the number of samples with a non-zero RT hit.
+        /// </summary>
+        public int NumHit { get; set; } = 0;
+        public CommonStdData(MoleculeMsReference comp) {
+            Reference = comp;
+        }
+    
+
+        public void SetStandard(StandardPair std) {
+            this.Chromatograms.Add(std.Chromatogram);
+            if (std.SamplePeakAreaBean.PeakFeature.ChromXsTop.Value == 0) {
+                this.PeakAreaList.Add(0);
+                this.PeakHeightList.Add(0);
+                this.PeakWidthList.Add(0);
+                this.RetentionTimeList.Add(0);
+                this.MzList.Add(0);
+            }
+            else {
+                this.PeakAreaList.Add(std.SamplePeakAreaBean.PeakFeature.PeakAreaAboveZero);
+                this.PeakHeightList.Add(std.SamplePeakAreaBean.PeakFeature.PeakHeightTop);
+                if (std.SamplePeakAreaBean.PeakFeature.ChromXsRight != null && std.SamplePeakAreaBean.PeakFeature.ChromXsLeft != null)
+                    this.PeakWidthList.Add(std.SamplePeakAreaBean.PeakFeature.ChromXsRight.Value - std.SamplePeakAreaBean.PeakFeature.ChromXsLeft.Value);
+                this.RetentionTimeList.Add(std.SamplePeakAreaBean.PeakFeature.ChromXsTop.Value);
+                this.MzList.Add(std.SamplePeakAreaBean.PrecursorMz);
+
+                this.NumHit++;
+            }
+        }
+
+        public void CalcAverageRetentionTime() {
+            double sum = 0;
+            if(NumHit > 0) {
+                foreach(var rt in RetentionTimeList.Where(x => x > 0)) { sum += rt; }
+                AverageRetentionTime = (float)(sum / (float)NumHit);
+            }
+            else {
+                AverageRetentionTime = 0;
+            }
+        }
+
+
+    }
+
+    public class RetentionTimeCorrectionMethod {
+        public static void UpdateRtCorrectionBean(List<AnalysisFileBean> files, ParallelOptions parallelOptions, RetentionTimeCorrectionParam rtParam, List<CommonStdData> commonStdList) {
+            if (rtParam.RtDiffCalcMethod == RtDiffCalcMethod.SampleMinusSampleAverage) {
+                Parallel.ForEach(files, parallelOptions, f => {
+                    if (f.RetentionTimeCorrectionBean.StandardList != null && f.RetentionTimeCorrectionBean.StandardList.Count > 0) {
+                        var originalRts = f.RetentionTimeCorrectionBean.OriginalRt;
+                        if (originalRts != null) {
+                            var items = RetentionTimeCorrection.GetRetentionTimeCorrectionBean_SampleMinusAverage(
+                                rtParam, f.RetentionTimeCorrectionBean.StandardList, f.RetentionTimeCorrectionBean.OriginalRt.ToArray(), commonStdList);
+                            SaveRetentionCorrectionResult(f.RetentionTimeCorrectionBean.RetentionTimeCorrectionResultFilePath, items.originalRt, items.rtDiff, items.predictedRt);
+                            f.RetentionTimeCorrectionBean.ClearCache();
+                        }
+                    }
+                });
+            }
+            else {
+                Parallel.ForEach(files, parallelOptions, f => {
+                    if (f.RetentionTimeCorrectionBean.StandardList != null && f.RetentionTimeCorrectionBean.StandardList.Count > 0) {
+                        var originalRts = f.RetentionTimeCorrectionBean.OriginalRt;
+                        if (originalRts != null) {
+                            var items = RetentionTimeCorrection.GetRetentionTimeCorrectionBean_SampleMinusReference(
+                                rtParam, f.RetentionTimeCorrectionBean.StandardList, f.RetentionTimeCorrectionBean.OriginalRt.ToArray());
+                            SaveRetentionCorrectionResult(f.RetentionTimeCorrectionBean.RetentionTimeCorrectionResultFilePath, items.originalRt, items.rtDiff, items.predictedRt);
+                            f.RetentionTimeCorrectionBean.ClearCache();
+                        }
+                    }
+                });
+            }
+        }
+
+        public static void SaveRetentionCorrectionResult(string filepath, List<double> originalRt, List<double> rtDiff, List<double> predictedRt) {
+            using (var fs = File.Open(filepath, FileMode.Create, FileAccess.ReadWrite)) {
+                fs.Write(BitConverter.GetBytes(originalRt.Count), 0, ByteConvertion.ToByteCount(originalRt.Count));
+                for (int i = 0; i < originalRt.Count; i++) {
+                    fs.Write(BitConverter.GetBytes(originalRt[i]), 0, ByteConvertion.ToByteCount(originalRt[i]));
+                    if (rtDiff.IsEmptyOrNull()) {
+                        fs.Write(BitConverter.GetBytes(originalRt[i]), 0, ByteConvertion.ToByteCount(originalRt[i]));
+                    }
+                    else {
+                        fs.Write(BitConverter.GetBytes(rtDiff[i]), 0, ByteConvertion.ToByteCount(rtDiff[i]));
+                    }
+                    if (predictedRt.IsEmptyOrNull()) {
+                        fs.Write(BitConverter.GetBytes(originalRt[i]), 0, ByteConvertion.ToByteCount(originalRt[i]));
+                    }
+                    else {
+                        fs.Write(BitConverter.GetBytes(predictedRt[i]), 0, ByteConvertion.ToByteCount(predictedRt[i]));
+                    }
+                }
+            }
+        }
+
+        public static void LoadRetentionCorrectionResult(string filepath, out List<double> originalRt, out List<double> rtDiff, out List<double> predictedRt) {
+            
+            if (!File.Exists(filepath)) {
+                originalRt = null;
+                rtDiff = null;
+                predictedRt = null;
+                return;
+            }
+
+            originalRt = new List<double>();
+            rtDiff = new List<double>();
+            predictedRt = new List<double>();   
+
+            using (var fs = File.Open(filepath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                var buffer = new byte[4];
+                fs.Read(buffer, 0, 4);
+                var count = BitConverter.ToInt32(buffer, 0);
+
+                for (int i = 0; i < count; i++) {
+                    buffer = new byte[24];
+                    fs.Read(buffer, 0, 24);
+
+                    originalRt.Add(BitConverter.ToDouble(buffer, 0));
+                    rtDiff.Add(BitConverter.ToDouble(buffer, 8));
+                    predictedRt.Add(BitConverter.ToDouble(buffer, 16));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Builds the common standard summary rows across all analysis files.
+        /// </summary>
+        /// <param name="analysisFiles">Analysis files that contain the per-sample RT correction results.</param>
+        /// <param name="iStdList">The standard library used to define which standards participate in the summary.</param>
+        /// <returns>The per-standard summary rows with averages calculated across samples.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the target standard library contains duplicate ScanID values.</exception>
+        public static List<CommonStdData> MakeCommonStdList(List<AnalysisFileBean> analysisFiles, List<MoleculeMsReference> iStdList) {
+            var commonStdList = new List<CommonStdData>();
+            var tmpStdList = iStdList.Where(x => x.IsTargetMolecule).OrderBy(x => x.ChromXs.RT.Value);
+            foreach (var std in tmpStdList) {
+                commonStdList.Add(new CommonStdData(std));
+            }
+            ValidateUniqueScanIds(commonStdList);
+            for (var i = 0; i < analysisFiles.Count; i++) {
+                var standardLookup = CreateStandardPairLookup(analysisFiles[i].RetentionTimeCorrectionBean.StandardList);
+                for (var j = 0; j < commonStdList.Count; j++) {
+                    if (standardLookup.TryGetValue(commonStdList[j].Reference.ScanID, out var std)) {
+                        commonStdList[j].SetStandard(std);
+                    }
+                    else {
+                        commonStdList[j].SetStandard(CreateEmptyStandardPair(commonStdList[j].Reference));
+                    }
+                }
+            }
+            foreach (var d in commonStdList) {
+                d.CalcAverageRetentionTime();
+            }
+            return commonStdList;
+        }
+
+        /// <summary>
+        /// Builds a ScanID lookup for a sample's standard pairs.
+        /// </summary>
+        /// <param name="standardList">The sample standard pairs to index.</param>
+        /// <returns>A dictionary keyed by ScanID.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when duplicate ScanID values are encountered.</exception>
+        private static Dictionary<int, StandardPair> CreateStandardPairLookup(IEnumerable<StandardPair> standardList) {
+            var lookup = new Dictionary<int, StandardPair>();
+            foreach (var std in standardList ?? Enumerable.Empty<StandardPair>()) {
+                if (lookup.ContainsKey(std.Reference.ScanID)) {
+                    throw new InvalidOperationException($"Duplicate ScanID found in sample standard list: {std.Reference.ScanID}.");
+                }
+                lookup[std.Reference.ScanID] = std;
+            }
+            return lookup;
+        }
+
+        /// <summary>
+        /// Creates a zero-valued placeholder standard pair for a missing sample standard entry.
+        /// </summary>
+        /// <param name="reference">The reference standard for the placeholder row.</param>
+        /// <returns>A standard pair with zero RT and zero peak information.</returns>
+        private static StandardPair CreateEmptyStandardPair(MoleculeMsReference reference) {
+            return new StandardPair {
+                Reference = reference,
+                SamplePeakAreaBean = new ChromatogramPeakFeature {
+                    PrecursorMz = reference.PrecursorMz,
+                    ChromXs = new ChromXs(0, ChromXType.RT, ChromXUnit.Min),
+                },
+                Chromatogram = new List<ChromatogramPeak>(),
+            };
+        }
+
+        /// <summary>
+        /// Ensures that the target summary rows are uniquely keyed by ScanID.
+        /// </summary>
+        /// <param name="commonStdList">The common summary rows to validate.</param>
+        /// <exception cref="InvalidOperationException">Thrown when duplicate ScanID values are encountered.</exception>
+        private static void ValidateUniqueScanIds(IEnumerable<CommonStdData> commonStdList) {
+            var seen = new HashSet<int>();
+            foreach (var commonStd in commonStdList ?? Enumerable.Empty<CommonStdData>()) {
+                if (!seen.Add(commonStd.Reference.ScanID)) {
+                    throw new InvalidOperationException($"Duplicate ScanID found in common standard list: {commonStd.Reference.ScanID}.");
+                }
+            }
+        }
+    }
+}

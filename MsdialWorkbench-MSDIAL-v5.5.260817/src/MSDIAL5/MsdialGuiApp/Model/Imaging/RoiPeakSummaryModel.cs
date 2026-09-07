@@ -1,0 +1,49 @@
+﻿using CompMs.App.Msdial.Model.DataObj;
+using CompMs.CommonMVVM;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace CompMs.App.Msdial.Model.Imaging
+{
+    internal sealed class RoiPeakSummaryModel : BindableBase
+    {
+        private readonly RoiAccess _access;
+        private readonly RawIntensityOnPixelsLoader _intensitiesLoader;
+        private readonly int _peakIndex;
+
+        public RoiPeakSummaryModel(RoiAccess access, ChromatogramPeakFeatureModel peak, RawIntensityOnPixelsLoader intensitiesLoader, int peakIndex) {
+            _access = access ?? throw new System.ArgumentNullException(nameof(access));
+            Peak = peak;
+            _intensitiesLoader = intensitiesLoader;
+            _peakIndex = peakIndex;
+        }
+
+        public ChromatogramPeakFeatureModel Peak { get; }
+
+        public double? AccumulatedIntensity {
+            get => _accumulatedIntensity;
+            private set => SetProperty(ref _accumulatedIntensity, value);
+        }
+        private double? _accumulatedIntensity = null;
+
+        public bool IsAccumulatedIntensityLoading {
+            get => _isAccumulatedIntensityLoading;
+            private set => SetProperty(ref _isAccumulatedIntensityLoading, value);
+        }
+        private bool _isAccumulatedIntensityLoading = false;
+
+        public async Task EnsureCalculateAccumulatedIntensityAsync() {
+            if (_accumulatedIntensity is not null || _isAccumulatedIntensityLoading) {
+                return;
+            }
+            IsAccumulatedIntensityLoading = true;
+            try {
+                var pixels = await _intensitiesLoader.LoadAsync(_peakIndex).ConfigureAwait(false);
+                AccumulatedIntensity = _access.Access(pixels.PixelPeakFeaturesList[0].IntensityArray).Average();
+            }
+            finally {
+                IsAccumulatedIntensityLoading = false;
+            }
+        }
+    }
+}

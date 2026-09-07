@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net48</TargetFrameworks>
+    <AssemblyName>MsdialGcmsProcess</AssemblyName>
+    <Configurations>Debug;Release;Debug vendor unsupported;Release vendor unsupported</Configurations>
+  </PropertyGroup>
+
+  <ItemGroup>
+	  <PackageReference Include="RawDataHandler" Version="1.0.*" Condition="'$(Configuration)'=='Release'" />
+	  <PackageReference Include="RawDataHandler" Version="1.2.9013.327" Condition="'$(Configuration)'=='Debug'"/>
+	  <PackageReference Include="RawDataHandler-Vendor-UnSupported" Version="1.0.*-*" Condition="'$(Configuration)'=='Debug vendor unsupported'" />
+	  <PackageReference Include="RawDataHandler-Vendor-UnSupported" Version="1.0.*" Condition="'$(Configuration)'=='Release vendor unsupported'" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Common\CommonStandard\CommonStandard.csproj" />
+    <ProjectReference Include="..\DatabaseStandard\DatabaseStandard.csproj" />
+    <ProjectReference Include="..\DataProcessingStandard\DataProcessingStandard.csproj" />
+    <ProjectReference Include="..\MathematicsStandard\MathematicsStandard.csproj" />
+    <ProjectReference Include="..\MolecularFormulaFinderStandard\MolecularFormulaFinderStandard.csproj" />
+    <ProjectReference Include="..\MsdialLcmsProcessStandard\MsdialLcmsProcessStandard.csproj" />
+    <ProjectReference Include="..\..\Common\spectra-hash\splash\Splash.csproj" />
+  </ItemGroup>
+
+</Project>
