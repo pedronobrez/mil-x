@@ -58,6 +58,36 @@ internal static class ClearcoreReader
         field.SetValue(null, false);
     }
 
+
+    private static bool _vendorCentroidWarned;
+
+    /// <summary>
+    /// SCIEX's spectral peak finder for one cycle. PeakClass carries the fitted apex (apexX/apexY)
+    /// as well as the peak's area and half-height bounds; MS-DIAL only wants m/z and intensity.
+    /// Returns null when the SDK cannot run it, so the caller falls back to local-maximum centroids.
+    /// </summary>
+    private static RawPeakElement[]? TryVendorCentroids(MSExperiment exp, int cycle, double minIntensity, Action<string> log) {
+        try {
+            var found = exp.GetPeakArray(cycle);
+            if (found is null || found.Length == 0) return null;
+            var peaks = new List<RawPeakElement>(found.Length);
+            foreach (var p in found) {
+                if (p is null || p.apexY <= minIntensity || p.apexX <= 0) continue;
+                peaks.Add(new RawPeakElement { Mz = p.apexX, Intensity = p.apexY });
+            }
+            if (peaks.Count == 0) return null;
+            peaks.Sort((a, b) => a.Mz.CompareTo(b.Mz));
+            return peaks.ToArray();
+        }
+        catch (Exception ex) {
+            if (!_vendorCentroidWarned) {
+                _vendorCentroidWarned = true;
+                log($"[wiff] the SCIEX spectral peak finder is unavailable ({ex.GetType().Name}: {ex.Message}); falling back to MS-DIAL's local-maximum centroiding");
+            }
+            return null;
+        }
+    }
+
     public static IReadOnlyList<string> ListSamples(string path) {
         EnsureInitialised();
         var provider = new AnalystWiffDataProvider(OpenFileMode.ReadOnlyShared);
@@ -73,7 +103,15 @@ internal static class ClearcoreReader
     public static RawMeasurement Read(string path, int fileId, RawReadOptions options) {
         EnsureInitialised();
         var log = options.Log ?? (_ => { });
-        var centroid = !options.GetProfileData && Environment.GetEnvironmentVariable("OPENDIAL_WIFF_CENTROID") != "0";
+        // How profile spectra become centroids. "sciex" (the default) uses the vendor's own spectral
+        // peak finder, the one Analyst and the closed MS-DIAL reader use: it fits each profile peak,
+        // so its apex sits about a quarter above the highest sampled point and its peak list is
+        // cleaner. "msdial" applies MS-DIAL's generic local-maximum method instead, and "0" keeps the
+        // profile data. Heights feed the minimum-peak-height cut-off, so this choice moves results.
+        var centroidMode = (Environment.GetEnvironmentVariable("OPENDIAL_WIFF_CENTROID") ?? "sciex").Trim().ToLowerInvariant();
+        if (options.GetProfileData) centroidMode = "0";
+        var centroid = centroidMode is not ("0" or "off" or "false" or "profile");
+        var vendorCentroid = centroid && centroidMode is not ("msdial" or "localmax");
         var minIntensity = double.TryParse(Environment.GetEnvironmentVariable("OPENDIAL_WIFF_MIN_INTENSITY"), NumberStyles.Float, CultureInfo.InvariantCulture, out var mi) ? mi : 0.0;
         var full = Path.GetFullPath(path);
         var provider = new AnalystWiffDataProvider(OpenFileMode.ReadOnlyShared);
@@ -109,10 +147,18 @@ internal static class ClearcoreReader
                     _ => ScanPolarity.Undefined,
                 };
                 var isMrmLike = details.ExperimentType == ExperimentType.MRM || details.ExperimentType == ExperimentType.SIM;
-                // fixed precursor / isolation window of the experiment (SWATH, product ion scans)
+                // In IDA — SCIEX's DDA — experiment 0 is the survey (TOF MS) and every later experiment
+                // is a dependent product-ion scan whose precursor is chosen per cycle from the n most
+                // intense survey ions. Those experiments still carry a FragmentBasedScanMassRange, but
+                // its FixedMasses is only the placeholder written by the acquisition method: the same
+                // value in every dependent experiment. Reading it would give every channel one identical
+                // precursor. The precursor that was actually isolated is on each spectrum (ParentMZ).
+                var isIdaDependent = details.IDAType is MSExperimentInfo.IDAExperimentType.Dependent
+                                                     or MSExperimentInfo.IDAExperimentType.Confirmation;
+                // fixed precursor / isolation window of the experiment (SWATH, fixed product ion scans)
                 double fixedPrecursor = 0, fixedWindow = 0;
                 if (details.MassRangeInfo is { Length: > 0 } && details.MassRangeInfo[0] is FragmentBasedScanMassRange fr) {
-                    if (fr.FixedMasses is { Length: > 0 }) fixedPrecursor = fr.FixedMasses[0];
+                    if (!isIdaDependent && fr.FixedMasses is { Length: > 0 }) fixedPrecursor = fr.FixedMasses[0];
                     fixedWindow = fr.IsolationWindow;
                 }
                 var scans = details.NumberOfScans;
@@ -133,28 +179,42 @@ internal static class ClearcoreReader
                     if (msLevel > 1 && !isSwath && n <= 0) {
                         continue; // untriggered IDA dependent scan
                     }
-                    double[] xs, ys;
-                    if (n > 0) {
-                        if (centroid && !info.CentroidMode) {
-                            // restore the zero points SCIEX strips from profile data so that peaks are bounded
-                            try { exp.AddZeros(spectrum, 1); } catch { }
-                        }
-                        xs = spectrum.GetActualXValues();
-                        ys = spectrum.GetActualYValues();
+                    // a dependent scan with no precursor recorded was never triggered either
+                    if (isIdaDependent && info.ParentMZ <= 0) {
+                        continue;
+                    }
+                    RawPeakElement[] peaks;
+                    var representation = info.CentroidMode ? SpectrumRepresentation.Centroid : SpectrumRepresentation.Profile;
+                    var vendorPeaks = n > 0 && vendorCentroid && !info.CentroidMode && !isMrmLike
+                        ? TryVendorCentroids(exp, cycle, minIntensity, log)
+                        : null;
+                    if (vendorPeaks is not null) {
+                        peaks = vendorPeaks;
+                        representation = SpectrumRepresentation.Centroid;
                     }
                     else {
-                        xs = Array.Empty<double>();
-                        ys = Array.Empty<double>();
-                    }
-                    var peaks = new RawPeakElement[xs.Length];
-                    for (var i = 0; i < xs.Length; i++) {
-                        peaks[i].Mz = xs[i];
-                        peaks[i].Intensity = ys[i];
-                    }
-                    var representation = info.CentroidMode ? SpectrumRepresentation.Centroid : SpectrumRepresentation.Profile;
-                    if (centroid && !info.CentroidMode && peaks.Length > 0 && !isMrmLike) {
-                        peaks = SpectralCentroiding.CentroidByLocalMaximumMethod(peaks, absThreshold: minIntensity);
-                        representation = SpectrumRepresentation.Centroid;
+                        double[] xs, ys;
+                        if (n > 0) {
+                            if (centroid && !info.CentroidMode) {
+                                // restore the zero points SCIEX strips from profile data so that peaks are bounded
+                                try { exp.AddZeros(spectrum, 1); } catch { }
+                            }
+                            xs = spectrum.GetActualXValues();
+                            ys = spectrum.GetActualYValues();
+                        }
+                        else {
+                            xs = Array.Empty<double>();
+                            ys = Array.Empty<double>();
+                        }
+                        peaks = new RawPeakElement[xs.Length];
+                        for (var i = 0; i < xs.Length; i++) {
+                            peaks[i].Mz = xs[i];
+                            peaks[i].Intensity = ys[i];
+                        }
+                        if (centroid && !info.CentroidMode && peaks.Length > 0 && !isMrmLike) {
+                            peaks = SpectralCentroiding.CentroidByLocalMaximumMethod(peaks, absThreshold: minIntensity);
+                            representation = SpectrumRepresentation.Centroid;
+                        }
                     }
                     var rt = exp.GetRTFromExperimentCycle(cycle);
                     var s = new RawSpectrum {

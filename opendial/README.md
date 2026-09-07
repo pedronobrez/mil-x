@@ -55,6 +55,7 @@ A TripleTOF `.wiff` opened natively in the Explorer:
 ![wiff](docs/images/explorer-wiff.png)
 
 Documentation: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (reverse-engineering report),
+[docs/SCIEX-IDA.md](docs/SCIEX-IDA.md) (how SCIEX IDA is read, and how a run compares with MS-DIAL),
 [docs/PORTING.md](docs/PORTING.md) (status, vendor formats, limitations),
 [docs/OPENQUANT-ALIGNMENT.md](docs/OPENQUANT-ALIGNMENT.md) (what is shared with OpenQuant),
 [docs/adr/](docs/adr/) (decisions), [upstream-patches/](upstream-patches/README.md)

@@ -21,3 +21,5 @@ opendial/testdata/**/*_tags.xml
 opendial/testdata/**/*.rtc
 opendial/testdata/**/*.mzML
 opendial/vendor/
+# real acquisitions and libraries dropped in for validation: large and not ours to redistribute
+/testdata/

@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    WiffProbe: prints the acquisition structure of a SCIEX .wiff straight from the Clearcore2 API,
+    without going through OpenDIAL's reader. Used to work out how an experiment declares its
+    precursor: a fixed one (SWATH, product-ion scan) or one that changes every cycle (IDA).
+
+      run it with dotnet run from tools/WiffProbe, passing the .wiff and a cycle count
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>OpenDIAL.Tools.WiffProbe</RootNamespace>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <SciexAssemblyDir Condition="'$(SciexAssemblyDir)' == ''">$(MSBuildThisFileDirectory)../../vendor/sciex</SciexAssemblyDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../MsdialWorkbench-MSDIAL-v5.5.260817/src/Common/CommonStandard/CommonStandard.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- the Clearcore2 spectral peak finder reaches for the .NET Framework configuration stack -->
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.1" />
+    <PackageReference Include="System.Diagnostics.EventLog" Version="8.0.1" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+    <PackageReference Include="System.Security.Permissions" Version="8.0.0" />
+    <PackageReference Include="System.Windows.Extensions" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Clearcore2.Data"><HintPath>$(SciexAssemblyDir)/Clearcore2.Data.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Clearcore2.Data.AnalystDataProvider"><HintPath>$(SciexAssemblyDir)/Clearcore2.Data.AnalystDataProvider.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Clearcore2.Data.CommonInterfaces"><HintPath>$(SciexAssemblyDir)/Clearcore2.Data.CommonInterfaces.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Clearcore2.Utility"><HintPath>$(SciexAssemblyDir)/Clearcore2.Utility.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Clearcore2.RawXYProcessing"><HintPath>$(SciexAssemblyDir)/Clearcore2.RawXYProcessing.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Sciex.Data.XYData"><HintPath>$(SciexAssemblyDir)/Sciex.Data.XYData.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="$(SciexAssemblyDir)/*.dll" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

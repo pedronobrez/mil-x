@@ -63,18 +63,6 @@ namespace CompMs.App.MsdialConsole.Process
                 return false;
             }
 
-            // OpenDIAL: files imported from a folder keep AcquisitionType.None, because only the
-            // file-list importer fills it in. The MS/MS of a peak is then collected with whichever
-            // rule None happens to fall into, so a run over a folder and the same run over a file
-            // list disagree. Give every file the project's acquisition type instead.
-            foreach (var file in analysisFiles) {
-                if (file.AcquisitionType == AcquisitionType.None) {
-                    file.AcquisitionType = param.ProjectParam.AcquisitionType == AcquisitionType.None
-                        ? AcquisitionType.DDA
-                        : param.ProjectParam.AcquisitionType;
-                }
-            }
-
             var dt = DateTime.Now;
             var projectFileName = $"Project-{dt:yyMMddhhmm}.mddata";
             var inputfolder = Directory.Exists(input) ? input : Path.GetDirectoryName(input);

@@ -69,4 +69,38 @@ public class SciexWiffPluginTests
         Assert.Equal(Units.Minute, m.SpectrumList[0].ScanStartTimeUnit);
         Assert.True(SciexWiffReaderPlugin.ListSamples(wiff).Count >= 1);
     }
+
+    /// <summary>
+    /// SCIEX calls DDA "IDA": experiment 0 is the TOF MS survey and experiments 1..n are dependent
+    /// product-ion slots whose precursor is picked per cycle from the most intense survey ions. The
+    /// acquisition method still writes a placeholder FixedMasses into every dependent experiment —
+    /// the same value in all of them — so a reader that trusts it reports one identical precursor for
+    /// every channel. The precursors must instead track the spectra.
+    /// </summary>
+    [Fact]
+    public void Ida_dependent_experiments_carry_a_precursor_per_scan() {
+        var wiff = TestWiff;
+        if (wiff == null || !SciexWiffReaderPlugin.IsSdkAvailable) {
+            Console.WriteLine("skipped: set OPENDIAL_TEST_WIFF and build with the SCIEX assemblies");
+            return;
+        }
+        RawReaderPlugins.Register(new SciexWiffReaderPlugin());
+        using var access = new RawDataAccess(wiff, 0, false, false, true);
+        var m = access.GetMeasurement()!;
+        var ms2 = m.SpectrumList.Where(s => s.MsLevel > 1 && s.Precursor is not null).ToList();
+        if (ms2.Count < 50) {
+            Console.WriteLine("skipped: not an IDA acquisition");
+            return;
+        }
+        var experiments = ms2.Select(s => s.ExperimentID).Distinct().Count();
+        var precursors = ms2.Select(s => Math.Round(s.Precursor.SelectedIonMz, 3)).Distinct().Count();
+        // one precursor per experiment would be the placeholder bug; IDA gives far more
+        Assert.True(precursors > experiments * 4,
+            $"expected many precursors across {experiments} experiments, got {precursors}");
+        // and within a single dependent experiment the precursor must change from cycle to cycle
+        var oneSlot = ms2.Where(s => s.ExperimentID == ms2[0].ExperimentID).ToList();
+        Assert.True(oneSlot.Select(s => Math.Round(s.Precursor.SelectedIonMz, 3)).Distinct().Count() > 1,
+            "an IDA dependent experiment reported a single precursor for all of its cycles");
+        Assert.All(ms2, s => Assert.True(s.Precursor.SelectedIonMz > 0));
+    }
 }

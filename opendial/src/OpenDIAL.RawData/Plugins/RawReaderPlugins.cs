@@ -76,7 +76,42 @@ public static class RawReaderPlugins
         if (Directory.Exists(local)) yield return local;
     }
 
+    private static readonly List<string> ProbePaths = new();
+    private static bool _resolverInstalled;
+
+    /// <summary>
+    /// A plugin ships its own dependencies next to it, and they are not in the application's
+    /// deps.json, so the default resolution never finds them: the SCIEX reader, for instance, pulls
+    /// the vendor SDK and the .NET Framework configuration shims it needs. Probe the plugin folders
+    /// by simple name whenever the runtime cannot resolve an assembly.
+    /// </summary>
+    private static void InstallProbe(string dir) {
+        lock (ProbePaths) {
+            if (!ProbePaths.Contains(dir)) ProbePaths.Add(dir);
+            if (_resolverInstalled) return;
+            _resolverInstalled = true;
+            AppDomain.CurrentDomain.AssemblyResolve += (_, args) => {
+                var simpleName = new AssemblyName(args.Name).Name;
+                if (string.IsNullOrEmpty(simpleName)) return null;
+                string[] dirs;
+                lock (ProbePaths) dirs = ProbePaths.ToArray();
+                foreach (var probe in dirs) {
+                    foreach (var candidate in Directory.GetFiles(probe, simpleName + ".dll", SearchOption.AllDirectories)) {
+                        try {
+                            return Assembly.LoadFrom(candidate);
+                        }
+                        catch {
+                            // keep looking
+                        }
+                    }
+                }
+                return null;
+            };
+        }
+    }
+
     private static IEnumerable<IRawFileReaderPlugin> LoadFrom(string dir) {
+        InstallProbe(dir);
         var result = new List<IRawFileReaderPlugin>();
         foreach (var dll in Directory.GetFiles(dir, "*.dll", SearchOption.AllDirectories)) {
             Assembly asm;
