@@ -23,6 +23,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Theme.axaml/AppStyles.axaml are picked up by Avalonia's default glob; the icon is not. -->
+    <AvaloniaResource Include="Assets/icon.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.3.13" />
     <PackageReference Include="Avalonia.Desktop" Version="11.3.13" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.13" />

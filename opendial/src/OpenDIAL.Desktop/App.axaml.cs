@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using OpenDIAL.Desktop.Services;
 using OpenDIAL.Desktop.ViewModels;
@@ -37,6 +38,24 @@ public partial class App : Application
             var vm = new MainWindowViewModel(settings, dialogs, messages);
             window.DataContext = vm;
             desktop.MainWindow = window;
+
+            // Documents opened from Finder arrive either as launch arguments (cold start) or as a
+            // file-activation event (the application is already running); both end in OpenAnyAsync.
+            var launchPath = (desktop.Args ?? Array.Empty<string>())
+                .FirstOrDefault(a => !a.StartsWith("-", StringComparison.Ordinal) && (File.Exists(a) || Directory.Exists(a)));
+            if (launchPath is not null)
+            {
+                window.Opened += async (_, _) => await vm.OpenAnyAsync(launchPath);
+            }
+            if (TryGetFeature(typeof(IActivatableLifetime)) is IActivatableLifetime activatable)
+            {
+                activatable.Activated += async (_, e) =>
+                {
+                    if (e is not FileActivatedEventArgs activation) return;
+                    var path = activation.Files.Select(f => f.TryGetLocalPath()).FirstOrDefault(p => !string.IsNullOrEmpty(p));
+                    if (path is not null) await vm.OpenAnyAsync(path);
+                };
+            }
 
             // OPENDIAL_OPEN=<.odproj | .mdproject | results folder> opens it at startup (also used by smoke tests)
             var autoOpen = Environment.GetEnvironmentVariable("OPENDIAL_OPEN");

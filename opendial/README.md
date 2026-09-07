@@ -25,7 +25,21 @@ bash opendial/scripts/setup-macos.sh     # .NET 8 SDK (no sudo) + NuGet source
 bash opendial/scripts/build-cli.sh       # -> opendial/dist/opendial-cli-osx-arm64/opendial-cli
 bash opendial/scripts/test.sh            # unit tests + end-to-end synthetic run
 dotnet run --project opendial/src/OpenDIAL.Desktop -c Release -p:UseOpenRawData=true   # GUI (or scripts/build-gui.sh)
+bash opendial/scripts/make-app-bundle.sh # -> opendial/dist/OpenDIAL.app (double-clickable, ad-hoc signed)
 ```
+
+## Installing the desktop application on macOS
+
+`scripts/make-app-bundle.sh` publishes the application, draws the icon (`tools/make_icon.py`) and
+assembles `dist/OpenDIAL.app` — self-contained, with the SCIEX plugin, ad-hoc signed so Apple
+Silicon will run it. Drag it to `/Applications`. The bundle is not notarised, so the very first
+launch has to be right-click ▸ **Open** ▸ **Open**; every launch after that is a normal double-click.
+
+Finder hands documents to the application, on a cold start and while it is already running:
+`.odproj` and `.mdproject` projects open as projects, `.oqproj` imports an OpenQuant batch, and a raw
+file (`.mzML`, `.wiff`, `.raw`, …) opens straight in the Explorer. Agilent/Bruker `.d` folders are
+supported, but Finder cannot bind a folder to an application, so open those from **File ▸ Add folder…**.
+
 
 ![explorer](docs/images/explorer.png)
 

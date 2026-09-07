@@ -6,6 +6,7 @@
         x:Class="OpenDIAL.Desktop.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="{Binding Title}"
+        Icon="avares://OpenDIAL/Assets/icon.png"
         Width="1650" Height="1000" MinWidth="1100" MinHeight="680"
         FontSize="13"
         Background="{DynamicResource OdCanvas}"

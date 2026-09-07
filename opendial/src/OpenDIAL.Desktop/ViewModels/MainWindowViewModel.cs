@@ -184,6 +184,18 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         await OpenAsync(path);
     }
 
+    /// <summary>
+    /// Opens whatever the path happens to be, choosing by extension: an OpenQuant batch is imported,
+    /// a raw file or a folder of raw files goes to the Explorer, anything else is treated as a project
+    /// or a results folder. This is what Finder hands us when a document is dropped on the application.
+    /// </summary>
+    public Task OpenAnyAsync(string path)
+    {
+        if (OpenQuantProject.IsProject(path)) return ImportOpenQuantBatchAsync(path);
+        if (FileFormats.IsSupported(path)) return OpenRawAsync(path);
+        return OpenAsync(path);
+    }
+
     /// <summary>Opens an OpenDIAL project (.odproj), an MS-DIAL .mdproject or a results folder.</summary>
     public async Task OpenAsync(string path)
     {
