@@ -20,6 +20,11 @@ time and then by MS level lands the survey scan of a cycle ahead of that cycle's
 which is the order MS-DIAL expects. Of the 11 616 dependent slots in a file, about 9 100 are
 actually triggered; the rest hold no data points and no precursor.
 
+The Explorer names the channels from the data, so a correctly read IDA file shows one survey
+channel and 24 dependent slots whose scan counts fall off as the later slots trigger less often:
+
+![IDA channels in the Explorer](images/explorer-ida.png)
+
 ## 1. The precursor of a dependent experiment is per scan, not per experiment
 
 Each dependent experiment still declares a `FragmentBasedScanMassRange` with `FixedMasses` and an
