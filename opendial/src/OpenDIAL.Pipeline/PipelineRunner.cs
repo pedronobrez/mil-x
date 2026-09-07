@@ -112,7 +112,12 @@ public sealed class PipelineRunner
         {
             ct.ThrowIfCancellationRequested();
             var input = inputs[i];
-            if (conversion.IsVendorFormat(input.Path))
+            if (WiffSupport.CanReadNatively(input.Path))
+            {
+                reporter.Log($"[reader] {input.Name}: read natively by a raw-file plugin, no conversion needed.");
+                resolvedPaths.Add(input.Path);
+            }
+            else if (conversion.IsVendorFormat(input.Path))
             {
                 reporter.Stage("Converting", input.Name, 100.0 * i / inputs.Count, 5.0 * i / inputs.Count, "Converting vendor format to mzML");
                 resolvedPaths.Add(await conversion.EnsureMzmlAsync(input.Path, logProgress, ct).ConfigureAwait(false));

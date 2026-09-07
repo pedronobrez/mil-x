@@ -43,6 +43,7 @@ public partial class MainWindow : Window
         };
         _vm.ShowSettings = async () => await new SettingsWindow(_vm.Settings).ShowDialog(this);
         _vm.ShowAbout = async () => await new AboutWindow().ShowDialog(this);
+        _vm.ShowOpenQuantExport = async () => await new OpenQuantExportWindow().ShowDialog<OpenDIAL.Interop.OpenQuant.OpenQuantExportOptions?>(this);
         _vm.LogLines.CollectionChanged += OnLogChanged;
     }
 

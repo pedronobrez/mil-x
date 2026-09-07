@@ -8,6 +8,8 @@ using CompMs.Common.Components;
 using CompMs.MsdialCore.DataObj;
 using OpenDIAL.Desktop.Controls;
 using OpenDIAL.Desktop.Services;
+using OpenDIAL.Interop.OpenQuant;
+using CompMs.MsdialCore.MSDec;
 using OpenDIAL.Pipeline.Model;
 using OpenDIAL.Pipeline.Results;
 
@@ -510,6 +512,47 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     private void OpenOutputFolder()
     {
         if (_session is not null) ShellService.Open(_session.Folder);
+    }
+
+    /// <summary>The spots currently listed (after the filter), in list order.</summary>
+    public IReadOnlyList<AlignmentSpotRow> ListedSpots => SpotItems.Where(i => i.Spot is not null).Select(i => i.Spot!).ToList();
+
+    /// <summary>
+    /// Writes the listed spots as an OpenQuant component CSV. The representative deconvoluted MS/MS of each spot
+    /// (the same one the Spectrum tab shows) supplies the fragment column. Returns the number of components written.
+    /// </summary>
+    public async Task<int> ExportOpenQuantAsync(string path, OpenQuantExportOptions options)
+    {
+        var spots = ListedSpots;
+        var alignmentFile = _session?.AlignmentFile;
+        return await Task.Run(() =>
+        {
+            var props = new List<AlignmentSpotProperty>(spots.Count);
+            var decs = new List<MSDecResult>(spots.Count);
+            foreach (var row in spots)
+            {
+                var prop = row.Spot ?? new AlignmentSpotProperty
+                {
+                    MasterAlignmentID = row.Id,
+                    AlignmentID = row.Id,
+                    Name = row.Name,
+                    MassCenter = row.Mz,
+                    TimesCenter = new CompMs.Common.Components.ChromXs(row.Rt),
+                    Ontology = row.Ontology,
+                };
+                props.Add(prop);
+                MSDecResult? dec = null;
+                if (options.UseFragment && alignmentFile is not null)
+                {
+                    try { dec = ResultLoader.LoadAlignmentMsDec(alignmentFile, row.Id); }
+                    catch { dec = null; }
+                }
+                decs.Add(dec!);
+            }
+            var components = OpenQuantComponentCsv.FromAlignmentSpots(props, decs, options);
+            OpenQuantComponentCsv.Write(path, components);
+            return components.Count;
+        });
     }
 
     /// <summary>Writes a height (and area) matrix of all spots × samples as TSV.</summary>

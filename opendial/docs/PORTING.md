@@ -11,7 +11,7 @@
 | Thermo `.raw`, Agilent/Bruker `.d`, Sciex `.wiff2`, Shimadzu `.lcd` | **works through msconvert** (native or Docker) | same | conversion is automatic and cached; see §2 |
 | `.abf` (Reifycs) | no | no | Windows-only native library; convert to mzML |
 | `.ibf` / `.cdf` / `.imzML` | with the legacy dll | with the legacy dll (+ libnetcdf) | drop `RawDataHandler-Vendor-UnSupported.dll` into `plugins/legacy` |
-| Desktop GUI | Avalonia app in `src/OpenDIAL.Desktop` (new, MVP) | same | the WPF GUI is not portable |
+| Desktop GUI | Avalonia app in `src/OpenDIAL.Desktop` (Explorer / Analytics / Method / Samples, OpenQuant's look) | same | the WPF GUI is not portable |
 | EIEIO lipid SQLite DB (EAD lipidomics) | **works** (Microsoft.Data.Sqlite) | works | upstream `EadLipidDatabaseTests` pass on Apple Silicon |
 | InChIKey generation (NCDK, libinchi) | needs `libinchi.dylib` next to the app | needs `libinchi.so` | `brew install inchi` |
 

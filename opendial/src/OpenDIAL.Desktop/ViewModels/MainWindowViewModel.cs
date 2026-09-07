@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CompMs.Common.Enum;
 using OpenDIAL.Desktop.Services;
+using OpenDIAL.Interop.OpenQuant;
 using OpenDIAL.Pipeline;
 using OpenDIAL.Pipeline.Model;
 using OpenDIAL.Pipeline.Project;
@@ -76,6 +77,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     public Func<Task<OpenDialProject?>>? ShowNewProjectWizard { get; set; }
     public Func<Task>? ShowSettings { get; set; }
     public Func<Task>? ShowAbout { get; set; }
+    /// <summary>Set by the window: shows the OpenQuant export options and returns them (or null when cancelled).</summary>
+    public Func<Task<OpenQuantExportOptions?>>? ShowOpenQuantExport { get; set; }
 
     private void RefreshRecent()
     {
@@ -228,7 +231,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
                 var rows = new List<InputFileViewModel>();
                 foreach (var f in opened.AnalysisFiles.OrderBy(f => f.AnalysisFileAnalyticalOrder))
                 {
-                    var row = new InputFileViewModel(f.AnalysisFilePath, f.AnalysisFileAnalyticalOrder, Method.Parameters.AcquisitionType)
+                    var row = new InputFileViewModel(f.AnalysisFilePath, f.AnalysisFileAnalyticalOrder, Method.Parameters.AcquisitionType, WiffSupport.InferSampleIndex(f.AnalysisFilePath), f.AnalysisFileName)
                     {
                         Name = f.AnalysisFileName,
                         Class = f.AnalysisFileClass ?? "1",
@@ -267,6 +270,151 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         {
             _loading = false;
             IsDirty = false;
+        }
+    }
+
+    /// <summary>
+    /// Adds raw files (one path, or every raw file of a folder) to the batch without any results and opens the
+    /// first one in the Explorer. Used by the OPENDIAL_OPEN_RAW hook and by drag-and-drop style quick looks.
+    /// </summary>
+    public async Task OpenRawAsync(string pathOrFolder)
+    {
+        pathOrFolder = Path.GetFullPath(pathOrFolder);
+        try
+        {
+            var paths = Directory.Exists(pathOrFolder) && !FileFormats.IsSupported(pathOrFolder)
+                ? FileFormats.EnumerateRawFiles(pathOrFolder).ToList()
+                : new List<string> { pathOrFolder };
+            if (paths.Count == 0)
+            {
+                Status = $"No supported raw files in {pathOrFolder}.";
+                return;
+            }
+            if (!await ConfirmDiscardAsync("Open the raw files anyway?")) return;
+            ResetSession();
+            _loading = true;
+            var added = Samples.AddPaths(paths);
+            ProjectName = Path.GetFileNameWithoutExtension(paths[0].TrimEnd(Path.DirectorySeparatorChar));
+            Explorer.Load(Samples.Samples.ToList(), null);
+            SelectedWorkspace = 0;
+            Status = added == 0
+                ? Samples.Message
+                : $"Opened {added} sample(s) from {(paths.Count == 1 ? paths[0] : pathOrFolder)} — not processed; the Explorer shows the raw channels." + (string.IsNullOrEmpty(Samples.Message) ? string.Empty : " " + Samples.Message);
+        }
+        catch (Exception ex)
+        {
+            Status = "Could not open raw data: " + ex.Message;
+            await _messages.ShowErrorAsync("Could not open raw data", ex.Message);
+        }
+        finally
+        {
+            _loading = false;
+            IsDirty = Samples.HasSamples;
+        }
+    }
+
+    // ---------------------------------------------------------------- OpenQuant interop
+
+    [RelayCommand]
+    private async Task ImportOpenQuantBatchAsync()
+    {
+        var files = await _dialogs.PickFilesAsync("Import an OpenQuant batch", new[] { "*.oqproj", "*.opvproj" }, allowMultiple: false, Settings.Current.LastProjectFolder);
+        if (files.Count == 0) return;
+        await ImportOpenQuantBatchAsync(files[0]);
+    }
+
+    /// <summary>Adds the samples of an OpenQuant project (.oqproj / .opvproj) to the batch with their type, group, dilution and comment.</summary>
+    public async Task ImportOpenQuantBatchAsync(string path)
+    {
+        try
+        {
+            var contents = await Task.Run(() => OpenQuantProject.Load(path));
+            if (contents.Samples.Count == 0)
+            {
+                await _messages.ShowErrorAsync("Nothing to import", $"{Path.GetFileName(path)} has no samples.");
+                return;
+            }
+            var rows = new List<InputFileViewModel>();
+            var missing = new List<string>();
+            var problems = new List<string>();
+            var baseFolder = Path.GetDirectoryName(path) ?? string.Empty;
+            foreach (var sample in contents.Samples)
+            {
+                var samplePath = string.IsNullOrWhiteSpace(sample.Path) ? string.Empty : Path.IsPathRooted(sample.Path) ? sample.Path : Path.GetFullPath(Path.Combine(baseFolder, sample.Path));
+                if (samplePath.Length == 0) { problems.Add($"{sample.Name}: no path"); continue; }
+                var exists = File.Exists(samplePath) || Directory.Exists(samplePath);
+                if (!exists) missing.Add(samplePath);
+                var rowPath = samplePath;
+                var sampleIndex = sample.SampleIndex;
+                if (exists && WiffSupport.IsWiff(samplePath) && WiffSupport.IsNativeAvailable)
+                {
+                    try
+                    {
+                        var entries = await Task.Run(() => WiffSupport.Expand(samplePath));
+                        var entry = entries.FirstOrDefault(e => e.SampleIndex == sample.SampleIndex) ?? entries.FirstOrDefault();
+                        if (entry is not null) { rowPath = entry.Path; sampleIndex = entry.SampleIndex; }
+                    }
+                    catch (Exception ex)
+                    {
+                        problems.Add($"{Path.GetFileName(samplePath)}: {ex.Message}");
+                    }
+                }
+                var type = sample.ToAnalysisFileType() switch
+                {
+                    CompMs.Common.Enum.AnalysisFileType.Blank => SampleType.Blank,
+                    CompMs.Common.Enum.AnalysisFileType.QC => SampleType.QC,
+                    CompMs.Common.Enum.AnalysisFileType.Standard => SampleType.Standard,
+                    _ => SampleType.Sample,
+                };
+                rows.Add(new InputFileViewModel(rowPath, rows.Count + 1, Samples.DefaultAcquisition, sampleIndex, sample.Name)
+                {
+                    SampleType = type,
+                    Class = sample.ToAnalysisClass(),
+                    Dilution = sample.DilutionFactor > 0 ? sample.DilutionFactor : 1,
+                    Comment = sample.Comment ?? string.Empty,
+                });
+            }
+            var added = Samples.AddRows(rows);
+            Explorer.Load(Samples.Samples.ToList(), Results);
+            if (string.IsNullOrEmpty(ProjectName)) ProjectName = Path.GetFileNameWithoutExtension(path);
+            SelectedWorkspace = 3;
+            IsDirty = true;
+            Status = $"Imported {added} sample(s) from {Path.GetFileName(path)}" + (missing.Count > 0 ? $" — {missing.Count} file(s) not found" : string.Empty);
+            if (missing.Count > 0 || problems.Count > 0)
+            {
+                var text = string.Empty;
+                if (missing.Count > 0) text += "These files do not exist (the rows were added anyway):\n" + string.Join("\n", missing.Take(12)) + (missing.Count > 12 ? $"\n… and {missing.Count - 12} more" : string.Empty);
+                if (problems.Count > 0) text += (text.Length > 0 ? "\n\n" : string.Empty) + string.Join("\n", problems);
+                await _messages.ShowErrorAsync("OpenQuant batch imported with warnings", text);
+            }
+        }
+        catch (Exception ex)
+        {
+            Status = "Import failed: " + ex.Message;
+            await _messages.ShowErrorAsync("Could not import the OpenQuant batch", ex.Message);
+        }
+    }
+
+    [RelayCommand]
+    private async Task ExportOpenQuantAsync()
+    {
+        if (Results is null || !Analytics.HasResults) { Status = "Process the batch (or open results) before exporting to OpenQuant."; return; }
+        if (ShowOpenQuantExport is null) return;
+        var options = await ShowOpenQuantExport();
+        if (options is null) return;
+        var suggested = (string.IsNullOrEmpty(ProjectName) ? "components" : ProjectName + "_components") + ".csv";
+        var path = await _dialogs.SaveFileAsync("Export components to OpenQuant", suggested, "csv", OutputFolder);
+        if (path is null) return;
+        try
+        {
+            Status = "Exporting components…";
+            var count = await Analytics.ExportOpenQuantAsync(path, options);
+            Status = $"{count} components written to {path}";
+        }
+        catch (Exception ex)
+        {
+            Status = "Export failed: " + ex.Message;
+            await _messages.ShowErrorAsync("Export failed", ex.Message);
         }
     }
 

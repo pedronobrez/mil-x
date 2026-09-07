@@ -14,6 +14,8 @@
     <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
     <Configurations>Debug;Release;Debug vendor unsupported;Release vendor unsupported</Configurations>
     <NoWarn>$(NoWarn);CS0618</NoWarn>
+    <!-- output folder of the native SCIEX .wiff plugin; its files are mirrored into <app>/plugins/sciex after the build -->
+    <SciexPluginDir>$(MSBuildThisFileDirectory)../OpenDIAL.Plugins.SciexWiff/bin/$(Configuration)/net8.0/</SciexPluginDir>
   </PropertyGroup>
 
   <PropertyGroup Condition="$(Configuration.StartsWith('Debug'))">
@@ -32,6 +34,22 @@
 
   <ItemGroup>
     <ProjectReference Include="..\OpenDIAL.Pipeline\OpenDIAL.Pipeline.csproj" />
+    <ProjectReference Include="..\OpenDIAL.Interop.OpenQuant\OpenDIAL.Interop.OpenQuant.csproj" />
+    <!-- build the plugin first; it is consumed through OpenDIAL.Pipeline and mirrored into plugins/sciex below -->
+    <ProjectReference Include="..\OpenDIAL.Plugins.SciexWiff\OpenDIAL.Plugins.SciexWiff.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
+
+  <!--
+    Mirror the SCIEX plugin (reader + Clearcore2 SDK + licence text) into <app>/plugins/sciex, where
+    OpenDIAL.RawData discovers raw-file readers. Assemblies the app already ships are excluded so the
+    plugin folder never shadows the app's own copies.
+  -->
+  <Target Name="CopySciexPlugin" AfterTargets="Build" Condition="Exists('$(SciexPluginDir)')">
+    <ItemGroup>
+      <SciexPluginFile Include="$(SciexPluginDir)*.dll;$(SciexPluginDir)*.txt"
+                       Exclude="$(SciexPluginDir)Common.dll;$(SciexPluginDir)OpenDIAL.RawData.dll;$(SciexPluginDir)NCDK.dll;$(SciexPluginDir)MessagePack*.dll;$(SciexPluginDir)Accord*.dll;$(SciexPluginDir)Newtonsoft.Json.dll;$(SciexPluginDir)Splash.dll;$(SciexPluginDir)MathNet.Numerics.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(SciexPluginFile)" DestinationFolder="$(OutDir)plugins/sciex/" SkipUnchangedFiles="true" ContinueOnError="true" />
+  </Target>
 
 </Project>

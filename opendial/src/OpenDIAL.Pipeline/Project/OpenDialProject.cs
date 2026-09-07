@@ -17,6 +17,8 @@ public sealed class ProjectSample
     public double Dilution { get; set; } = 1;
     public string Comment { get; set; } = string.Empty;
     public bool Included { get; set; } = true;
+    /// <summary>0-based sample inside a multi-sample .wiff batch (0 for every other file).</summary>
+    public int SampleIndex { get; set; }
 }
 
 /// <summary>
@@ -87,6 +89,7 @@ public sealed class OpenDialProject
                 Dilution = s.Dilution,
                 Comment = s.Comment,
                 Included = s.Included,
+                SampleIndex = s.SampleIndex,
             }).ToList(),
         };
         var json = JsonSerializer.Serialize(copy, JsonOptions);

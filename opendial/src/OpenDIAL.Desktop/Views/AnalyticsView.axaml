@@ -12,6 +12,7 @@
         <StackPanel Orientation="Horizontal" Spacing="2">
           <Button Classes="tool strong" Content="Process batch" Command="{Binding $parent[Window].DataContext.ProcessBatchCommand}" ToolTip.Tip="Run the pipeline on the current batch (Cmd+R)" />
           <Button Classes="tool" Content="Re-export…" Command="{Binding $parent[Window].DataContext.ReexportCommand}" IsEnabled="{Binding HasResults}" />
+          <Button Classes="tool" Content="Export to OpenQuant…" Command="{Binding $parent[Window].DataContext.ExportOpenQuantCommand}" IsEnabled="{Binding HasResults}" ToolTip.Tip="Write the listed spots as an OpenQuant component CSV (precursor, fragment, RT window)" />
           <Button Classes="tool" Content="Open output folder" Command="{Binding OpenOutputFolderCommand}" IsEnabled="{Binding HasResults}" />
           <Rectangle Classes="vsep" />
           <Button Classes="tool" Content="Magnify" Click="OnMagnifySelected" IsEnabled="{Binding HasResults}" ToolTip.Tip="Enlarge the selected sample's panel (double-click a panel does the same)" />

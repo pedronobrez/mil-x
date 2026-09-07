@@ -162,6 +162,7 @@ public sealed partial class ExplorerViewModel : ViewModelBase
 
     public void Clear()
     {
+        _loading.Clear();
         Tree.Clear();
         ActiveChannels.Clear();
         Series = Array.Empty<TraceSeries>();
@@ -178,6 +179,7 @@ public sealed partial class ExplorerViewModel : ViewModelBase
     {
         _session = session;
         _library = null;
+        _loading.Clear();
         Tree.Clear();
         ActiveChannels.Clear();
         ActiveChannel = null;
@@ -205,7 +207,25 @@ public sealed partial class ExplorerViewModel : ViewModelBase
         }
     }
 
+    private readonly Dictionary<ExplorerNode, Task> _loading = new();
+
+    /// <summary>Loads a sample's channels once (expanding the node and the initial load may both ask); optionally ticks its TIC afterwards.</summary>
     private async Task EnsureLoadedAsync(ExplorerNode sampleNode, bool checkTic)
+    {
+        if (!_loading.TryGetValue(sampleNode, out var task))
+        {
+            task = LoadSampleAsync(sampleNode);
+            _loading[sampleNode] = task;
+        }
+        await task;
+        if (checkTic)
+        {
+            var tic = sampleNode.Children.FirstOrDefault(c => c.IsTicLeaf);
+            if (tic is not null) tic.IsChecked = true;
+        }
+    }
+
+    private async Task LoadSampleAsync(ExplorerNode sampleNode)
     {
         var sample = sampleNode.Sample!;
         if (sample.Raw is not null) return;
@@ -217,7 +237,8 @@ public sealed partial class ExplorerViewModel : ViewModelBase
             sample.Channels = channels;
             sampleNode.Children.Clear();
             var ms1Indices = channels.FirstOrDefault(c => c.Kind == RawChannelKind.Ms1)?.SpectrumIndices ?? Enumerable.Range(0, raw.SpectrumList.Count).ToList();
-            var tic = new ExplorerNode("TIC", "MS1 survey scans") { Sample = sample, Channel = new RawChannel(RawChannelKind.Ms1, "TIC", ms1Indices, 0, 0, 0), IsTicLeaf = true };
+            var experiments = RawExplorer.HasExperiments(raw);
+            var tic = new ExplorerNode("TIC", experiments ? $"all {channels.Count} experiments summed" : "MS1 survey scans") { Sample = sample, Channel = new RawChannel(RawChannelKind.Ms1, "TIC", ms1Indices, 0, 0, 0), IsTicLeaf = true };
             Hook(tic);
             sampleNode.Children.Add(tic);
             foreach (var c in channels)
@@ -228,7 +249,6 @@ public sealed partial class ExplorerViewModel : ViewModelBase
                 ActiveChannels.Add(leaf);
             }
             ActiveChannel ??= sampleNode.Children.Skip(1).FirstOrDefault() ?? tic;
-            if (checkTic) tic.IsChecked = true;
             ApplyFilter();
             await LoadPeaksAsync(sample);
         }
@@ -351,7 +371,7 @@ public sealed partial class ExplorerViewModel : ViewModelBase
             {
                 var raw = leaf.Sample!.Raw!;
                 var ch = leaf.Channel!;
-                var chrom = kind == "BPC" && !leaf.IsTicLeaf ? RawExplorer.Bpc(raw, ch.SpectrumIndices) : RawExplorer.Tic(raw, ch.SpectrumIndices);
+                var chrom = leaf.IsTicLeaf ? RawExplorer.SampleTic(raw, ch.SpectrumIndices) : kind == "BPC" ? RawExplorer.Bpc(raw, ch.SpectrumIndices) : RawExplorer.Tic(raw, ch.SpectrumIndices);
                 var label = leaf.IsTicLeaf ? $"{leaf.Sample.Name} · TIC" : $"{leaf.Sample.Name} · {leaf.Label} ({kind})";
                 list.Add(new TraceSeries(label, Post(chrom.Points, sigma, baseline, normalize)));
             }

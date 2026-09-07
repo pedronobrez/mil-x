@@ -51,6 +51,7 @@
           <Separator />
           <MenuItem Header="Add data files…" Command="{Binding Samples.AddFilesCommand}" />
           <MenuItem Header="Add folder…" Command="{Binding Samples.AddFolderCommand}" />
+          <MenuItem Header="Import OpenQuant batch (.oqproj)…" Command="{Binding ImportOpenQuantBatchCommand}" />
           <MenuItem Header="Close project" Command="{Binding CloseProjectCommand}" />
           <Separator />
           <MenuItem Header="Settings…" Command="{Binding OpenSettingsCommand}" />
@@ -74,6 +75,7 @@
           <MenuItem Header="Cancel run" Command="{Binding CancelRunCommand}" IsEnabled="{Binding Run.IsRunning}" />
           <Separator />
           <MenuItem Header="Re-export alignment matrix…" Command="{Binding ReexportCommand}" />
+          <MenuItem Header="Export to OpenQuant…" Command="{Binding ExportOpenQuantCommand}" IsEnabled="{Binding HasResults}" />
           <MenuItem Header="Open output folder" Command="{Binding OpenOutputFolderCommand}" />
           <MenuItem Header="Choose output folder…" Command="{Binding BrowseOutputCommand}" />
           <Separator />

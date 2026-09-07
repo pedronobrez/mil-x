@@ -79,6 +79,17 @@ public static class ResultLoader
         return dec is null ? null : ToSpectrum(dec, $"{spot.Name} (spot {spot.Id}, m/z {spot.Mz:F4})");
     }
 
+    /// <summary>Representative deconvoluted result (peaks + metadata) of an alignment spot, or null when absent.</summary>
+    public static MSDecResult? LoadAlignmentMsDec(AlignmentFileBean alignmentFile, int spotId)
+    {
+        ArgumentNullException.ThrowIfNull(alignmentFile);
+        if (string.IsNullOrEmpty(alignmentFile.SpectraFilePath) || !File.Exists(alignmentFile.SpectraFilePath))
+        {
+            return null;
+        }
+        return ReadMsDec(alignmentFile.SpectraFilePath, spotId, -1);
+    }
+
     public static MsSpectrum ToSpectrum(MSDecResult dec, string label)
     {
         var peaks = dec.Spectrum

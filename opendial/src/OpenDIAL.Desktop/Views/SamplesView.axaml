@@ -9,6 +9,7 @@
       <StackPanel Orientation="Horizontal" Spacing="2">
         <Button Classes="tool strong" Content="Add data files…" Command="{Binding AddFilesCommand}" />
         <Button Classes="tool" Content="Add folder…" Command="{Binding AddFolderCommand}" />
+        <Button Classes="tool" Content="Import OpenQuant batch…" Command="{Binding $parent[Window].DataContext.ImportOpenQuantBatchCommand}" ToolTip.Tip="Add the samples of an OpenQuant project (.oqproj) with their type, group, dilution and comment" />
         <Button Classes="tool" Content="Remove" Command="{Binding RemoveSelectedCommand}" />
         <Button Classes="tool" Content="Clear all" Command="{Binding ClearAllCommand}" IsEnabled="{Binding HasSamples}" />
         <Rectangle Classes="vsep" />
@@ -79,7 +80,7 @@
       <StackPanel IsVisible="{Binding !HasSamples}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8" IsHitTestVisible="False">
         <TextBlock Classes="wordmark" Text="OpenDIAL" HorizontalAlignment="Center" Foreground="{DynamicResource OdInkFaint}" />
         <TextBlock Classes="muted" Text="Add data files to start a batch, or create a project with File ▸ New project…" HorizontalAlignment="Center" />
-        <TextBlock Classes="hint" Text="mzML, ABF, CDF and IBF open directly; Thermo .raw, Agilent/Bruker .d and Sciex .wiff go through msconvert (Settings)." HorizontalAlignment="Center" />
+        <TextBlock Classes="hint" Text="mzML, ABF, CDF and IBF open directly; SCIEX .wiff is read natively (one sample per row); Thermo .raw and Agilent/Bruker .d go through msconvert (Settings)." HorizontalAlignment="Center" />
       </StackPanel>
     </Panel>
   </DockPanel>

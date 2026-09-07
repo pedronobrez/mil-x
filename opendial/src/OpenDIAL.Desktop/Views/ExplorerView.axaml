@@ -28,7 +28,7 @@
       </StackPanel>
     </Border>
 
-    <Grid ColumnDefinitions="320,6,*,6,420" Margin="8,8,8,8">
+    <Grid ColumnDefinitions="370,6,*,6,420" Margin="8,8,8,8">
       <!-- left: samples and channels -->
       <Border Grid.Column="0" Classes="panel">
         <DockPanel>

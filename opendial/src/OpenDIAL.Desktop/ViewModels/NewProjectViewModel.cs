@@ -56,7 +56,7 @@ public sealed partial class NewProjectViewModel : ViewModelBase
     public string ProjectFolder => string.IsNullOrWhiteSpace(Name) ? string.Empty : Path.Combine(Folder, SafeName(Name));
     public string ProjectPath => string.IsNullOrWhiteSpace(Name) ? string.Empty : Path.Combine(ProjectFolder, SafeName(Name) + OpenDialProject.Extension);
     public string ProjectPreview => string.IsNullOrWhiteSpace(Name) ? "Give the project a name." : $"{ProjectPath}\nRaw files stay where they are; results are written next to the project file.";
-    public string SamplesSummary => Samples.Count == 0 ? "No files yet." : $"{Samples.Count} file(s), {Samples.Select(s => s.Class).Distinct().Count()} class(es), {Samples.Count(s => s.IsVendorFormat)} vendor file(s)";
+    public string SamplesSummary => Samples.Count == 0 ? "No files yet." : $"{Samples.Count} sample(s), {Samples.Select(s => s.Class).Distinct().Count()} class(es), {Samples.Count(s => s.NeedsConversion)} file(s) via msconvert";
     public IonizationMode Mode => MethodSource == "defaults-gcms" ? IonizationMode.GCMS : IonizationMode.LCMS;
     public string MethodSummary => MethodSource switch
     {
@@ -104,11 +104,7 @@ public sealed partial class NewProjectViewModel : ViewModelBase
     private async Task AddFilesAsync()
     {
         var files = await _dialogs.PickFilesAsync("Add data files", FileFormats.PickerPatterns, allowMultiple: true, _settings.Current.LastInputFolder);
-        foreach (var f in files)
-        {
-            if (Samples.Any(s => string.Equals(s.Path, f, StringComparison.OrdinalIgnoreCase)) || !FileFormats.IsSupported(f)) continue;
-            Samples.Add(new InputFileViewModel(f, Samples.Count + 1, Mode == IonizationMode.GCMS ? AcquisitionMode.DDA : AcquisitionMode.DDA));
-        }
+        AddPaths(files);
         if (files.Count > 0) _settings.Current.LastInputFolder = Path.GetDirectoryName(files[0]) ?? string.Empty;
     }
 
@@ -117,11 +113,24 @@ public sealed partial class NewProjectViewModel : ViewModelBase
     {
         var folder = await _dialogs.PickFolderAsync("Add all raw files in a folder", _settings.Current.LastInputFolder);
         if (folder is null) return;
-        foreach (var f in FileFormats.EnumerateRawFiles(folder))
+        AddPaths(FileFormats.EnumerateRawFiles(folder));
+    }
+
+    /// <summary>Adds files to the wizard batch; a .wiff batch becomes one row per sample.</summary>
+    private void AddPaths(IEnumerable<string> paths)
+    {
+        var problems = new List<string>();
+        foreach (var f in paths)
         {
-            if (Samples.Any(s => string.Equals(s.Path, f, StringComparison.OrdinalIgnoreCase))) continue;
-            Samples.Add(new InputFileViewModel(f, Samples.Count + 1, AcquisitionMode.DDA));
+            if (Samples.Any(s => string.Equals(s.Path, f, StringComparison.OrdinalIgnoreCase)) || !FileFormats.IsSupported(f)) continue;
+            foreach (var row in InputFileViewModel.FromPath(f, Samples.Count + 1, AcquisitionMode.DDA, out var error))
+            {
+                if (error is not null) problems.Add(error);
+                if (Samples.Any(s => string.Equals(s.Path, row.Path, StringComparison.OrdinalIgnoreCase))) continue;
+                Samples.Add(row);
+            }
         }
+        Error = problems.Count > 0 ? string.Join("; ", problems) : string.Empty;
     }
 
     [RelayCommand]

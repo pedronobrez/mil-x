@@ -19,6 +19,7 @@
     <ProjectReference Include="..\..\..\MsdialWorkbench-MSDIAL-v5.5.260817\src\MSDIAL5\MsdialGcMsApi\MsdialGcMsApi.csproj" />
     <ProjectReference Include="..\..\..\MsdialWorkbench-MSDIAL-v5.5.260817\src\MSDIAL5\MsdialIntegrate\MsdialIntegrate.csproj" />
     <ProjectReference Include="..\OpenDIAL.RawData\OpenDIAL.RawData.csproj" />
+    <ProjectReference Include="..\OpenDIAL.Plugins.SciexWiff\OpenDIAL.Plugins.SciexWiff.csproj" />
   </ItemGroup>
 
 </Project>

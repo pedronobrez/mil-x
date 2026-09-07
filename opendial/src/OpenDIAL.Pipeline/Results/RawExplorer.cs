@@ -63,6 +63,10 @@ public static class RawExplorer
     {
         ArgumentNullException.ThrowIfNull(raw);
         var spectra = raw.SpectrumList;
+        if (HasExperiments(raw))
+        {
+            return DiscoverExperimentChannels(raw);
+        }
         var channels = new List<RawChannel>();
         var ms1 = new List<int>();
         var ms2 = new List<int>();
@@ -115,6 +119,119 @@ public static class RawExplorer
             channels.Add(new RawChannel(RawChannelKind.Ms2Window, label, list, target, key.Ce, first.ExperimentID));
         }
         return channels;
+    }
+
+    /// <summary>True when the reader tagged spectra with acquisition-method experiments (SCIEX .wiff: 0 = survey, 1.. = product-ion / SWATH channels).</summary>
+    public static bool HasExperiments(RawMeasurement raw)
+    {
+        foreach (var s in raw.SpectrumList)
+        {
+            if (s.ExperimentID > 0) return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// One channel per acquisition experiment, in method order, labelled the way OpenQuant does:
+    /// "TOF MS  100–2000" for MS1 experiments, "MS2 351.20 → 50–360, CE -30" for product-ion / SWATH
+    /// experiments (an experiment whose precursor changes scan to scan is an IDA dependent-scan slot).
+    /// </summary>
+    public static IReadOnlyList<RawChannel> DiscoverExperimentChannels(RawMeasurement raw)
+    {
+        var spectra = raw.SpectrumList;
+        var byExperiment = new SortedDictionary<int, List<int>>();
+        for (var i = 0; i < spectra.Count; i++)
+        {
+            var e = Math.Max(0, spectra[i].ExperimentID);
+            if (!byExperiment.TryGetValue(e, out var list)) byExperiment[e] = list = new List<int>();
+            list.Add(i);
+        }
+        var channels = new List<RawChannel>();
+        foreach (var (e, list) in byExperiment)
+        {
+            var first = spectra[list[0]];
+            var (lo, hi) = MassRange(spectra, list);
+            var range = hi > lo ? $"{lo:F0}–{hi:F0}" : string.Empty;
+            if (first.MsLevel <= 1)
+            {
+                channels.Add(new RawChannel(RawChannelKind.Ms1, string.IsNullOrEmpty(range) ? "TOF MS" : $"TOF MS  {range}", list, 0, 0, e));
+                continue;
+            }
+            var precursors = new HashSet<long>();
+            double ceSum = 0;
+            var ceCount = 0;
+            foreach (var i in list)
+            {
+                var s = spectra[i];
+                var p = s.Precursor?.IsolationTargetMz > 0 ? s.Precursor.IsolationTargetMz : (s.Precursor?.SelectedIonMz ?? 0);
+                precursors.Add((long)Math.Round(p * 10));
+                var ce = s.CollisionEnergy != 0 ? s.CollisionEnergy : (s.Precursor?.CollisionEnergy ?? 0);
+                if (ce != 0) { ceSum += ce; ceCount++; }
+            }
+            var meanCe = ceCount > 0 ? ceSum / ceCount : 0;
+            var ceLabel = ceCount > 0 ? $", CE {meanCe:F0}" : string.Empty;
+            if (precursors.Count > Math.Max(4, list.Count / 4.0))
+            {
+                channels.Add(new RawChannel(RawChannelKind.Ms2Events, $"IDA MS2 slot {e}" + (string.IsNullOrEmpty(range) ? string.Empty : $" → {range}") + ceLabel, list, 0, meanCe, e));
+                continue;
+            }
+            var target = first.Precursor?.IsolationTargetMz > 0 ? first.Precursor.IsolationTargetMz : (first.Precursor?.SelectedIonMz ?? 0);
+            var lower = first.Precursor?.IsolationWindowLowerOffset ?? 0;
+            var upper = first.Precursor?.IsolationWindowUpperOffset ?? 0;
+            var isWide = lower + upper > 2.5;
+            var head = isWide ? $"MS2 {target - lower:F1}–{target + upper:F1}" : $"MS2 {target:F2}";
+            var label = head + (string.IsNullOrEmpty(range) ? string.Empty : $" → {range}") + ceLabel;
+            channels.Add(new RawChannel(RawChannelKind.Ms2Window, label, list, target, meanCe, e));
+        }
+        return channels;
+    }
+
+    private static (double Lo, double Hi) MassRange(List<RawSpectrum> spectra, List<int> indices)
+    {
+        var first = spectra[indices[0]];
+        if (first.ScanWindowUpperLimit > first.ScanWindowLowerLimit && first.ScanWindowUpperLimit > 0)
+        {
+            return (first.ScanWindowLowerLimit, first.ScanWindowUpperLimit);
+        }
+        double lo = double.MaxValue, hi = 0;
+        foreach (var i in indices)
+        {
+            var s = spectra[i];
+            if (s.LowestObservedMz > 0 && s.LowestObservedMz < lo) lo = s.LowestObservedMz;
+            if (s.HighestObservedMz > hi) hi = s.HighestObservedMz;
+        }
+        return lo == double.MaxValue ? (0, 0) : (lo, hi);
+    }
+
+    /// <summary>
+    /// The whole-sample TIC. For experiment-tagged files every experiment of a cycle is summed into one point
+    /// (like OpenQuant's sample TIC); otherwise it is the TIC of the MS1 scans.
+    /// </summary>
+    public static Chromatogram SampleTic(RawMeasurement raw, IReadOnlyList<int> ms1Indices)
+    {
+        if (!HasExperiments(raw))
+        {
+            return Tic(raw, ms1Indices);
+        }
+        var spectra = raw.SpectrumList;
+        var cycles = new SortedDictionary<int, (double Rt, double Sum, bool HasSurvey)>();
+        foreach (var s in spectra)
+        {
+            var tic = s.TotalIonCurrent > 0 ? s.TotalIonCurrent : Sum(s.Spectrum);
+            var rt = RtMinutes(s);
+            if (cycles.TryGetValue(s.ScanNumber, out var c))
+            {
+                // the survey scan's time stands for the cycle; otherwise the earliest experiment's
+                var useRt = s.ExperimentID == 0 && !c.HasSurvey ? rt : (c.HasSurvey ? c.Rt : Math.Min(c.Rt, rt));
+                cycles[s.ScanNumber] = (useRt, c.Sum + tic, c.HasSurvey || s.ExperimentID == 0);
+            }
+            else
+            {
+                cycles[s.ScanNumber] = (rt, tic, s.ExperimentID == 0);
+            }
+        }
+        var points = cycles.Values.OrderBy(c => c.Rt).Select(c => new ChromatogramPoint(c.Rt, c.Sum)).ToList();
+        return new Chromatogram("TIC", 0, 0, points);
     }
 
     /// <summary>Total ion current over the given scans.</summary>

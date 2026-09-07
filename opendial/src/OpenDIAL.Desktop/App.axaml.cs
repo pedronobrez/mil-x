@@ -42,7 +42,39 @@ public partial class App : Application
             var autoOpen = Environment.GetEnvironmentVariable("OPENDIAL_OPEN");
             if (!string.IsNullOrWhiteSpace(autoOpen))
             {
-                window.Opened += async (_, _) => await vm.OpenAsync(autoOpen);
+                window.Opened += async (_, _) =>
+                {
+                    await vm.OpenAsync(autoOpen);
+                    // OPENDIAL_EXPORT_OPENQUANT=<csv> writes the annotated spots as OpenQuant components right after opening (smoke tests only)
+                    var oqCsv = Environment.GetEnvironmentVariable("OPENDIAL_EXPORT_OPENQUANT");
+                    if (!string.IsNullOrWhiteSpace(oqCsv) && vm.Results is not null)
+                    {
+                        try
+                        {
+                            var n = await vm.Analytics.ExportOpenQuantAsync(oqCsv, new Interop.OpenQuant.OpenQuantExportOptions { AnnotatedOnly = true });
+                            vm.Status = $"{n} components written to {oqCsv}";
+                            Console.WriteLine(vm.Status);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.Error.WriteLine("OpenQuant export failed: " + ex);
+                        }
+                    }
+                };
+            }
+
+            // OPENDIAL_IMPORT_OPENQUANT=<.oqproj> imports an OpenQuant batch at start-up (smoke tests only)
+            var importOq = Environment.GetEnvironmentVariable("OPENDIAL_IMPORT_OPENQUANT");
+            if (!string.IsNullOrWhiteSpace(importOq))
+            {
+                window.Opened += async (_, _) => { await vm.ImportOpenQuantBatchAsync(importOq); Console.WriteLine(vm.Status); Console.WriteLine(vm.Samples.StatusLine); };
+            }
+
+            // OPENDIAL_OPEN_RAW=<raw file | folder of raw files> adds the files to the batch and opens the first in the Explorer (no results)
+            var openRaw = Environment.GetEnvironmentVariable("OPENDIAL_OPEN_RAW");
+            if (!string.IsNullOrWhiteSpace(openRaw))
+            {
+                window.Opened += async (_, _) => await vm.OpenRawAsync(openRaw);
             }
 
             // OPENDIAL_AUTORUN=<folder with raw files (+ library.msp, method*.txt)> runs the pipeline at start-up (smoke tests only)
@@ -92,6 +124,22 @@ public partial class App : Application
                                 vm.Explorer.SelectedPeak = vm.Explorer.Peaks.FirstOrDefault(p => p.IsAnnotated);
                                 await Task.Delay(2500);
                                 break;
+                            case "explorer-channel":
+                            {
+                                // expand the first file and tick its first product-ion (MS2) channel next to the TIC
+                                var file = vm.Explorer.Tree.FirstOrDefault();
+                                if (file is not null) file.IsExpanded = true;
+                                var leaf = vm.Explorer.ActiveChannels.FirstOrDefault(n => n.Channel is { Kind: Pipeline.Results.RawChannelKind.Ms2Window })
+                                           ?? vm.Explorer.ActiveChannels.FirstOrDefault(n => n.Channel is { Kind: Pipeline.Results.RawChannelKind.Ms2Events });
+                                if (leaf is not null) { leaf.IsChecked = true; vm.Explorer.ActiveChannel = leaf; }
+                                vm.Explorer.Normalize = true;
+                                await Task.Delay(2500);
+                                // show the product-ion spectrum at the apex of the first drawn trace
+                                var trace = vm.Explorer.Series.FirstOrDefault();
+                                if (trace is { Points.Count: > 0 }) vm.Explorer.ShowScanAt(trace.Points.MaxBy(p => p.Y).X);
+                                await Task.Delay(1500);
+                                break;
+                            }
                             case "analytics-spectrum":
                             case "analytics-metric":
                             {

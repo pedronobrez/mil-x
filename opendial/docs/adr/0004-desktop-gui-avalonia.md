@@ -11,7 +11,9 @@ WPF `Dispatcher`. WPF has no macOS or Linux implementation and no automated conv
 Avalonia handles custom `DrawingVisual` rendering.
 
 ## Decision
-Build a new, smaller desktop application (`OpenDIAL.Desktop`) with Avalonia 11 and
+Build a new, smaller desktop application that reuses OpenQuant's visual identity and shell
+(four workspaces, token palette, toolbars as bands of type), so the two applications read as one suite.
+Build it (`OpenDIAL.Desktop`) with Avalonia 11 and
 CommunityToolkit.Mvvm on top of `OpenDIAL.Pipeline`, a headless orchestration library adapted
 from the MS-DIAL console (`MsdialCoreTestApp`). Charts are custom Avalonia controls (EIC/TIC line
 chart, spectrum stick chart with mirror plot, per-sample bar chart). The upstream model layer is

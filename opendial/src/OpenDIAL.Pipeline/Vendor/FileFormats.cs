@@ -25,7 +25,7 @@ public static class FileFormats
 
     /// <summary>Human readable badge for the GUI; empty for open formats.</summary>
     public static string GetBadge(string path)
-        => IsVendorFormat(path) ? "vendor format – requires msconvert bridge" : string.Empty;
+        => IsVendorFormat(path) ? (WiffSupport.CanReadNatively(path) ? "read natively" : "vendor format – requires msconvert bridge") : string.Empty;
 
     /// <summary>Enumerates supported raw files (and vendor directories) directly under <paramref name="folder"/>.</summary>
     public static IEnumerable<string> EnumerateRawFiles(string folder)

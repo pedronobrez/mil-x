@@ -32,6 +32,6 @@ public sealed class InputFile
     /// <summary>Whether the file is included in processing.</summary>
     public bool Included { get; set; } = true;
 
-    /// <summary>True when the file is a vendor format that needs the msconvert bridge.</summary>
-    public bool IsVendorFormat => FileFormats.IsVendorFormat(Path);
+    /// <summary>True when the file is a vendor format that needs the msconvert bridge (a natively readable .wiff is not).</summary>
+    public bool IsVendorFormat => FileFormats.IsVendorFormat(Path) && !WiffSupport.CanReadNatively(Path);
 }

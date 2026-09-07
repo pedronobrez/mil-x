@@ -46,11 +46,13 @@ public sealed partial class SamplesViewModel : ViewModelBase
         ClassNames.Clear();
         foreach (var c in classes) ClassNames.Add(c);
         var types = Samples.GroupBy(s => s.SampleType).OrderBy(g => g.Key).Select(g => $"{g.Count()} {g.Key}");
-        var vendor = Samples.Count(s => s.IsVendorFormat);
+        var vendor = Samples.Count(s => s.NeedsConversion);
+        var native = Samples.Count(s => s.ReadsNatively);
         var missing = Samples.Count(s => !s.Exists);
         StatusLine = Samples.Count == 0
             ? "No samples — add data files to start a batch."
             : $"{Samples.Count} sample(s) — {classes.Count} class(es)" + (types.Any() ? " · " + string.Join(", ", types) : string.Empty)
+              + (native > 0 ? $" · {native} wiff sample(s) read natively" : string.Empty)
               + (vendor > 0 ? $" · {vendor} vendor file(s) via msconvert" : string.Empty) + (missing > 0 ? $" · {missing} file(s) not found" : string.Empty);
         OnPropertyChanged(nameof(HasSamples));
     }
@@ -88,18 +90,44 @@ public sealed partial class SamplesViewModel : ViewModelBase
     public int AddPaths(IEnumerable<string> paths)
     {
         var added = 0;
+        var problems = new List<string>();
         foreach (var path in paths)
         {
             if (Samples.Any(f => string.Equals(f.Path, path, StringComparison.OrdinalIgnoreCase))) continue;
-            if (!FileFormats.IsSupported(path)) { Message = $"Skipped unsupported file: {Path.GetFileName(path)}"; continue; }
-            Attach(new InputFileViewModel(path, Samples.Count + 1, DefaultAcquisition));
+            if (!FileFormats.IsSupported(path)) { problems.Add($"skipped unsupported file {Path.GetFileName(path)}"); continue; }
+            foreach (var row in InputFileViewModel.FromPath(path, Samples.Count + 1, DefaultAcquisition, out var error))
+            {
+                if (error is not null) problems.Add(error);
+                if (Samples.Any(f => string.Equals(f.Path, row.Path, StringComparison.OrdinalIgnoreCase))) continue;
+                Attach(row);
+                added++;
+            }
+        }
+        if (added > 0)
+        {
+            _settings.Current.LastInputFolder = Path.GetDirectoryName(Samples[^1].Path) ?? string.Empty;
+            _ = _settings.SaveAsync();
+            Refresh();
+        }
+        Message = problems.Count > 0 ? string.Join("; ", problems) : added > 0 ? $"Added {added} sample(s)." : Message;
+        return added;
+    }
+
+    /// <summary>Adds prepared rows (e.g. from an OpenQuant batch), skipping paths already in the batch; returns how many were added.</summary>
+    public int AddRows(IEnumerable<InputFileViewModel> rows)
+    {
+        var added = 0;
+        foreach (var row in rows)
+        {
+            if (Samples.Any(f => string.Equals(f.Path, row.Path, StringComparison.OrdinalIgnoreCase) && f.SampleIndex == row.SampleIndex)) continue;
+            row.AnalyticalOrder = Samples.Count + 1;
+            Attach(row);
             added++;
         }
         if (added > 0)
         {
             _settings.Current.LastInputFolder = Path.GetDirectoryName(Samples[^1].Path) ?? string.Empty;
             _ = _settings.SaveAsync();
-            Message = $"Added {added} file(s).";
             Refresh();
         }
         return added;

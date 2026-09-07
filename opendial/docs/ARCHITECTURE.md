@@ -147,8 +147,12 @@ opendial/
     Plugins/RawReaderPlugins.cs   IRawFileReaderPlugin discovery from ./plugins (e.g. a future Thermo
                                RawFileReader plugin, which needs a separately licensed library)
   src/OpenDIAL.Plugins.SciexWiff/  native .wiff reader on SCIEX's Clearcore2 SDK (ADR 0005), loaded from plugins/sciex
+  src/OpenDIAL.Interop.OpenQuant/  OpenQuant component CSV export / .oqproj batch import
   src/OpenDIAL.Pipeline/       orchestration library (adapted from the console) – used by the GUI
-  src/OpenDIAL.Desktop/        Avalonia 11 desktop application (macOS/Linux/Windows)
+                               (OpenDialProject .odproj, RawExplorer channels/TIC/BPC/XIC, per-sample aligned peaks)
+  src/OpenDIAL.Desktop/        Avalonia 11 desktop application (macOS/Linux/Windows); OpenQuant's shell and palette:
+                               Explorer (raw browsing), Analytics (per-sample EIC review grid of aligned spots,
+                               statistics, metric plot), Method, Samples; New-project wizard
   tests/OpenDIAL.RawData.Tests 28 unit tests (encodings, numpress round trips, semantics, vendor bridge)
   tests/OpenDIAL.Pipeline.Tests end-to-end test on the synthetic data set
   tools/make_synthetic_mzml.py synthetic LC-MS/MS DDA generator (indexedmzML, 12 compounds, isotopes,
