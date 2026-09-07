@@ -66,7 +66,30 @@ public sealed class PeakFeatureRow
     public bool HasMs2 { get; init; }
     public bool IsAnnotated => !string.IsNullOrEmpty(Name) && !Name.StartsWith("Unknown", StringComparison.OrdinalIgnoreCase) && !Name.StartsWith("w/o", StringComparison.OrdinalIgnoreCase);
     public MsScanMatchResult? MatchResult { get; init; }
+
 }
+
+/// <summary>
+/// One library match of an aligned feature. MS-DIAL keeps several per feature and reports the best;
+/// the others are what a reviewer picks from when the automatic choice is wrong.
+/// </summary>
+public sealed record AnnotationCandidate(
+    string Name,
+    double TotalScore,
+    double SimpleDotProduct,
+    double WeightedDotProduct,
+    double ReverseDotProduct,
+    double MatchedPeaksCount,
+    double MatchedPeaksPercentage,
+    double MassSimilarity,
+    double RtSimilarity,
+    bool IsRepresentative,
+    bool IsSpectrumMatch,
+    bool IsLipidClassMatch,
+    bool IsLipidChainsMatch,
+    bool IsLipidPositionMatch,
+    string Source,
+    int LibraryId);
 
 public sealed record SampleInfo(int FileId, string FileName, string Class, string SampleType);
 
@@ -100,6 +123,21 @@ public sealed class AlignmentSpotRow
     public double SignalToNoiseAverage { get; init; }
     public bool IsAnnotated => !string.IsNullOrEmpty(Name) && !Name.StartsWith("Unknown", StringComparison.OrdinalIgnoreCase) && !Name.StartsWith("w/o", StringComparison.OrdinalIgnoreCase);
     public MsScanMatchResult? MatchResult { get; init; }
+
+    /// <summary>True when at least one aligned peak carried a product spectrum.</summary>
+    public bool MsmsAssigned { get; init; }
+    /// <summary>Sample the aligned feature takes its spectrum and annotation from.</summary>
+    public int RepresentativeFileId { get; init; }
+    /// <summary>MS1 isotope pattern of the representative sample, monoisotopic peak first.</summary>
+    public IReadOnlyList<SpectrumPeakPoint> IsotopicPeaks { get; init; } = Array.Empty<SpectrumPeakPoint>();
+    /// <summary>Comment MS-DIAL stored with the feature.</summary>
+    public string Comment { get; init; } = string.Empty;
+    /// <summary>Every library match kept for this feature, best first: the alternatives to the reported name.</summary>
+    public IReadOnlyList<AnnotationCandidate> Candidates { get; init; } = Array.Empty<AnnotationCandidate>();
+    public bool IsManuallyAnnotated { get; init; }
+
+    /// <summary>Proportion of the monoisotopic ion in the MS1 isotope cluster, as MS-DIAL reports it.</summary>
+    public double MonoisotopicPercentage { get; init; }
 }
 
 public sealed class AlignmentTable

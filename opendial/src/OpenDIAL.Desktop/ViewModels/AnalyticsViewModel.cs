@@ -10,6 +10,7 @@ using OpenDIAL.Desktop.Controls;
 using OpenDIAL.Desktop.Services;
 using OpenDIAL.Interop.OpenQuant;
 using CompMs.MsdialCore.MSDec;
+using OpenDIAL.Pipeline.Curation;
 using OpenDIAL.Pipeline.Model;
 using OpenDIAL.Pipeline.Results;
 
@@ -30,19 +31,6 @@ public sealed record ResultSession(
     public static ResultSession From(OpenedProject p) => new(p.Folder, p.AnalysisFiles, p.AlignmentFile, p.Parameter, p.DataBaseMapper, p.ExportedFiles, p.ProjectFilePath, p.Mode);
 }
 
-/// <summary>Row of the spot list: either a group header or an alignment spot.</summary>
-public sealed class SpotListItem
-{
-    public SpotListItem(string header, int count) { Header = header; Count = count; IsHeader = true; }
-    public SpotListItem(AlignmentSpotRow spot) { Spot = spot; IsHeader = false; Header = string.Empty; }
-    public bool IsHeader { get; }
-    public string Header { get; }
-    public int Count { get; }
-    public AlignmentSpotRow? Spot { get; }
-    public string Title => Spot is null ? Header : Spot.IsAnnotated ? Spot.Name : $"m/z {Spot.Mz.ToString("F4", CultureInfo.InvariantCulture)}";
-    public string Subtitle => Spot is null ? string.Empty : $"{Spot.Rt.ToString("F2", CultureInfo.InvariantCulture)} min · m/z {Spot.Mz.ToString("F4", CultureInfo.InvariantCulture)} · #{Spot.Id}";
-}
-
 /// <summary>One EIC panel of the review grid.</summary>
 public sealed partial class ReviewPanelViewModel : ViewModelBase
 {
@@ -60,6 +48,9 @@ public sealed partial class ReviewPanelViewModel : ViewModelBase
     public IReadOnlyList<Point> FullTrace { get; set; } = Array.Empty<Point>();
     public double PeakMax { get; set; }
 }
+
+/// <summary>One line of the match-score breakdown beside the mirror plot.</summary>
+public sealed record ScoreRow(string Metric, string Value);
 
 /// <summary>Per-class statistics of the selected spot.</summary>
 public sealed record ClassStatRow(string Class, int N, double Mean, double Sd, double Cv, double Min, double Max, double AreaMean);
@@ -97,6 +88,9 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     private string? _libraryPath;
     private int _gridVersion;
     private readonly Dictionary<int, ReviewPanelViewModel> _allPanels = new();
+    private CurationStore? _curation;
+    private List<SpotRowViewModel> _allRows = new();
+    private bool _suspendFilter;
 
     public static string[] ZoomModes { get; } = { "Expected window", "Peak", "Full trace" };
     public static string[] MetricColumns { get; } = { "Height", "Area", "RT", "m/z", "S/N" };
@@ -107,16 +101,48 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
         _cache = cache;
     }
 
-    public ObservableCollection<SpotListItem> SpotItems { get; } = new();
     public ObservableCollection<ReviewPanelViewModel> Panels { get; } = new();
+
+    /// <summary>The ion table: every aligned feature that passes the filter band, in table order.</summary>
+    public ObservableCollection<SpotRowViewModel> IonRows { get; } = new();
+    public static string[] TagFilters { get; } = { "All", "Untagged", "Reviewed", "Not reviewed", "Confirmed", "Low quality spectrum", "Misannotation", "Coelution (mixed spectra)", "Overannotation" };
+    public static string[] AnnotationFilters { get; } = { "All", "Confident", "Suggested", "Annotated", "Unknown" };
+    public ObservableCollection<string> Ontologies { get; } = new();
+    public IReadOnlyList<PeakSpotTagKind> TagKinds { get; } = PeakSpotTagKindExtensions.All;
 
     [ObservableProperty] private bool _hasResults;
     [ObservableProperty] private string _summary = "No results loaded. Process the batch or open a project.";
     [ObservableProperty] private string _filterText = string.Empty;
     [ObservableProperty] private int _annotatedCount;
     [ObservableProperty] private int _unknownCount;
-    [ObservableProperty] private SpotListItem? _selectedItem;
     [ObservableProperty] private AlignmentSpotRow? _selectedSpot;
+    [ObservableProperty] private SpotRowViewModel? _selectedRow;
+
+    // ion table filter band
+    [ObservableProperty] private string _mzFrom = string.Empty;
+    [ObservableProperty] private string _mzTo = string.Empty;
+    [ObservableProperty] private string _rtFrom = string.Empty;
+    [ObservableProperty] private string _rtTo = string.Empty;
+    [ObservableProperty] private bool _msmsOnly;
+    [ObservableProperty] private string _annotationFilter = "All";
+    [ObservableProperty] private string _tagFilter = "All";
+    [ObservableProperty] private string _ontologyFilter = "All";
+    [ObservableProperty] private string _tableSummary = string.Empty;
+    [ObservableProperty] private int _confirmedCount;
+    [ObservableProperty] private int _rejectedCount;
+    [ObservableProperty] private int _reviewedCount;
+    [ObservableProperty] private bool _curationDirty;
+
+    // candidates of the selected feature
+    [ObservableProperty] private IReadOnlyList<AnnotationCandidate> _candidates = Array.Empty<AnnotationCandidate>();
+    [ObservableProperty] private AnnotationCandidate? _selectedCandidate;
+    [ObservableProperty] private IReadOnlyList<Point> _isotopePeaks = Array.Empty<Point>();
+    [ObservableProperty] private IReadOnlyList<ScoreRow> _scoreRows = Array.Empty<ScoreRow>();
+    [ObservableProperty] private IReadOnlyList<BarItem> _sampleBars = Array.Empty<BarItem>();
+    [ObservableProperty] private IReadOnlyList<ScatterPoint> _featureMap = Array.Empty<ScatterPoint>();
+    [ObservableProperty] private ScatterPoint? _selectedFeaturePoint;
+    [ObservableProperty] private string _featureMapLabel = string.Empty;
+    [ObservableProperty] private string _isotopeTitle = "MS1 isotope pattern";
     [ObservableProperty] private string _spotTitle = string.Empty;
     [ObservableProperty] private string _spotDetail = string.Empty;
 
@@ -166,9 +192,15 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
         _session = null;
         _spots = Array.Empty<AlignmentSpotRow>();
         _allPanels.Clear();
-        SpotItems.Clear();
         Panels.Clear();
         SelectedSpot = null;
+        SelectedRow = null;
+        _allRows = new List<SpotRowViewModel>();
+        IonRows.Clear();
+        _curation = null;
+        CurationDirty = false;
+        Candidates = Array.Empty<AnnotationCandidate>();
+        IsotopePeaks = Array.Empty<Point>();
         HasResults = false;
         Summary = "No results loaded. Process the batch or open a project.";
         SampleRows = Array.Empty<SampleResultRow>();
@@ -196,12 +228,19 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
             var table = await ResultLoader.LoadAlignmentTableAsync(session.AlignmentFile, session.AnalysisFiles);
             _spots = table.Spots;
             _samples = table.Samples;
+            _curation = CurationStore.Load(session.AlignmentFile.FilePath);
+            _allRows = _spots.Select(s => new SpotRowViewModel(s, _curation)).ToList();
             AnnotatedCount = _spots.Count(s => s.IsAnnotated);
             UnknownCount = _spots.Count - AnnotatedCount;
             HasResults = true;
             Summary = $"{_spots.Count} aligned spots across {table.Samples.Count} sample(s) · {AnnotatedCount} annotated";
-            RebuildList();
-            SelectedItem = SpotItems.FirstOrDefault(i => !i.IsHeader);
+            Ontologies.Clear();
+            Ontologies.Add("All");
+            foreach (var o in _spots.Select(s => s.Ontology).Where(o => !string.IsNullOrWhiteSpace(o)).Distinct().OrderBy(o => o, StringComparer.OrdinalIgnoreCase)) Ontologies.Add(o);
+            OntologyFilter = string.Empty;
+            OntologyFilter = "All";
+            RebuildRows();
+            SelectedRow = IonRows.FirstOrDefault();
         }
         catch (Exception ex)
         {
@@ -210,31 +249,312 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
         }
     }
 
-    partial void OnFilterTextChanged(string value) => RebuildList();
+    partial void OnFilterTextChanged(string value) => RebuildRows();
+    partial void OnMzFromChanged(string value) => RebuildRows();
+    partial void OnMzToChanged(string value) => RebuildRows();
+    partial void OnRtFromChanged(string value) => RebuildRows();
+    partial void OnRtToChanged(string value) => RebuildRows();
+    partial void OnMsmsOnlyChanged(bool value) => RebuildRows();
+    partial void OnAnnotationFilterChanged(string value) => RebuildRows();
+    partial void OnTagFilterChanged(string value) => RebuildRows();
+    partial void OnOntologyFilterChanged(string value) => RebuildRows();
 
-    private void RebuildList()
+    private static double? ParseBound(string s) =>
+        double.TryParse(s?.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var v) ? v : null;
+
+    /// <summary>
+    /// Applies the filter band to the ion table. The selected feature is kept when it survives the
+    /// filter, so tightening a filter while reviewing does not throw the reviewer out of place.
+    /// </summary>
+    public void RebuildRows()
     {
-        var f = FilterText?.Trim() ?? string.Empty;
-        bool Match(AlignmentSpotRow s) => f.Length == 0 || s.Name.Contains(f, StringComparison.OrdinalIgnoreCase)
-            || s.Mz.ToString("F4", CultureInfo.InvariantCulture).Contains(f, StringComparison.Ordinal) || s.Id.ToString(CultureInfo.InvariantCulture) == f
-            || s.Adduct.Contains(f, StringComparison.OrdinalIgnoreCase) || s.Ontology.Contains(f, StringComparison.OrdinalIgnoreCase);
-        var keep = SelectedSpot;
-        SpotItems.Clear();
-        var annotated = _spots.Where(s => s.IsAnnotated && Match(s)).OrderBy(s => s.Name, StringComparer.OrdinalIgnoreCase).ToList();
-        var unknown = _spots.Where(s => !s.IsAnnotated && Match(s)).OrderBy(s => s.Rt).ToList();
-        SpotItems.Add(new SpotListItem("Annotated", annotated.Count));
-        foreach (var s in annotated) SpotItems.Add(new SpotListItem(s));
-        SpotItems.Add(new SpotListItem("Unknown", unknown.Count));
-        foreach (var s in unknown) SpotItems.Add(new SpotListItem(s));
-        if (keep is not null)
+        if (_suspendFilter) return;
+        var text = FilterText?.Trim() ?? string.Empty;
+        var mzLo = ParseBound(MzFrom);
+        var mzHi = ParseBound(MzTo);
+        var rtLo = ParseBound(RtFrom);
+        var rtHi = ParseBound(RtTo);
+
+        bool Matches(SpotRowViewModel r)
         {
-            SelectedItem = SpotItems.FirstOrDefault(i => i.Spot == keep);
+            if (mzLo is not null && r.Mz < mzLo) return false;
+            if (mzHi is not null && r.Mz > mzHi) return false;
+            if (rtLo is not null && r.Rt < rtLo) return false;
+            if (rtHi is not null && r.Rt > rtHi) return false;
+            if (MsmsOnly && !r.MsmsAssigned) return false;
+            if (OntologyFilter is not ("All" or "" or null) && !string.Equals(r.Ontology, OntologyFilter, StringComparison.OrdinalIgnoreCase)) return false;
+            switch (AnnotationFilter)
+            {
+                case "Confident" when !r.IsConfident: return false;
+                case "Suggested" when r.Level != "suggested" && r.Level != "m/z only": return false;
+                case "Annotated" when !r.IsAnnotated: return false;
+                case "Unknown" when r.IsAnnotated: return false;
+            }
+            switch (TagFilter)
+            {
+                case "Untagged" when r.HasAnyTag: return false;
+                case "Reviewed" when !r.Reviewed: return false;
+                case "Not reviewed" when r.Reviewed: return false;
+                case "Confirmed" when !r.HasTag(PeakSpotTagKind.Confirmed): return false;
+                case "Low quality spectrum" when !r.HasTag(PeakSpotTagKind.LowQualitySpectrum): return false;
+                case "Misannotation" when !r.HasTag(PeakSpotTagKind.Misannotation): return false;
+                case "Coelution (mixed spectra)" when !r.HasTag(PeakSpotTagKind.Coelution): return false;
+                case "Overannotation" when !r.HasTag(PeakSpotTagKind.Overannotation): return false;
+            }
+            if (text.Length == 0) return true;
+            return r.Name.Contains(text, StringComparison.OrdinalIgnoreCase)
+                || r.Ontology.Contains(text, StringComparison.OrdinalIgnoreCase)
+                || r.Adduct.Contains(text, StringComparison.OrdinalIgnoreCase)
+                || r.Formula.Contains(text, StringComparison.OrdinalIgnoreCase)
+                || r.Comment.Contains(text, StringComparison.OrdinalIgnoreCase)
+                || r.Id.ToString(CultureInfo.InvariantCulture) == text
+                || r.Mz.ToString("F4", CultureInfo.InvariantCulture).Contains(text, StringComparison.Ordinal);
+        }
+
+        var keep = SelectedRow;
+        IonRows.Clear();
+        foreach (var r in _allRows)
+        {
+            if (Matches(r)) IonRows.Add(r);
+        }
+        if (keep is not null && IonRows.Contains(keep)) SelectedRow = keep;
+        else if (SelectedRow is null || !IonRows.Contains(SelectedRow)) SelectedRow = IonRows.FirstOrDefault();
+        RefreshCounts();
+        BuildFeatureMap();
+    }
+
+    /// <summary>
+    /// Every filtered feature as a dot in retention time against m/z, coloured by lipid class. Within
+    /// one class on a reversed-phase column the dots fall on a line: retention rises with the acyl
+    /// carbon number and falls with each double bond, so a member sitting off its class's line is
+    /// the first thing to re-examine.
+    /// </summary>
+    private void BuildFeatureMap()
+    {
+        var pts = new List<ScatterPoint>(IonRows.Count);
+        foreach (var r in IonRows)
+        {
+            var group = string.IsNullOrWhiteSpace(r.Ontology) ? (r.IsAnnotated ? "(no class)" : "unknown") : r.Ontology;
+            pts.Add(new ScatterPoint(r.Rt, r.Mz, r.DisplayName, group, r));
+        }
+        FeatureMap = pts;
+        FeatureMapLabel = $"{pts.Count} feature(s) · retention time against m/z, coloured by class";
+        SyncFeatureMapSelection();
+    }
+
+    private void SyncFeatureMapSelection()
+    {
+        var target = FeatureMap.FirstOrDefault(p => ReferenceEquals(p.Tag, SelectedRow));
+        if (!ReferenceEquals(target, SelectedFeaturePoint)) SelectedFeaturePoint = target;
+    }
+
+    partial void OnSelectedFeaturePointChanged(ScatterPoint? value)
+    {
+        if (value?.Tag is SpotRowViewModel row && !ReferenceEquals(row, SelectedRow)) SelectedRow = row;
+    }
+
+    private void RefreshCounts()
+    {
+        ConfirmedCount = _allRows.Count(r => r.HasTag(PeakSpotTagKind.Confirmed));
+        RejectedCount = _allRows.Count(r => r.HasTag(PeakSpotTagKind.Misannotation));
+        ReviewedCount = _allRows.Count(r => r.Reviewed);
+        TableSummary = $"{IonRows.Count} of {_allRows.Count} features · {ReviewedCount} reviewed";
+        CurationDirty = _curation?.IsDirty ?? false;
+    }
+
+    partial void OnSelectedRowChanged(SpotRowViewModel? value)
+    {
+        if (value is null)
+        {
+            Candidates = Array.Empty<AnnotationCandidate>();
+            IsotopePeaks = Array.Empty<Point>();
+            return;
+        }
+        value.Refresh();
+        SelectedSpot = value.Spot;
+        Candidates = value.Spot.Candidates;
+        SelectedCandidate = Candidates.FirstOrDefault(c => c.IsRepresentative) ?? Candidates.FirstOrDefault();
+        ScoreRows = BuildScoreRows(value.Spot);
+        SampleBars = value.Spot.SamplePeaks
+            .Select(p => new BarItem(p.FileName, double.IsNaN(p.Height) ? 0 : p.Height, string.IsNullOrEmpty(p.Class) ? "(none)" : p.Class))
+            .ToList();
+        SyncFeatureMapSelection();
+        var isotopes = value.Spot.IsotopicPeaks;
+        IsotopePeaks = isotopes.Select(i => new Point(i.Mz, i.Intensity)).ToList();
+        IsotopeTitle = isotopes.Count == 0
+            ? "No MS1 isotope pattern stored for this feature"
+            : $"MS1 isotope pattern · {isotopes.Count} ion(s)" + (value.Spot.MonoisotopicPercentage > 0 ? $" · monoisotopic {value.Spot.MonoisotopicPercentage:F0} %" : string.Empty);
+    }
+
+
+    /// <summary>
+    /// The numbers behind the reported annotation, in the order a reviewer reads them: how much of
+    /// the spectrum matched, how much of the reference was accounted for, and how close the mass was.
+    /// </summary>
+    private static IReadOnlyList<ScoreRow> BuildScoreRows(AlignmentSpotRow spot)
+    {
+        var m = spot.MatchResult;
+        if (m is null) return new[] { new ScoreRow("No library match", string.Empty) };
+        string F(double v) => v.ToString("F3", CultureInfo.InvariantCulture);
+        var rows = new List<ScoreRow>
+        {
+            new("Total score", F(m.TotalScore)),
+            new("Dot product", F(m.WeightedDotProduct)),
+            new("Reverse dot product", F(m.ReverseDotProduct)),
+            new("Simple dot product", F(m.SimpleDotProduct)),
+            new("Matched peaks", m.MatchedPeaksCount.ToString("F0", CultureInfo.InvariantCulture)),
+            new("Matched peaks %", F(m.MatchedPeaksPercentage)),
+            new("Mass similarity", F(m.AcurateMassSimilarity)),
+        };
+        if (m.RtSimilarity > 0) rows.Add(new ScoreRow("RT similarity", F(m.RtSimilarity)));
+        rows.Add(new ScoreRow("Spectrum match", m.IsSpectrumMatch ? "yes" : "no"));
+        if (m.IsLipidClassMatch || m.IsLipidChainsMatch || m.IsLipidPositionMatch)
+        {
+            var level = m.IsLipidPositionMatch ? "sn-position" : m.IsLipidChainsMatch ? "chains" : "class";
+            rows.Add(new ScoreRow("Lipid evidence", level));
+        }
+        return rows;
+    }
+
+    // ---------------------------------------------------------------- curation
+
+    /// <summary>Toggles one of MS-DIAL's five review flags on the selected feature.</summary>
+    [RelayCommand]
+    private void ToggleTag(string? id)
+    {
+        if (SelectedRow is null || !int.TryParse(id, out var value) || !Enum.IsDefined(typeof(PeakSpotTagKind), value)) return;
+        SelectedRow.ToggleTag((PeakSpotTagKind)value);
+        AfterCuration();
+    }
+
+    [RelayCommand]
+    private void ClearTags()
+    {
+        SelectedRow?.ClearTags();
+        AfterCuration();
+    }
+
+    /// <summary>Accept the annotation and move on: the common keystroke of a review pass.</summary>
+    [RelayCommand]
+    private void ConfirmAndNext()
+    {
+        if (SelectedRow is null) return;
+        SelectedRow.SetTag(PeakSpotTagKind.Misannotation, false);
+        SelectedRow.SetTag(PeakSpotTagKind.Confirmed, true);
+        AfterCuration();
+        NextSpot();
+    }
+
+    /// <summary>Reject the annotation and move on.</summary>
+    [RelayCommand]
+    private void RejectAndNext()
+    {
+        if (SelectedRow is null) return;
+        SelectedRow.SetTag(PeakSpotTagKind.Confirmed, false);
+        SelectedRow.SetTag(PeakSpotTagKind.Misannotation, true);
+        AfterCuration();
+        NextSpot();
+    }
+
+    [RelayCommand]
+    private void NextSpot()
+    {
+        if (IonRows.Count == 0) return;
+        var i = SelectedRow is null ? -1 : IonRows.IndexOf(SelectedRow);
+        SelectedRow = IonRows[Math.Min(IonRows.Count - 1, i + 1)];
+    }
+
+    [RelayCommand]
+    private void PreviousSpot()
+    {
+        if (IonRows.Count == 0) return;
+        var i = SelectedRow is null ? IonRows.Count : IonRows.IndexOf(SelectedRow);
+        SelectedRow = IonRows[Math.Max(0, i - 1)];
+    }
+
+    /// <summary>Jumps to the next feature nobody has looked at, skipping what is already decided.</summary>
+    [RelayCommand]
+    private void NextUnreviewed()
+    {
+        if (IonRows.Count == 0) return;
+        var start = SelectedRow is null ? -1 : IonRows.IndexOf(SelectedRow);
+        for (var k = 1; k <= IonRows.Count; k++)
+        {
+            var row = IonRows[(start + k + IonRows.Count) % IonRows.Count];
+            if (!row.Reviewed) { SelectedRow = row; return; }
+        }
+        Summary = "Every feature in the current filter has been reviewed.";
+    }
+
+    /// <summary>Replaces the automatic annotation with the candidate the reviewer picked.</summary>
+    [RelayCommand]
+    private void UseSelectedCandidate()
+    {
+        if (SelectedRow is null || SelectedCandidate is null) return;
+        SelectedRow.SetManualName(SelectedCandidate.Name);
+        AfterCuration();
+    }
+
+    /// <summary>Drops a hand-picked annotation and shows what the run produced again.</summary>
+    [RelayCommand]
+    private void ResetAnnotation()
+    {
+        if (SelectedRow is null) return;
+        SelectedRow.SetManualName(string.Empty);
+        AfterCuration();
+    }
+
+    /// <summary>
+    /// Tags every feature the filter is currently showing. Reviewing a lipid class is usually a
+    /// matter of filtering to it, checking the retention-time trend, and accepting the whole set.
+    /// </summary>
+    [RelayCommand]
+    private void ConfirmAllShown()
+    {
+        foreach (var r in IonRows)
+        {
+            r.SetTag(PeakSpotTagKind.Misannotation, false);
+            r.SetTag(PeakSpotTagKind.Confirmed, true);
+        }
+        Summary = $"{IonRows.Count} feature(s) tagged Confirmed.";
+        AfterCuration();
+    }
+
+    [RelayCommand]
+    private void ClearAllShown()
+    {
+        foreach (var r in IonRows) r.ClearTags();
+        Summary = $"Tags removed from {IonRows.Count} feature(s).";
+        AfterCuration();
+    }
+
+    [RelayCommand]
+    private void SaveCuration()
+    {
+        if (_curation is null) return;
+        try
+        {
+            _curation.Save();
+            CurationDirty = false;
+            Summary = $"Review saved to {Path.GetFileName(_curation.TagFilePath)} (MS-DIAL reads this file too).";
+        }
+        catch (Exception ex)
+        {
+            Summary = "Review could not be saved: " + ex.Message;
         }
     }
 
-    partial void OnSelectedItemChanged(SpotListItem? value)
+    /// <summary>Writes the review out if anything changed; called when the workspace is left.</summary>
+    public void FlushCuration()
     {
-        if (value is { IsHeader: false, Spot: not null }) SelectedSpot = value.Spot;
+        if (_curation is { IsDirty: true }) SaveCuration();
+    }
+
+    private void AfterCuration()
+    {
+        RefreshCounts();
+        // a tag filter is a moving target while tagging: re-apply it so the list stays honest
+        if (TagFilter != "All") RebuildRows();
     }
 
     partial void OnSelectedSpotChanged(AlignmentSpotRow? value)
@@ -514,8 +834,8 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
         if (_session is not null) ShellService.Open(_session.Folder);
     }
 
-    /// <summary>The spots currently listed (after the filter), in list order.</summary>
-    public IReadOnlyList<AlignmentSpotRow> ListedSpots => SpotItems.Where(i => i.Spot is not null).Select(i => i.Spot!).ToList();
+    /// <summary>The features the ion table is currently showing, in table order: what an export writes.</summary>
+    public IReadOnlyList<AlignmentSpotRow> ListedSpots => IonRows.Select(r => r.Spot).ToList();
 
     /// <summary>
     /// Writes the listed spots as an OpenQuant component CSV. The representative deconvoluted MS/MS of each spot

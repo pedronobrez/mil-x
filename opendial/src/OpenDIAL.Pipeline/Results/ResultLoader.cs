@@ -335,10 +335,42 @@ public static class ResultLoader
                     SampleHeights = heights,
                     SamplePeaks = samplePeaks,
                     MatchResult = match is null || match.IsUnknown ? null : match,
+                    MsmsAssigned = aligned.Any(p => p.IsMsmsAssigned),
+                    RepresentativeFileId = spot.RepresentativeFileID,
+                    IsotopicPeaks = (spot.IsotopicPeaks ?? new List<CompMs.Common.DataObj.Property.IsotopicPeak>())
+                        .Where(p => p is not null)
+                        .Select(p => new SpectrumPeakPoint(p.Mass, p.AbsoluteAbundance))
+                        .ToList(),
+                    Comment = spot.Comment ?? string.Empty,
+                    MonoisotopicPercentage = spot.MonoIsotopicPercentage,
+                    IsManuallyAnnotated = spot.MatchResults?.IsManuallyModifiedRepresentative ?? false,
+                    Candidates = BuildCandidates(spot.MatchResults, match),
                 });
             }
             return new AlignmentTable(samples, spots, "container");
         }, ct);
+    }
+
+
+    /// <summary>
+    /// The library matches kept for a feature, best first. MS-DIAL stores several and reports one;
+    /// a reviewer who disagrees needs to see the runners-up and what separated them.
+    /// </summary>
+    private static IReadOnlyList<AnnotationCandidate> BuildCandidates(MsScanMatchResultContainer? container, MsScanMatchResult? representative)
+    {
+        if (container is null) return Array.Empty<AnnotationCandidate>();
+        var results = container.MatchResults?.Where(r => r is not null && !r.IsUnknown && !r.IsDecoy).ToList();
+        if (results is null || results.Count == 0) return Array.Empty<AnnotationCandidate>();
+        return results
+            .OrderByDescending(r => r.TotalScore)
+            .Select(r => new AnnotationCandidate(
+                string.IsNullOrEmpty(r.Name) ? "(unnamed record)" : r.Name,
+                r.TotalScore, r.SimpleDotProduct, r.WeightedDotProduct, r.ReverseDotProduct,
+                r.MatchedPeaksCount, r.MatchedPeaksPercentage, r.AcurateMassSimilarity, r.RtSimilarity,
+                ReferenceEquals(r, representative), r.IsSpectrumMatch,
+                r.IsLipidClassMatch, r.IsLipidChainsMatch, r.IsLipidPositionMatch,
+                r.Source.ToString(), r.LibraryID))
+            .ToList();
     }
 
     /// <summary>Fallback parser for the exported .mdalign TSV (MS-DIAL alignment export format).</summary>

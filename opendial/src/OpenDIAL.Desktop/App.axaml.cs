@@ -167,6 +167,25 @@ public partial class App : Application
                                 await Task.Delay(1500);
                                 break;
                             }
+                            case "review-map":
+                            {
+                                // the review workspace with a class filter on and the feature map open
+                                vm.Analytics.AnnotationFilter = "Annotated";
+                                await Task.Delay(1200);
+                                var tabs = Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(window).OfType<Avalonia.Controls.TabControl>().FirstOrDefault(t => t.Name == "ResultTabs");
+                                if (tabs is not null) tabs.SelectedIndex = 5;
+                                await Task.Delay(1800);
+                                break;
+                            }
+                            case "review-candidates":
+                            {
+                                vm.Analytics.AnnotationFilter = "Confident";
+                                await Task.Delay(1200);
+                                var tabs = Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(window).OfType<Avalonia.Controls.TabControl>().FirstOrDefault(t => t.Name == "ResultTabs");
+                                if (tabs is not null) tabs.SelectedIndex = 3;
+                                await Task.Delay(1800);
+                                break;
+                            }
                             case "analytics-magnify":
                                 vm.Analytics.Magnify(vm.Analytics.Panels.FirstOrDefault());
                                 await Task.Delay(1500);

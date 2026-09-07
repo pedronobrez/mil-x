@@ -82,6 +82,20 @@
   <Style Selector="Border.badge.accent TextBlock">
     <Setter Property="Foreground" Value="{DynamicResource OdAccent}" />
   </Style>
+  <!-- read-only pill: annotation level, "hand-picked", and similar one-word states -->
+  <Style Selector="Border.chip">
+    <Setter Property="Background" Value="{DynamicResource OdSurfaceAlt}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource OdLine}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Padding" Value="8,2" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Border.chip TextBlock">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="Foreground" Value="{DynamicResource OdInkMuted}" />
+  </Style>
+
   <Style Selector="Border.count">
     <Setter Property="Background" Value="{DynamicResource OdAccentSoft}" />
     <Setter Property="CornerRadius" Value="9" />
@@ -132,6 +146,11 @@
   <Style Selector="Border.hairline-bottom">
     <Setter Property="BorderBrush" Value="{DynamicResource OdLine}" />
     <Setter Property="BorderThickness" Value="0,0,0,1" />
+  </Style>
+  <!-- vertical rule between a chart and the numbers beside it -->
+  <Style Selector="Border.hairline-left">
+    <Setter Property="BorderBrush" Value="{DynamicResource OdLine}" />
+    <Setter Property="BorderThickness" Value="1,0,0,0" />
   </Style>
   <Style Selector="Border.section">
     <Setter Property="BorderBrush" Value="{DynamicResource OdLine}" />
@@ -220,6 +239,17 @@
     <Setter Property="Foreground" Value="{DynamicResource OdInk}" />
     <Setter Property="FontWeight" Value="SemiBold" />
   </Style>
+  <!-- a toolbar button acting as a toggle: the tag buttons of the review strip -->
+  <Style Selector="Button.tool.on /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource OdAccentSoft}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource OdAccent}" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+  <Style Selector="Button.tool.on">
+    <Setter Property="Foreground" Value="{DynamicResource OdAccent}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
   <!-- small icon-ish buttons (◀ ▶ ×) -->
   <Style Selector="Button.icon">
     <Setter Property="Padding" Value="6,2" />
