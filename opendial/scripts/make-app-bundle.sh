@@ -27,7 +27,9 @@ if [ -z "$RID" ]; then
 fi
 [ "$(uname -s)" = "Darwin" ] || { echo "application bundles can only be built on macOS"; exit 1; }
 
-VERSION="${OPENDIAL_VERSION:-0.1.0}"
+# the version is stamped once, in Directory.Build.props; the application reads the same number
+VERSION="${OPENDIAL_VERSION:-$(sed -n 's/.*<Version>\([^<]*\)<\/Version>.*/\1/p' "$ROOT/Directory.Build.props" | head -1)}"
+VERSION="${VERSION:-0.0.0}"
 PUBLISH="$ROOT/dist/opendial-desktop-$RID"
 APP="$ROOT/dist/OpenDIAL.app"
 

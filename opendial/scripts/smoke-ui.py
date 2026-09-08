@@ -7,20 +7,30 @@ into the bundle, a font that stopped resolving, a plugin that fails to load, a s
 fires. The last one is not hypothetical — every workspace shortcut had been dead since the day it
 was written, and nothing in the suite noticed.
 
-So this launches the real bundle through LaunchServices, the way a person does, opens a real
-project, and then asserts on what the window says it is showing. It reads that from the probe file
-the application writes when OPENDIAL_UI_PROBE names one, rather than guessing from pixels.
+So this launches the real bundle through LaunchServices, the way a person does, and then asserts on
+what the window says it is showing. It reads that from the probe file the application writes when
+OPENDIAL_UI_PROBE names one, rather than guessing from pixels.
+
+Two modes, which can be combined:
 
     opendial/scripts/smoke-ui.py --project ~/…/Project-2609071200.mdproject
+        opens a processed project and checks the shell: title, ion table, shortcuts, a click.
+
+    opendial/scripts/smoke-ui.py --process ~/…/raw-folder --library ~/…/library.msp
+        writes a project from the raw files in the folder, presses Cmd+R and waits for the run,
+        then does the work a reviewer does: filters the table by typing, re-integrates a peak by
+        typing a window and clicking Apply, saves the review, and exports the reviewed table — the
+        one step that goes through the system's save panel is handed over by the command channel.
 
 Exits non-zero on the first failure and says what it expected. Needs a logged-in graphical session;
-clicks additionally need cliclick (brew install cliclick), and are skipped with a warning if it is
-not there.
+clicks and typing additionally need cliclick (brew install cliclick), and are skipped with a warning
+if it is not there.
 """
 
 from __future__ import annotations
 
 import argparse
+import glob
 import json
 import os
 import shutil
@@ -33,8 +43,12 @@ APP_PROCESS = "OpenDIAL"
 
 # the digit keys, which is how a shortcut has to be sent: a character event never reaches one
 KEY_CODES = {1: 18, 2: 19, 3: 20, 4: 21, 5: 23}
+KEY_R = 15
+KEY_A = 0
 
 WORKSPACES = ["Explorer", "Analytics", "Method", "Samples", "Statistics"]
+
+RAW_EXTENSIONS = (".wiff", ".mzml", ".raw", ".d", ".abf", ".ibf", ".cdf")
 
 
 class Failed(Exception):
@@ -128,6 +142,26 @@ def click(x: float, y: float) -> None:
         subprocess.run(["cliclick", f"m:{origin}"], capture_output=True)
 
 
+def type_text(text: str) -> None:
+    """Types into whatever has the focus, the way a keyboard would."""
+    front()
+    subprocess.run(["cliclick", "w:100", f"t:{text}", "w:200"], check=True, capture_output=True)
+
+
+def click_control(state: dict, name: str, what: str) -> None:
+    spot = state["controls"].get(name)
+    check(spot is not None, f"the window reports where {what} is")
+    x, y = to_screen(state, spot)
+    click(x, y)
+
+
+def replace_text(state: dict, name: str, what: str, text: str) -> None:
+    """Clicks a text box, selects what is in it, and types over it."""
+    click_control(state, name, what)
+    press(KEY_A)   # Cmd+A
+    type_text(text)
+
+
 def read_probe(path: str) -> dict:
     for _ in range(5):
         try:
@@ -138,10 +172,11 @@ def read_probe(path: str) -> dict:
     raise Failed(f"no readable probe at {path}")
 
 
-def wait_for(path: str, predicate, what: str, timeout: float) -> dict:
+def wait_for(path: str, predicate, what: str, timeout: float, report=None) -> dict:
     """Waits for the window to report something, and says what it was still saying if it never did."""
     deadline = time.time() + timeout
     last: dict = {}
+    next_report = time.time() + 15
     while time.time() < deadline:
         try:
             last = read_probe(path)
@@ -150,9 +185,28 @@ def wait_for(path: str, predicate, what: str, timeout: float) -> dict:
             continue
         if predicate(last):
             return last
+        if report is not None and time.time() >= next_report:
+            report(last)
+            next_report = time.time() + 15
         time.sleep(0.5)
     raise Failed(f"timed out after {timeout:.0f} s waiting for {what}; the window was reporting "
-                 f"{json.dumps({k: v for k, v in last.items() if k != 'controls'}, indent=2)}")
+                 f"{json.dumps({k: v for k, v in last.items() if k not in ('controls',)}, indent=2)}")
+
+
+def send_command(probe: str, command: dict, timeout: float = 120) -> dict:
+    """Hands one command to the application and waits for it to say it is done."""
+    command = dict(command)
+    command["id"] = f"{time.time():.3f}"
+    with open(probe + ".commands.tmp", "w", encoding="utf-8") as handle:
+        json.dump(command, handle)
+    os.replace(probe + ".commands.tmp", probe + ".commands")
+    state = wait_for(probe, lambda s: (s.get("lastCommand") or {}).get("id") == command["id"],
+                     f"the {command['action']} command to complete", timeout)
+    result = state["lastCommand"]
+    if not result.get("ok"):
+        raise Failed(f"{command['action']} failed: {result.get('message')}")
+    say(f"       {command['action']}: {result.get('message')}")
+    return state
 
 
 def check(condition: bool, message: str) -> None:
@@ -161,14 +215,68 @@ def check(condition: bool, message: str) -> None:
     say(f"  ok  {message}")
 
 
+def classify(name: str) -> tuple[str, str]:
+    """A guess at what an injection is from its name, good enough for a batch nobody labelled."""
+    lower = name.lower()
+    if "bk" in lower or "blank" in lower or "blk" in lower:
+        return "Blank", "blank"
+    if "qc" in lower or "eq" in lower or "pool" in lower:
+        return "QC", "qc"
+    return "Sample", "sample"
+
+
+def write_project(folder: str, raw_folder: str, method: str | None, library: str | None, limit: int) -> tuple[str, int]:
+    """Writes an .odproj the way the New project wizard would, from the raw files in a folder."""
+    raws = sorted(p for p in glob.glob(os.path.join(raw_folder, "*")) if p.lower().endswith(RAW_EXTENSIONS)
+                  and not p.lower().endswith(".wiff.scan"))
+    # a .wiff2 beside a .wiff is the same acquisition in the newer container; the .wiff is the one read natively
+    stems = {os.path.splitext(p)[0] for p in raws if p.lower().endswith(".wiff")}
+    raws = [p for p in raws if not (p.lower().endswith(".wiff2") and os.path.splitext(p)[0] in stems)]
+    if limit > 0:
+        raws = raws[:limit]
+    if not raws:
+        raise Failed(f"no raw files in {raw_folder}")
+    method_text = open(method, encoding="utf-8").read() if method else ""
+    if library:
+        lines = [l for l in method_text.splitlines() if not l.lower().startswith("msp file path")]
+        lines.append(f"MSP file path: {os.path.abspath(library)}")
+        method_text = "\n".join(lines) + "\n"
+    samples = []
+    for order, path in enumerate(raws, start=1):
+        name = os.path.splitext(os.path.basename(path))[0]
+        sample_type, cls = classify(name)
+        samples.append({
+            "Path": os.path.abspath(path), "Name": name, "Class": cls, "SampleType": sample_type,
+            "Acquisition": "DDA", "AnalyticalOrder": order, "Batch": 1, "Dilution": 1,
+            "Comment": "", "Included": True, "SampleIndex": 0,
+        })
+    project = {
+        "Version": 1, "Name": "smoke-cycle", "Mode": "LCMS",
+        "OutputFolder": os.path.join(folder, "results"), "MdprojectPath": None,
+        "MethodText": method_text, "Samples": samples,
+    }
+    os.makedirs(folder, exist_ok=True)
+    path = os.path.join(folder, "smoke-cycle.odproj")
+    with open(path, "w", encoding="utf-8") as handle:
+        json.dump(project, handle, indent=2)
+    return path, len(samples)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--bundle", default="/Applications/OpenDIAL.app",
                         help="the application to drive (default: the installed one)")
-    parser.add_argument("--project", help="a project to open; without it only the empty window is checked")
+    parser.add_argument("--project", help="a processed project to open; checks the shell around it")
+    parser.add_argument("--process", metavar="FOLDER",
+                        help="a folder of raw files: writes a project, processes it, and reviews the result")
+    parser.add_argument("--method", help="method file for --process (default: the application's LC-MS defaults)")
+    parser.add_argument("--library", help="MSP library for --process")
+    parser.add_argument("--limit", type=int, default=0, help="process only the first N raw files of the folder")
     parser.add_argument("--shots", help="directory to save screenshots into")
     parser.add_argument("--open-timeout", type=float, default=600,
-                        help="seconds to allow for the project to load (default: 600)")
+                        help="seconds to allow for a project to load (default: 600)")
+    parser.add_argument("--process-timeout", type=float, default=2400,
+                        help="seconds to allow for the run (default: 2400)")
     parser.add_argument("--keep", action="store_true", help="leave the application running at the end")
     args = parser.parse_args()
 
@@ -181,29 +289,49 @@ def main() -> int:
         say(f"FAIL: no application at {args.bundle}; build and install it first "
             f"(opendial/scripts/make-app-bundle.sh)")
         return 1
+    # the application resolves its launch argument against its own working directory, which is "/"
+    if args.project:
+        args.project = os.path.abspath(args.project)
+    if args.process:
+        args.process = os.path.abspath(args.process)
     if args.project and not os.path.exists(args.project):
         say(f"FAIL: no project at {args.project}")
         return 1
+    if args.process and not os.path.isdir(args.process):
+        say(f"FAIL: no folder at {args.process}")
+        return 1
+    if not args.project and not args.process:
+        say("note: neither --project nor --process given; only the empty window is checked")
 
     can_click = shutil.which("cliclick") is not None
     if not can_click:
-        say("note: cliclick is not installed, so the click checks are skipped (brew install cliclick)")
+        say("note: cliclick is not installed, so the click and typing checks are skipped (brew install cliclick)")
 
     work = tempfile.mkdtemp(prefix="opendial-smoke-")
     probe = os.path.join(work, "probe.json")
     out_log = os.path.join(work, "stdout.log")
     err_log = os.path.join(work, "stderr.log")
+    settings = os.path.join(work, "settings")
     shots = args.shots or os.path.join(work, "shots")
     os.makedirs(shots, exist_ok=True)
+    os.makedirs(settings, exist_ok=True)
+
+    launch_path = args.project
+    expected_samples = 0
+    if args.process:
+        launch_path, expected_samples = write_project(os.path.join(work, "cycle"), args.process, args.method, args.library, args.limit)
+        say(f"wrote a project with {expected_samples} sample(s) at {launch_path}")
 
     say(f"driving {args.bundle}")
     say(f"  probe {probe}")
     quit_running()
 
+    # the settings live in the work folder, so the run neither reads nor rewrites the person's own
     launch = ["open", "-a", args.bundle, "--env", f"OPENDIAL_UI_PROBE={probe}",
+              "--env", f"OPENDIAL_SETTINGS_DIR={settings}",
               "--stdout", out_log, "--stderr", err_log]
-    if args.project:
-        launch += ["--args", args.project]
+    if launch_path:
+        launch += ["--args", launch_path]
     result = subprocess.run(launch, capture_output=True, text=True)
     if result.returncode != 0:
         say(f"FAIL: could not launch it: {result.stderr.strip() or result.stdout.strip()}")
@@ -219,11 +347,16 @@ def main() -> int:
         subprocess.run(["screencapture", "-x", "-o", path], capture_output=True)
         say(f"  shot {path}")
 
+    def progress(state: dict) -> None:
+        run = state.get("run") or {}
+        say(f"       … {run.get('stage')} {run.get('progress')} % {run.get('file') or ''}")
+
     try:
         say("the window comes up")
         state = wait_for(probe, lambda s: bool(s.get("title")), "the window to report itself", 90)
         check(APP_PROCESS in state["title"], f"the title reads {state['title']!r}")
         check(bool(state.get("controls")), "the window can say where its workspace tabs are")
+        check(bool(state.get("version")), f"the build calls itself version {state.get('version')}")
 
         if args.project:
             say("the project opens")
@@ -235,6 +368,123 @@ def main() -> int:
             check(state["workspaceName"] == "Analytics",
                   "opening a processed project lands on the review workspace")
             shot("opened")
+
+        if args.process:
+            say("the unprocessed project opens on the batch")
+            state = wait_for(probe, lambda s: s.get("hasProject") and s.get("samples", 0) == expected_samples,
+                             f"the {expected_samples} samples to load", 60)
+            check(state["workspaceName"] == "Samples", "a project with no results lands on the Samples workspace")
+            check(not state["hasResults"], "and has no results yet")
+
+            say("Cmd+R processes the batch")
+            press(KEY_R)
+            state = wait_for(probe, lambda s: (s.get("run") or {}).get("running") or s.get("hasResults"),
+                             "the run to start", 30)
+            check(state["workspaceName"] == "Analytics", "processing switches to the review workspace")
+            started = time.time()
+            state = wait_for(probe, lambda s: s.get("hasResults") and s.get("ionRows", 0) > 0 and not (s.get("run") or {}).get("running"),
+                             "the run to finish", args.process_timeout, report=progress)
+            elapsed = time.time() - started
+            run = state["run"]
+            check(run.get("error") is None, f"the run finished without an error in {elapsed:.0f} s")
+            check(state["ionRows"] > 0, f"the alignment holds {state['ionRows']} features")
+            if any(p.lower().endswith(".wiff") for p in glob.glob(os.path.join(args.process, "*"))):
+                check(run.get("nativeReads", 0) == expected_samples,
+                      f"the SCIEX plugin in the bundle read {run.get('nativeReads')} of {expected_samples} .wiff files natively")
+            out_folder = state.get("outputFolder") or ""
+            check(os.path.exists(os.path.join(out_folder, "opendial_method.txt")), "the method was written beside the results")
+            aligns = glob.glob(os.path.join(out_folder, "*.mdalign"))
+            check(len(aligns) == 1, f"one alignment table was exported: {os.path.basename(aligns[0]) if aligns else 'none'}")
+            check(bool(glob.glob(os.path.join(out_folder, "*.mdproject"))), "an MS-DIAL project was saved with it")
+            with open(launch_path, encoding="utf-8") as handle:
+                saved = json.load(handle)
+            check(bool(saved.get("MdprojectPath")), "the OpenDIAL project now points at the MS-DIAL project")
+            shot("processed")
+
+            if can_click:
+                say("the ion table answers the keyboard: filtering by typing")
+                state = read_probe(probe)
+                target = state["selected"]
+                check(target is not None, f"a feature is selected: #{target['id']} {target['name']}")
+                click_control(state, "control.FilterBox", "the filter box")
+                type_text(str(target["id"]))
+                state = wait_for(probe, lambda s: s.get("ionRows") == 1 and (s.get("review") or {}).get("filter") == str(target["id"]),
+                                 "the filter to narrow the table to the one id", 15)
+                check(state["selected"]["id"] == target["id"], f"the table narrowed to feature #{target['id']} and kept it selected")
+
+                say("a peak is re-integrated by typing a window and clicking Apply to all")
+                peaks = [p for p in state["selected"]["samples"] if p.get("height") and p.get("left") is not None]
+                check(len(peaks) > 0, f"the feature has a detected peak in {len(peaks)} sample(s)")
+                first = peaks[0]
+                width = max(0.02, (first["right"] - first["left"]) / 4.0)
+                new_from = round(first["rt"] - width, 3)
+                new_to = round(first["rt"] + width, 3)
+                heights_before = {p["file"]: p["height"] for p in state["selected"]["samples"]}
+                replace_text(state, "control.IntegrateFrom", "the integrate-from box", f"{new_from:.3f}")
+                replace_text(state, "control.IntegrateTo", "the integrate-to box", f"{new_to:.3f}")
+                state = wait_for(probe, lambda s: (s.get("review") or {}).get("integrationFrom") == f"{new_from:.3f}"
+                                 and (s.get("review") or {}).get("integrationTo") == f"{new_to:.3f}",
+                                 "the typed window to reach the boxes", 15)
+                check(True, f"the boxes read {new_from:.3f}–{new_to:.3f} min")
+                click_control(state, "control.ApplyToAll", "the Apply to all button")
+                state = wait_for(probe, lambda s: (s.get("review") or {}).get("peaksEdited") is True
+                                 and (s.get("selected") or {}).get("manuallyQuantified") is True,
+                                 "the re-integration to be applied", 120)
+                after = state["selected"]["samples"]
+                inside = [p for p in after if p.get("left") is not None and p["left"] >= new_from - 1e-6 and p["right"] <= new_to + 1e-6]
+                check(len(inside) == len([p for p in after if p.get("left") is not None]),
+                      f"every integrated sample now sits inside {new_from:.3f}–{new_to:.3f} min ({len(inside)} of {len(after)})")
+                changed = sum(1 for p in after if p.get("height") is not None and heights_before.get(p["file"]) != p["height"])
+                check(changed >= 1, f"{changed} sample height(s) changed with the narrower window")
+                shot("reintegrated")
+
+                say("Save review writes the edit back")
+                click_control(state, "control.SaveReview", "the Save review button")
+                state = wait_for(probe, lambda s: (s.get("review") or {}).get("peaksEdited") is False,
+                                 "the review to be saved", 60)
+                arf = glob.glob(os.path.join(out_folder, "AlignResult-*.arf2"))
+                tags = glob.glob(os.path.join(out_folder, "AlignResult-*_tags.xml"))
+                backups = glob.glob(os.path.join(out_folder, "*.before-curation"))
+                check(len(tags) >= 1, f"the tag file MS-DIAL reads exists: {os.path.basename(tags[0]) if tags else 'none'}")
+                check(len(backups) >= 1, f"{len(backups)} file(s) kept as they were before the edit")
+                check(len(arf) >= 1, "the alignment container was rewritten in place")
+
+                say("the reviewed table is exported (the save panel is the system's, so the path is handed over)")
+                reviewed = os.path.join(work, "cycle", "reviewed.txt")
+                send_command(probe, {"action": "exportReviewed", "path": reviewed})
+                check(os.path.exists(reviewed), "the reviewed table exists")
+                with open(reviewed, encoding="utf-8") as handle:
+                    lines = [l.rstrip("\n").split("\t") for l in handle if l.strip()]
+                header, classes, rows = lines[0], lines[1], lines[2:]
+                check(len(rows) == 1, f"it holds the {len(rows)} feature the filter was showing")
+                quant = header.index("Manually quantified")
+                check(rows[0][0] == str(target["id"]) and rows[0][quant] == "True",
+                      f"feature #{rows[0][0]} is marked as quantified by hand")
+                check(classes[0] == "Class" and len(classes) == len(header), "the second line names each sample's class")
+
+                components = os.path.join(work, "cycle", "components.csv")
+                send_command(probe, {"action": "exportOpenQuant", "path": components})
+                check(os.path.exists(components) and len(open(components, encoding="utf-8").read().splitlines()) >= 1,
+                      "the OpenQuant component list exists")
+
+                say("the manual opens from the keyboard and answers a search")
+                front()
+                osascript('tell application "System Events" to key code 122', check=True)   # F1
+                state = wait_for(probe, lambda s: (s.get("help") or {}).get("open") is True, "the help window to open", 15)
+                check(state["help"]["page"] == "analytics-workspace",
+                      f"F1 on the review workspace opens its page: {state['help']['title']!r}")
+                send_command(probe, {"action": "openHelp", "page": "index", "query": "drift correction"})
+                state = wait_for(probe, lambda s: (s.get("help") or {}).get("results", 0) > 0, "the search to find pages", 15)
+                check(state["help"]["results"] > 0, f"searching 'drift correction' finds {state['help']['results']} page(s)")
+                send_command(probe, {"action": "closeHelp"})
+
+                say("the filter is cleared again")
+                state = read_probe(probe)
+                click_control(state, "control.FilterBox", "the filter box")
+                press(KEY_A)
+                osascript('tell application "System Events" to key code 51', check=True)   # delete
+                state = wait_for(probe, lambda s: s.get("ionRows", 0) > 1, "the table to fill again", 15)
+                check(state["ionRows"] > 1, f"the table shows all {state['ionRows']} features again")
 
         say("every workspace shortcut goes where it says")
         for number, code in KEY_CODES.items():
@@ -261,7 +511,7 @@ def main() -> int:
             click(x, y)
             state = wait_for(probe, lambda s: s.get("workspace") == 4, "the click to select Statistics", 10)
             check(state["workspaceName"] == "Statistics", "clicking the Statistics tab selects it")
-            if args.project:
+            if args.project or args.process:
                 check(state["statistics"]["hasResults"], "the statistics workspace has the batch")
             shot("statistics")
 
@@ -291,7 +541,12 @@ def main() -> int:
         return 1
 
     say("")
-    say("the installed application opens, loads a real project, and answers both the keyboard and the mouse")
+    if args.process:
+        say("the installed application processes a batch of real acquisitions, re-integrates a peak from the keyboard, "
+            "saves the review, exports it, and opens its manual")
+    else:
+        say("the installed application opens, loads a real project, and answers both the keyboard and the mouse")
+    say(f"work folder kept at {work}")
     return 0
 
 

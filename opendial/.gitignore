@@ -16,3 +16,4 @@ testdata/**/*.mddata
 testdata/**/*.msp2*
 testdata/**/*_tags.xml
 testdata/**/*.rtc
+__pycache__/

@@ -167,6 +167,17 @@ public class VisualRegressionTests
     }
 
     [AvaloniaFact]
+    public void The_help_window_looks_like_its_reference()
+    {
+        var vm = new Help.HelpViewModel(Help.Manual.Load());
+        vm.Open("review-tags");
+        var window = new HelpWindow { DataContext = vm, Width = 1180, Height = 820 };
+        window.Show();
+        AssertLooksLike(window, "help-window");
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task The_drift_correction_looks_like_its_reference()
     {
         var (vm, _) = StatisticsWorkspaceTests.Drifting();

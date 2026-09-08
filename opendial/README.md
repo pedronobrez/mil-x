@@ -27,6 +27,8 @@ bash opendial/scripts/setup-macos.sh     # .NET 8 SDK (no sudo) + NuGet source
 bash opendial/scripts/build-cli.sh       # -> opendial/dist/opendial-cli-osx-arm64/opendial-cli
 bash opendial/scripts/test.sh            # unit tests + end-to-end synthetic run
 opendial/scripts/smoke-ui.py --project X # drive the installed app and check it really works
+opendial/scripts/smoke-ui.py --process DIR --library L.msp   # …and process, review, save and export a real batch
+python3 opendial/scripts/build-manual.py # -> opendial/dist/OpenDIAL-manual-<version>.pdf (and .html)
 bash opendial/scripts/ui-drive.sh        # the same primitives one at a time, for a screenshot
 dotnet run --project opendial/src/OpenDIAL.Desktop -c Release -p:UseOpenRawData=true   # GUI (or scripts/build-gui.sh)
 bash opendial/scripts/make-app-bundle.sh # -> opendial/dist/OpenDIAL.app (double-clickable, ad-hoc signed)
@@ -57,6 +59,15 @@ supported, but Finder cannot bind a folder to an application, so open those from
 A TripleTOF `.wiff` opened natively in the Explorer:
 
 ![wiff](docs/images/explorer-wiff.png)
+
+## The manual
+
+The complete user manual lives in [docs/manual/](docs/manual/): one Markdown page per topic, linked
+with `[[wikilinks]]` the way an Obsidian vault is. The same pages are embedded in the application —
+**Help ▸ OpenDIAL manual**, or F1 for the page of the workspace that is showing — with a search
+box and cross-references, and compiled into one PDF by `scripts/build-manual.py`. `ManualTests`
+holds the manual to the build: every link resolves, every control in the interface is mentioned,
+and the Versions page names the current version. The manual is updated with every version.
 
 Documentation: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (reverse-engineering report),
 [docs/SCIEX-IDA.md](docs/SCIEX-IDA.md) (how SCIEX IDA is read, and how a run compares with MS-DIAL),

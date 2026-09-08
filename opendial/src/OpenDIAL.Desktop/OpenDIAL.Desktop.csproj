@@ -35,6 +35,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!--
+      The manual travels inside the application. The pages under docs/manual are the source of both
+      the Help window and the PDF, so there is one manual; embedding them means the help is the help
+      of the build that is running rather than of whatever is on disk.
+    -->
+    <EmbeddedResource Include="..\..\docs\manual\*.md" LogicalName="Manual/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\..\docs\images\*.png" LogicalName="Manual/images/%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="OpenDIAL.Desktop.Tests" />
   </ItemGroup>
 

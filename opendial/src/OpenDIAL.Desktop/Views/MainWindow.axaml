@@ -33,6 +33,8 @@
     <KeyBinding Gesture="Cmd+O" Command="{Binding OpenProjectCommand}" />
     <KeyBinding Gesture="Cmd+R" Command="{Binding ProcessBatchCommand}" />
     <KeyBinding Gesture="Cmd+L" Command="{Binding ToggleLogCommand}" />
+    <KeyBinding Gesture="F1" Command="{Binding OpenHelpCommand}" />
+    <KeyBinding Gesture="Cmd+Shift+OemQuestion" Command="{Binding OpenHelpCommand}" />
   </Window.KeyBindings>
 
   <DockPanel>
@@ -98,6 +100,11 @@
           <MenuItem Header="Statistics" Command="{Binding SelectWorkspaceCommand}" CommandParameter="4" InputGesture="Cmd+D5" />
         </MenuItem>
         <MenuItem Header="_Help">
+          <MenuItem Header="OpenDIAL manual" Command="{Binding OpenHelpCommand}" CommandParameter="index" InputGesture="F1" />
+          <MenuItem Header="Help for this workspace" Command="{Binding OpenHelpCommand}" InputGesture="Cmd+Shift+OemQuestion" />
+          <MenuItem Header="Keyboard shortcuts" Command="{Binding OpenHelpCommand}" CommandParameter="keyboard-shortcuts" />
+          <MenuItem Header="Troubleshooting" Command="{Binding OpenHelpCommand}" CommandParameter="troubleshooting" />
+          <Separator />
           <MenuItem Header="About OpenDIAL" Command="{Binding OpenAboutCommand}" />
         </MenuItem>
       </Menu>

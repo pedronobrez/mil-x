@@ -1,6 +1,8 @@
+using System.Globalization;
 using System.Text.Json;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using OpenDIAL.Desktop.ViewModels;
 
@@ -17,20 +19,36 @@ namespace OpenDIAL.Desktop.Services;
 ///
 /// It is off unless OPENDIAL_UI_PROBE names a file, so the shipped application writes nothing.
 ///
-/// It also reports where a few controls are inside the window, because a script that clicks at a
-/// coordinate worked out from a screenshot breaks the moment the window moves or the layout shifts.
-/// Asking the window where its own tabs are is both robust and honest.
+/// It also reports where the named controls are inside the window, because a script that clicks at
+/// a coordinate worked out from a screenshot breaks the moment the window moves or the layout
+/// shifts. Asking the window where its own buttons are is both robust and honest.
+///
+/// One thing flows the other way. Beside the probe file the application watches for a
+/// "&lt;probe&gt;.commands" file and runs what it finds through the same view-model commands the
+/// buttons use. The smoke test needs that for exactly one thing: an export goes through the
+/// operating system's own save panel, which is not this application's code to drive, so the
+/// script hands the path over here instead and everything after the panel runs for real.
 /// </summary>
 public sealed class UiProbe
 {
     private readonly string _path;
     private bool _scheduled;
+    private DispatcherTimer? _timer;
+    private Dictionary<string, object?>? _lastCommand;
 
     private UiProbe(string path) => _path = path;
 
     /// <summary>The probe, or null when the environment did not ask for one.</summary>
     public static UiProbe? FromEnvironment() =>
         Environment.GetEnvironmentVariable("OPENDIAL_UI_PROBE") is { Length: > 0 } path ? new UiProbe(path) : null;
+
+    public string CommandPath => _path + ".commands";
+
+    /// <summary>
+    /// Runs one command from the command file and returns a message for the probe. Set by the
+    /// window, which is what has the view models.
+    /// </summary>
+    public Func<JsonElement, Task<string>>? CommandHandler { get; set; }
 
     /// <summary>
     /// Writes after the current burst of changes rather than on each one: loading a project moves a
@@ -40,35 +58,163 @@ public sealed class UiProbe
     {
         if (_scheduled) return;
         _scheduled = true;
-        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        Dispatcher.UIThread.Post(() =>
         {
             _scheduled = false;
             Write(window, vm);
-        }, Avalonia.Threading.DispatcherPriority.Background);
+        }, DispatcherPriority.Background);
+    }
+
+    /// <summary>Starts watching the command file. Harmless to call twice.</summary>
+    public void Listen(Window window, MainWindowViewModel vm)
+    {
+        if (_timer is not null) return;
+        _timer = new DispatcherTimer(TimeSpan.FromMilliseconds(400), DispatcherPriority.Background, (_, _) => _ = PollAsync(window, vm));
+        _timer.Start();
+    }
+
+    private bool _polling;
+
+    private async Task PollAsync(Window window, MainWindowViewModel vm)
+    {
+        if (_polling || CommandHandler is null || !File.Exists(CommandPath)) return;
+        _polling = true;
+        try
+        {
+            string text;
+            try
+            {
+                text = File.ReadAllText(CommandPath);
+                File.Delete(CommandPath);
+            }
+            catch (IOException)
+            {
+                return;   // still being written; next tick
+            }
+            using var document = JsonDocument.Parse(text);
+            var commands = document.RootElement.ValueKind == JsonValueKind.Array
+                ? document.RootElement.EnumerateArray().ToList()
+                : new List<JsonElement> { document.RootElement };
+            foreach (var command in commands)
+            {
+                var id = command.TryGetProperty("id", out var i) ? i.ToString() : string.Empty;
+                var action = command.TryGetProperty("action", out var a) ? a.GetString() ?? string.Empty : string.Empty;
+                string message;
+                var ok = true;
+                try
+                {
+                    message = await CommandHandler(command);
+                }
+                catch (Exception ex)
+                {
+                    ok = false;
+                    message = ex.Message;
+                }
+                _lastCommand = new Dictionary<string, object?>
+                {
+                    ["id"] = id,
+                    ["action"] = action,
+                    ["ok"] = ok,
+                    ["message"] = message,
+                    ["completedAt"] = DateTimeOffset.Now.ToString("O"),
+                };
+                Write(window, vm);
+            }
+        }
+        catch (Exception ex)
+        {
+            _lastCommand = new Dictionary<string, object?> { ["ok"] = false, ["message"] = "unreadable command file: " + ex.Message };
+            Write(window, vm);
+        }
+        finally
+        {
+            _polling = false;
+        }
     }
 
     public void Write(Window window, MainWindowViewModel vm)
     {
         try
         {
+            var analytics = vm.Analytics;
+            var selected = analytics.SelectedRow;
             var snapshot = new Dictionary<string, object?>
             {
                 ["writtenAt"] = DateTimeOffset.Now.ToString("O"),
+                ["version"] = AppInfo.Version,
                 ["title"] = vm.Title,
                 ["status"] = vm.Status,
                 ["workspace"] = vm.SelectedWorkspace,
                 ["workspaceName"] = WorkspaceName(vm.SelectedWorkspace),
                 ["projectName"] = vm.ProjectName,
+                ["projectPath"] = vm.ProjectPath,
+                ["outputFolder"] = vm.OutputFolder,
                 ["hasProject"] = vm.HasProject,
                 ["hasResults"] = vm.HasResults,
-                ["ionRows"] = vm.Analytics.IonRows.Count,
+                ["isDirty"] = vm.IsDirty,
+                ["ionRows"] = analytics.IonRows.Count,
                 ["samples"] = vm.Samples.Samples.Count,
+                ["run"] = new Dictionary<string, object?>
+                {
+                    ["running"] = vm.Run.IsRunning,
+                    ["stage"] = vm.Run.Stage,
+                    ["progress"] = Math.Round(vm.Run.Progress, 1),
+                    ["file"] = vm.Run.CurrentFile,
+                    ["error"] = vm.Run.LastError,
+                    ["log"] = vm.Run.LogLines.TakeLast(12).ToList(),
+                    // how many files the raw-file plugin opened itself, which is the one fact about
+                    // the bundle the log tail cannot keep once the run is long
+                    ["nativeReads"] = vm.Run.LogLines.Count(l => l.Contains("read natively", StringComparison.Ordinal)),
+                    ["conversions"] = vm.Run.LogLines.Count(l => l.Contains("Converting vendor format", StringComparison.Ordinal)),
+                },
+                ["review"] = new Dictionary<string, object?>
+                {
+                    ["listed"] = analytics.IonRows.Count,
+                    ["confirmed"] = analytics.ConfirmedCount,
+                    ["rejected"] = analytics.RejectedCount,
+                    ["reviewed"] = analytics.ReviewedCount,
+                    ["peaksEdited"] = analytics.PeaksEdited,
+                    ["curationDirty"] = analytics.CurationDirty,
+                    ["filter"] = analytics.FilterText,
+                    ["integrationFrom"] = analytics.IntegrationFrom,
+                    ["integrationTo"] = analytics.IntegrationTo,
+                    ["summary"] = analytics.Summary,
+                },
+                ["selected"] = selected is null ? null : new Dictionary<string, object?>
+                {
+                    ["id"] = selected.Id,
+                    ["name"] = selected.DisplayName,
+                    ["rt"] = Math.Round(selected.Rt, 4),
+                    ["mz"] = Math.Round(selected.Mz, 5),
+                    ["meanHeight"] = Math.Round(selected.Height, 1),
+                    ["fill"] = Math.Round(selected.Fill, 1),
+                    ["manuallyQuantified"] = selected.Spot.IsManuallyQuantified,
+                    ["tags"] = selected.TagText,
+                    ["samples"] = selected.Spot.SamplePeaks.Select(p => new Dictionary<string, object?>
+                    {
+                        ["file"] = p.FileName,
+                        ["height"] = double.IsNaN(p.Height) ? null : Math.Round(p.Height, 1),
+                        ["area"] = double.IsNaN(p.Area) ? null : Math.Round(p.Area, 1),
+                        ["rt"] = double.IsNaN(p.Rt) ? null : Math.Round(p.Rt, 4),
+                        ["left"] = double.IsNaN(p.RtLeft) ? null : Math.Round(p.RtLeft, 4),
+                        ["right"] = double.IsNaN(p.RtRight) ? null : Math.Round(p.RtRight, 4),
+                        ["gapFilled"] = p.IsGapFilled,
+                    }).ToList(),
+                },
                 ["statistics"] = new Dictionary<string, object?>
                 {
                     ["hasResults"] = vm.Statistics.HasResults,
                     ["hasDiscriminant"] = vm.Statistics.HasPls,
                     ["hasOrthogonal"] = vm.Statistics.HasOpls,
                     ["hasCorrection"] = vm.Statistics.HasCorrection,
+                },
+                ["help"] = vm.Help is null ? null : new Dictionary<string, object?>
+                {
+                    ["open"] = vm.Help.IsOpen,
+                    ["page"] = vm.Help.Current?.Slug,
+                    ["title"] = vm.Help.Current?.Title,
+                    ["query"] = vm.Help.Query,
+                    ["results"] = vm.Help.Results.Count,
                 },
                 ["client"] = new Dictionary<string, object?>
                 {
@@ -77,6 +223,7 @@ public sealed class UiProbe
                     ["scaling"] = window.RenderScaling,
                 },
                 ["controls"] = Controls(window),
+                ["lastCommand"] = _lastCommand,
             };
 
             var json = JsonSerializer.Serialize(snapshot, new JsonSerializerOptions { WriteIndented = true });
@@ -102,8 +249,8 @@ public sealed class UiProbe
     };
 
     /// <summary>
-    /// Where the workspace tabs are, relative to the top left of the window's own content and in
-    /// the units layout is done in.
+    /// Where the workspace tabs, the evidence tabs and every named control are, relative to the top
+    /// left of the window's own content and in the units layout is done in.
     ///
     /// Deliberately not in screen coordinates. Turning these into a place to click means knowing
     /// where the window frame is and how tall its title bar is, and both of those are the window
@@ -114,23 +261,47 @@ public sealed class UiProbe
     private static Dictionary<string, object?> Controls(Window window)
     {
         var found = new Dictionary<string, object?>();
-        var tabs = window.GetVisualDescendants().OfType<TabControl>().FirstOrDefault(t => t.Name == "WorkspaceTabs");
-        if (tabs is null) return found;
-
-        foreach (var item in tabs.GetVisualDescendants().OfType<TabItem>())
+        foreach (var tabs in window.GetVisualDescendants().OfType<TabControl>())
         {
-            var header = item.Header?.ToString();
-            if (string.IsNullOrEmpty(header) || item.Bounds.Width <= 0) continue;
-            var corner = item.TranslatePoint(new Point(0, 0), window);
-            if (corner is null) continue;
-            found["workspace." + header] = new Dictionary<string, object?>
+            var prefix = tabs.Name switch { "WorkspaceTabs" => "workspace.", "ResultTabs" => "evidence.", "StatsTabs" => "statistics.", _ => null };
+            if (prefix is null) continue;
+            foreach (var item in tabs.GetVisualDescendants().OfType<TabItem>())
             {
-                ["x"] = Math.Round(corner.Value.X + item.Bounds.Width / 2, 1),
-                ["y"] = Math.Round(corner.Value.Y + item.Bounds.Height / 2, 1),
-                ["width"] = Math.Round(item.Bounds.Width, 1),
-                ["height"] = Math.Round(item.Bounds.Height, 1),
-            };
+                var header = item.Header?.ToString();
+                if (string.IsNullOrEmpty(header)) continue;
+                Add(found, prefix + header, item, window);
+            }
         }
+        foreach (var control in window.GetVisualDescendants().OfType<Control>())
+        {
+            if (string.IsNullOrEmpty(control.Name) || control is TabControl or TabItem) continue;
+            Add(found, "control." + control.Name, control, window);
+        }
+        // the first row of the ion table, which is what a script clicks to prove a row answers
+        var table = window.GetVisualDescendants().OfType<DataGrid>().FirstOrDefault(g => g.Name == "IonTable");
+        var firstRow = table?.GetVisualDescendants().OfType<DataGridRow>().OrderBy(r => r.Bounds.Y).FirstOrDefault();
+        if (firstRow is not null) Add(found, "control.IonTable.firstRow", firstRow, window);
         return found;
     }
+
+    private static void Add(Dictionary<string, object?> found, string key, Control control, Window window)
+    {
+        if (!control.IsEffectivelyVisible || control.Bounds.Width <= 0 || control.Bounds.Height <= 0) return;
+        var corner = control.TranslatePoint(new Point(0, 0), window);
+        if (corner is null) return;
+        found[key] = new Dictionary<string, object?>
+        {
+            ["x"] = Math.Round(corner.Value.X + control.Bounds.Width / 2, 1),
+            ["y"] = Math.Round(corner.Value.Y + control.Bounds.Height / 2, 1),
+            ["width"] = Math.Round(control.Bounds.Width, 1),
+            ["height"] = Math.Round(control.Bounds.Height, 1),
+        };
+    }
+
+    /// <summary>The number the command file is allowed to carry, parsed the invariant way.</summary>
+    public static double Number(JsonElement element, string name, double fallback) =>
+        element.TryGetProperty(name, out var p)
+            ? p.ValueKind == JsonValueKind.Number ? p.GetDouble()
+              : double.TryParse(p.GetString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var v) ? v : fallback
+            : fallback;
 }

@@ -30,13 +30,13 @@
       <DockPanel>
         <TextBlock DockPanel.Dock="Right" Classes="muted" Text="{Binding Summary}" VerticalAlignment="Center" Margin="12,0,4,0" TextTrimming="CharacterEllipsis" />
         <StackPanel Orientation="Horizontal" Spacing="2">
-          <Button Classes="tool strong" Content="Process batch" Command="{Binding $parent[Window].DataContext.ProcessBatchCommand}" ToolTip.Tip="Run the pipeline on the current batch (Cmd+R)" />
+          <Button x:Name="ProcessBatch" Classes="tool strong" Content="Process batch" Command="{Binding $parent[Window].DataContext.ProcessBatchCommand}" ToolTip.Tip="Run the pipeline on the current batch (Cmd+R)" />
           <Button Classes="tool" Content="Re-export…" Command="{Binding $parent[Window].DataContext.ReexportCommand}" IsEnabled="{Binding HasResults}" />
           <Button Classes="tool" Content="Export to OpenQuant…" Command="{Binding $parent[Window].DataContext.ExportOpenQuantCommand}" IsEnabled="{Binding HasResults}" ToolTip.Tip="Write the listed features as an OpenQuant component CSV (precursor, fragment, RT window)" />
           <Button Classes="tool" Content="Export reviewed table…" Command="{Binding $parent[Window].DataContext.ExportReviewedTableCommand}" IsEnabled="{Binding HasResults}" ToolTip.Tip="Write the features the filter is showing, with their tags, comments and hand edits as columns" />
           <Button Classes="tool" Content="Open output folder" Command="{Binding OpenOutputFolderCommand}" IsEnabled="{Binding HasResults}" />
           <Rectangle Classes="vsep" />
-          <Button Classes="tool" Command="{Binding SaveCurationCommand}" IsEnabled="{Binding HasResults}"
+          <Button x:Name="SaveReview" Classes="tool" Command="{Binding SaveCurationCommand}" IsEnabled="{Binding HasResults}"
                   ToolTip.Tip="Write the review to &lt;alignment&gt;_tags.xml, the same file MS-DIAL reads and writes">
             <StackPanel Orientation="Horizontal" Spacing="6">
               <TextBlock Text="Save review" VerticalAlignment="Center" />
@@ -62,7 +62,7 @@
         -->
         <ScrollViewer x:Name="FilterScroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
         <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-          <TextBox Text="{Binding FilterText}" Watermark="name, ontology, adduct, comment, id…" Width="230" />
+          <TextBox x:Name="FilterBox" Text="{Binding FilterText}" Watermark="name, ontology, adduct, comment, id…" Width="230" />
           <TextBlock Classes="label" Text="m/z" Margin="6,0,0,0" />
           <TextBox Text="{Binding MzFrom}" Watermark="from" Width="72" />
           <TextBox Text="{Binding MzTo}" Watermark="to" Width="72" />
@@ -145,15 +145,15 @@
                   <Border DockPanel.Dock="Top" Classes="hairline-bottom" Padding="0,0,0,6" Margin="0,0,0,6">
                     <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                       <TextBlock Classes="eyebrow" Text="INTEGRATE" Margin="0,0,4,0" VerticalAlignment="Center" />
-                      <TextBox Text="{Binding IntegrationFrom}" Watermark="from" Width="80" />
+                      <TextBox x:Name="IntegrateFrom" Text="{Binding IntegrationFrom}" Watermark="from" Width="80" />
                       <TextBlock Classes="label" Text="to" VerticalAlignment="Center" />
-                      <TextBox Text="{Binding IntegrationTo}" Watermark="to" Width="80" />
+                      <TextBox x:Name="IntegrateTo" Text="{Binding IntegrationTo}" Watermark="to" Width="80" />
                       <TextBlock Classes="label" Text="min" VerticalAlignment="Center" Margin="0,0,4,0" />
-                      <Button Classes="tool strong" Content="Apply to all" Command="{Binding ReintegrateAllCommand}" ToolTip.Tip="Re-integrate this feature over the window in every sample" />
+                      <Button x:Name="ApplyToAll" Classes="tool strong" Content="Apply to all" Command="{Binding ReintegrateAllCommand}" ToolTip.Tip="Re-integrate this feature over the window in every sample" />
                       <Button Classes="tool" Content="This sample" Command="{Binding ReintegrateSampleCommand}" ToolTip.Tip="Re-integrate only the sample in focus" />
                       <Button Classes="tool" Content="Reset" Command="{Binding ResetIntegrationWindowCommand}" ToolTip.Tip="Put the current peak's own boundaries back in the boxes" />
                       <Rectangle Classes="vsep" />
-                      <Button Classes="tool" Content="Split isomer" Command="{Binding SplitIsomerCommand}" ToolTip.Tip="Copy the feature so two co-eluting compounds can be integrated and named apart" />
+                      <Button x:Name="SplitIsomer" Classes="tool" Content="Split isomer" Command="{Binding SplitIsomerCommand}" ToolTip.Tip="Copy the feature so two co-eluting compounds can be integrated and named apart" />
                       <TextBlock Classes="hint" Text="{Binding IntegrationHint}" VerticalAlignment="Center" Margin="8,0,0,0" TextTrimming="CharacterEllipsis" />
                     </StackPanel>
                   </Border>

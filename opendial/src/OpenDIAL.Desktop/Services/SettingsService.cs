@@ -28,7 +28,7 @@ public sealed class AppSettings
     public bool IonTableDetached { get; set; } = false;
 }
 
-/// <summary>Persists <see cref="AppSettings"/> as JSON under %APPDATA%/OpenDIAL/settings.json (~/.config/OpenDIAL on macOS/Linux).</summary>
+/// <summary>Persists <see cref="AppSettings"/> as JSON under %APPDATA%/OpenDIAL/settings.json (~/.config/OpenDIAL on macOS/Linux), or wherever OPENDIAL_SETTINGS_DIR points.</summary>
 public sealed class SettingsService
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -39,8 +39,11 @@ public sealed class SettingsService
 
     public SettingsService()
     {
+        // OPENDIAL_SETTINGS_DIR points the settings somewhere else, so a scripted run of the installed
+        // application neither reads nor rewrites the person's own recent projects and layout
+        var overridden = Environment.GetEnvironmentVariable("OPENDIAL_SETTINGS_DIR");
         var root = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        Folder = Path.Combine(root, "OpenDIAL");
+        Folder = string.IsNullOrWhiteSpace(overridden) ? Path.Combine(root, "OpenDIAL") : overridden;
         FilePath = Path.Combine(Folder, "settings.json");
         Current = Load();
     }

@@ -56,6 +56,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     public AnalyticsViewModel Analytics { get; }
     public StatisticsViewModel Statistics { get; }
     public RunViewModel Run { get; }
+    /// <summary>The manual, loaded on first use: the pages are embedded, so this is a few milliseconds.</summary>
+    public Help.HelpViewModel? Help { get; private set; }
     public ObservableCollection<RecentProject> RecentProjects { get; } = new();
     public ObservableCollection<string> LogLines => Run.LogLines;
 
@@ -604,6 +606,22 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     }
 
     [RelayCommand] private void OpenOutputFolder() { if (!string.IsNullOrEmpty(OutputFolder)) ShellService.Open(OutputFolder); }
+
+    /// <summary>Set by the window: shows the manual (creating the window the first time) and returns it.</summary>
+    public Action? ShowHelpWindow { get; set; }
+
+    /// <summary>The manual, loaded the first time it is asked for.</summary>
+    public Help.HelpViewModel EnsureHelp() => Help ??= new Help.HelpViewModel(Desktop.Help.Manual.Load());
+
+    /// <summary>Opens the manual at the page for the workspace that is showing, which is what F1 means.</summary>
+    [RelayCommand]
+    private void OpenHelp(object? page)
+    {
+        var help = EnsureHelp();
+        var slug = page as string;
+        help.Open(string.IsNullOrEmpty(slug) ? Desktop.Help.HelpViewModel.PageForWorkspace(SelectedWorkspace) : slug);
+        ShowHelpWindow?.Invoke();
+    }
     [RelayCommand] private async Task OpenSettingsAsync() { if (ShowSettings is not null) await ShowSettings(); }
     [RelayCommand] private async Task OpenAboutAsync() { if (ShowAbout is not null) await ShowAbout(); }
 

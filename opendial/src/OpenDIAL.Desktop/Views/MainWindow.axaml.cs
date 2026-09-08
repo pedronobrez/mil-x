@@ -34,6 +34,29 @@ public partial class MainWindow : Window
 
     private bool _closeConfirmed;
     private IonTableWindow? _ionTableWindow;
+    private HelpWindow? _helpWindow;
+
+    /// <summary>
+    /// One help window for the session, beside the main one rather than on top of it, so a page can
+    /// stay open while the thing it describes is being used.
+    /// </summary>
+    private void ShowHelp()
+    {
+        if (_vm is null) return;
+        var help = _vm.EnsureHelp();
+        if (_helpWindow is null)
+        {
+            _helpWindow = new HelpWindow { DataContext = help };
+            _helpWindow.Closed += (_, _) => { _helpWindow = null; help.IsOpen = false; _probe?.Schedule(this, _vm); };
+            _helpWindow.Show(this);
+        }
+        else
+        {
+            _helpWindow.Activate();
+        }
+        help.IsOpen = true;
+        _probe?.Schedule(this, _vm);
+    }
     private readonly Services.UiProbe? _probe = Services.UiProbe.FromEnvironment();
 
     private void Attach()
@@ -48,6 +71,7 @@ public partial class MainWindow : Window
         _vm.ShowSettings = async () => await new SettingsWindow(_vm.Settings).ShowDialog(this);
         _vm.ShowAbout = async () => await new AboutWindow().ShowDialog(this);
         _vm.ShowOpenQuantExport = async () => await new OpenQuantExportWindow().ShowDialog<OpenDIAL.Interop.OpenQuant.OpenQuantExportOptions?>(this);
+        _vm.ShowHelpWindow = ShowHelp;
         _vm.LogLines.CollectionChanged += OnLogChanged;
         _vm.Analytics.RequestDetachIonTable = DetachIonTable;
         // the column order the reviewer arranged is theirs, and should survive a restart
@@ -135,8 +159,53 @@ public partial class MainWindow : Window
         vm.Analytics.PropertyChanged += Report;
         vm.Statistics.PropertyChanged += Report;
         vm.Analytics.IonRows.CollectionChanged += (_, _) => _probe.Schedule(this, vm);
+        vm.Run.PropertyChanged += Report;
+        vm.Run.LogLines.CollectionChanged += (_, _) => _probe.Schedule(this, vm);
+        vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(MainWindowViewModel.Help) && vm.Help is not null) vm.Help.PropertyChanged += Report; };
+        _probe.CommandHandler = RunProbeCommandAsync;
+        _probe.Listen(this, vm);
         // once at the start, so the reader knows the window is up before anything has changed
         Dispatcher.UIThread.Post(() => _probe.Write(this, vm), DispatcherPriority.Background);
+    }
+
+    /// <summary>
+    /// The few things a script cannot reach through the keyboard and the mouse, because they go
+    /// through the operating system's own dialogs: each runs the same view-model method the menu
+    /// runs once its dialog has closed.
+    /// </summary>
+    private async Task<string> RunProbeCommandAsync(System.Text.Json.JsonElement command)
+    {
+        if (_vm is null) return "no view model";
+        var action = command.TryGetProperty("action", out var a) ? a.GetString() ?? string.Empty : string.Empty;
+        string Path() => command.TryGetProperty("path", out var p) && p.GetString() is { Length: > 0 } s ? s : throw new ArgumentException("the command needs a path");
+        switch (action)
+        {
+            case "exportReviewed":
+            {
+                var n = await _vm.Analytics.ExportReviewedTableAsync(Path(), areas: false);
+                return $"{n} feature(s) written";
+            }
+            case "exportOpenQuant":
+            {
+                var n = await _vm.Analytics.ExportOpenQuantAsync(Path(), new OpenDIAL.Interop.OpenQuant.OpenQuantExportOptions { AnnotatedOnly = true });
+                return $"{n} component(s) written";
+            }
+            case "reexport":
+                await _vm.Analytics.ReexportAsync(Path());
+                return "matrix written";
+            case "openHelp":
+            {
+                var page = command.TryGetProperty("page", out var pg) ? pg.GetString() : null;
+                _vm.OpenHelpCommand.Execute(page);
+                if (command.TryGetProperty("query", out var q) && _vm.Help is not null) _vm.Help.Query = q.GetString() ?? string.Empty;
+                return "help shown";
+            }
+            case "closeHelp":
+                _helpWindow?.Close();
+                return "help closed";
+            default:
+                throw new ArgumentException($"unknown action '{action}'");
+        }
     }
 
     private void OnLogChanged(object? sender, NotifyCollectionChangedEventArgs e)

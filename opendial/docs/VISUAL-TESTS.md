@@ -76,6 +76,7 @@ the reference; delete a local one only to re-record it deliberately.
 | `statistics-drift` | the correction table and the before-and-after traces |
 | `statistics-discriminant` | the score plot and the VIP table |
 | `statistics-orthogonal` | the predictive-against-orthogonal scores and the S-plot |
+| `help-window` | the manual open at the tags page, with its table of contents |
 
 A layout defect this class of test would have caught, and did not because the frame was never
 captured at a laptop's width: the review filter row drawing straight over the counts beside it.
@@ -93,14 +94,29 @@ noticed, because nothing had ever pressed one in the packaged application.
 
 ```bash
 opendial/scripts/smoke-ui.py --project ~/…/Project-2609071200.mdproject
+opendial/scripts/smoke-ui.py --process ~/…/raw-folder --method method.txt --library library.msp
 ```
 
-It launches `/Applications/OpenDIAL.app` through LaunchServices, the way a person does, opens a real
-project, and then checks: the title names the project, the ion table filled, opening a processed
-project lands on the review workspace, each of the five shortcuts selects the workspace it names on
-both the command and the control key, a click on the Statistics tab selects it, the process is still
-alive, and nothing unhandled reached stdout or stderr. `--bundle` drives a different build,
-`--shots` keeps the screenshots, `--keep` leaves it running to poke at.
+Both launch `/Applications/OpenDIAL.app` through LaunchServices, the way a person does, with an
+isolated settings folder so the run neither reads nor rewrites the person's own recent projects.
+
+The first form opens a real project and then checks: the title names the project, the ion table
+filled, opening a processed project lands on the review workspace, each of the five shortcuts
+selects the workspace it names on both the command and the control key, a click on the Statistics
+tab selects it, the process is still alive, and nothing unhandled reached stdout or stderr.
+
+The second form covers the work, not the shell. It writes an `.odproj` from the raw files in the
+folder (typing the injections by name: `BK` is a blank, `Eq` a control), presses Cmd+R, waits for
+the run, and checks that the SCIEX plugin inside the bundle read every `.wiff` natively, that the
+alignment table and the MS-DIAL project were written, and that the OpenDIAL project now points at
+them. Then it does what a reviewer does, through the keyboard and the mouse: types the selected
+feature's id into the filter box and sees the table narrow to it, types a narrower integration
+window into the two boxes and clicks **Apply to all**, checks that every sample now sits inside the
+window and that heights changed, clicks **Save review** and checks the tag file and the
+`.before-curation` backups on disk, exports the reviewed table and the OpenQuant component list and
+reads them back (the edited feature is marked *Manually quantified*), presses F1 and sees the
+manual open at the review page, and searches it. `--limit N` processes only the first N files;
+`--bundle` drives a different build, `--shots` keeps the screenshots, `--keep` leaves it running.
 
 It has teeth. Rebuild with `Gesture="Cmd+5"` put back and it passes the first four shortcuts and
 stops on the fifth: *timed out after 10 s waiting for Cmd+5 to select Statistics*, with the state
@@ -111,11 +127,21 @@ the window was still reporting printed underneath.
 Reading state off a screenshot is guesswork, so the application says it plainly instead. When
 `OPENDIAL_UI_PROBE` names a file, the window writes a small JSON snapshot to it whenever what it is
 showing changes: the title, the status line, the selected workspace, whether results are loaded, how
-many rows the ion table holds, and what the statistics workspace has computed. The shipped
+many rows the ion table holds, the run's stage and log tail, the selected feature with its
+per-sample windows and heights, whether the review has unsaved edits, and what the statistics
+workspace has computed. The shipped
 application writes nothing, because nothing sets that variable. `UiProbeTests` holds the shape of
 that file, since a rename here would otherwise only break a script nobody runs on every commit.
 
-The snapshot also carries where the workspace tabs are — inside the window, in layout units, not on
+One thing flows the other way. Beside the probe the application watches `<probe>.commands` and
+runs what it finds — `exportReviewed`, `exportOpenQuant`, `reexport`, `openHelp`, `closeHelp` —
+through the same view-model methods the menu runs once its dialog has closed. The script needs
+that for exactly one kind of step: an export goes through the operating system's own save panel,
+which is not this application's code to drive, so the path is handed over and everything after the
+panel runs for real. The result of each command comes back in the next snapshot.
+
+The snapshot also carries where the workspace tabs, the evidence tabs and every named control
+are — inside the window, in layout units, not on
 the screen. Turning that into a place to click means knowing where the window frame is and how tall
 its title bar is, and those belong to the window manager rather than to the application: the script
 reads the frame from System Events, takes the difference against the client size the probe reports,
@@ -148,6 +174,9 @@ and does.
 it and is swallowed. Both scripts front the process on every command, and `ui-drive.sh` puts the
 pointer back where it found it, because this runs on somebody's actual desk.
 
+Typing works the same way: `cliclick t:text` types into whatever has the focus, so a text box is
+clicked first, `Cmd+A` selects what is in it, and the new value is typed over it.
+
 One more: `open --env` cannot apply an environment to an instance that already exists, and fails
 with a bare `-600` rather than saying so. The smoke test makes sure nothing is running first, which
 takes some insisting, because a polite quit is refused while the window is asking whether to discard
@@ -155,6 +184,12 @@ an unsaved project.
 
 Coordinates are screen points with the origin top left, which on a Retina display is half the pixel
 coordinate read off a screenshot.
+
+And one that no script can get past: the first time the application — or the process that launched
+it, which is what macOS holds responsible for an application started with `open` — reads a
+protected folder, macOS shows a privacy prompt and the read blocks in the kernel until a person
+answers it. The run then sits at *Processing 10 %* with the process idle. Answer the prompt;
+the read resumes on its own. The script neither can nor should click it.
 
 What this confirmed on the real eight-injection run, entirely through clicks: the orthogonal model
 refuses that batch with "separates two classes, and this batch has 4"; the plain discriminant fits
