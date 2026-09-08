@@ -34,6 +34,7 @@ public partial class MainWindow : Window
 
     private bool _closeConfirmed;
     private IonTableWindow? _ionTableWindow;
+    private readonly Services.UiProbe? _probe = Services.UiProbe.FromEnvironment();
 
     private void Attach()
     {
@@ -52,6 +53,7 @@ public partial class MainWindow : Window
         // the column order the reviewer arranged is theirs, and should survive a restart
         RestoreColumnOrder(InlineIonTable());
         if (_vm.Settings.Current.IonTableDetached) DetachIonTable(true);
+        AttachProbe(_vm);
     }
 
     private IonTableView? InlineIonTable() =>
@@ -119,6 +121,22 @@ public partial class MainWindow : Window
             if (index < grid.Columns.Count) column.DisplayIndex = index;
             index++;
         }
+    }
+
+    /// <summary>
+    /// Reports what the window is showing to a file, when the environment asked for one. Nothing
+    /// happens otherwise, which is every run but a smoke test.
+    /// </summary>
+    private void AttachProbe(MainWindowViewModel vm)
+    {
+        if (_probe is null) return;
+        void Report(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => _probe.Schedule(this, vm);
+        vm.PropertyChanged += Report;
+        vm.Analytics.PropertyChanged += Report;
+        vm.Statistics.PropertyChanged += Report;
+        vm.Analytics.IonRows.CollectionChanged += (_, _) => _probe.Schedule(this, vm);
+        // once at the start, so the reader knows the window is up before anything has changed
+        Dispatcher.UIThread.Post(() => _probe.Write(this, vm), DispatcherPriority.Background);
     }
 
     private void OnLogChanged(object? sender, NotifyCollectionChangedEventArgs e)

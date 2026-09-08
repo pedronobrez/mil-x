@@ -83,36 +83,75 @@ That one is now held by a direct assertion in `ReviewWorkspaceTests` instead, co
 bounds at 1280 points wide, because an assertion about two rectangles says what it means more
 plainly than a picture does. Prefer that shape where the property can be named.
 
-## Driving the running application
+## The smoke test
 
-Headless frames catch layout. They do not catch the application actually being wrong on a real
-result, so it is worth driving the installed build now and then. `scripts/ui-drive.sh` does it:
+Everything above tests the source. None of it tests the thing that gets installed, and a defect that
+only appears there passes the whole suite: an asset that did not make it into the bundle, a font
+that stopped resolving, a plugin that fails to load, a shortcut that never fires. That last one is
+not hypothetical. Every workspace shortcut had been dead since the day it was written and nothing
+noticed, because nothing had ever pressed one in the packaged application.
+
+```bash
+opendial/scripts/smoke-ui.py --project ~/…/Project-2609071200.mdproject
+```
+
+It launches `/Applications/OpenDIAL.app` through LaunchServices, the way a person does, opens a real
+project, and then checks: the title names the project, the ion table filled, opening a processed
+project lands on the review workspace, each of the five shortcuts selects the workspace it names on
+both the command and the control key, a click on the Statistics tab selects it, the process is still
+alive, and nothing unhandled reached stdout or stderr. `--bundle` drives a different build,
+`--shots` keeps the screenshots, `--keep` leaves it running to poke at.
+
+It has teeth. Rebuild with `Gesture="Cmd+5"` put back and it passes the first four shortcuts and
+stops on the fifth: *timed out after 10 s waiting for Cmd+5 to select Statistics*, with the state
+the window was still reporting printed underneath.
+
+### How it can assert anything
+
+Reading state off a screenshot is guesswork, so the application says it plainly instead. When
+`OPENDIAL_UI_PROBE` names a file, the window writes a small JSON snapshot to it whenever what it is
+showing changes: the title, the status line, the selected workspace, whether results are loaded, how
+many rows the ion table holds, and what the statistics workspace has computed. The shipped
+application writes nothing, because nothing sets that variable. `UiProbeTests` holds the shape of
+that file, since a rename here would otherwise only break a script nobody runs on every commit.
+
+The snapshot also carries where the workspace tabs are — inside the window, in layout units, not on
+the screen. Turning that into a place to click means knowing where the window frame is and how tall
+its title bar is, and those belong to the window manager rather than to the application: the script
+reads the frame from System Events, takes the difference against the client size the probe reports,
+and adds the offset. A script that instead worked its coordinates out from a screenshot breaks the
+moment the window moves.
+
+### Driving it by hand
+
+`scripts/ui-drive.sh` does the same primitives one at a time, for a screenshot or a look:
 
 ```bash
 opendial/scripts/ui-drive.sh front
-opendial/scripts/ui-drive.sh click 371 107     # the Statistics workspace tab
+opendial/scripts/ui-drive.sh click 372 108     # the Statistics workspace tab
 opendial/scripts/ui-drive.sh key 23 cmd        # Cmd+5, the same thing by keyboard
 opendial/scripts/ui-drive.sh shot /tmp/now.png
-opendial/scripts/ui-drive.sh where             # the cursor, for working coordinates out
 ```
 
-Three things make this less obvious than it looks, all of them found the hard way:
+Three things make this less obvious than it looks, all found the hard way:
 
 **Clicks need real mouse events.** System Events' `click at` asks the accessibility layer to press a
 control, and Avalonia publishes almost nothing to that layer, so a click at a coordinate does
 nothing whatsoever — no error, no effect. `cliclick` posts the events a mouse would (`brew install
-cliclick`), and those work everywhere in the interface: workspace tabs, panel tabs, buttons, and a
-row of a table.
+cliclick`), and those work everywhere: workspace tabs, panel tabs, buttons, a row of a table.
 
 **Keystrokes need the physical key.** They do arrive, but `keystroke "5" using command down` sends a
 character event that never reaches a shortcut, while `key code 23 using command down` sends the key
-and does. Driving it this way is what turned up the fact that none of the workspace shortcuts had
-ever worked: `Gesture="Cmd+5"` parses without complaint and binds `Key.Clear`, because the parser
-reads the digit as the numeric value of the key enumeration. They are `Cmd+D5` now.
+and does.
 
 **The window has to be frontmost before the click, not after.** Otherwise the click only activates
-it and is swallowed. The script fronts the process on every command, and puts the pointer back where
-it found it, because this runs on somebody's actual desk.
+it and is swallowed. Both scripts front the process on every command, and `ui-drive.sh` puts the
+pointer back where it found it, because this runs on somebody's actual desk.
+
+One more: `open --env` cannot apply an environment to an instance that already exists, and fails
+with a bare `-600` rather than saying so. The smoke test makes sure nothing is running first, which
+takes some insisting, because a polite quit is refused while the window is asking whether to discard
+an unsaved project.
 
 Coordinates are screen points with the origin top left, which on a Retina display is half the pixel
 coordinate read off a screenshot.

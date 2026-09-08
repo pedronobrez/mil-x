@@ -26,7 +26,8 @@ identical results to the Windows reader.
 bash opendial/scripts/setup-macos.sh     # .NET 8 SDK (no sudo) + NuGet source
 bash opendial/scripts/build-cli.sh       # -> opendial/dist/opendial-cli-osx-arm64/opendial-cli
 bash opendial/scripts/test.sh            # unit tests + end-to-end synthetic run
-bash opendial/scripts/ui-drive.sh        # drive the installed app for a screenshot (needs cliclick)
+opendial/scripts/smoke-ui.py --project X # drive the installed app and check it really works
+bash opendial/scripts/ui-drive.sh        # the same primitives one at a time, for a screenshot
 dotnet run --project opendial/src/OpenDIAL.Desktop -c Release -p:UseOpenRawData=true   # GUI (or scripts/build-gui.sh)
 bash opendial/scripts/make-app-bundle.sh # -> opendial/dist/OpenDIAL.app (double-clickable, ad-hoc signed)
 ```
