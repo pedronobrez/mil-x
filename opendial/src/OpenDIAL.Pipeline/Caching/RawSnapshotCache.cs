@@ -4,18 +4,18 @@ using System.Text;
 namespace OpenDIAL.Pipeline.Caching;
 
 /// <summary>
-/// Keeps the survey scans of the raw files on disk, so the second time a project is opened the
-/// chromatograms come back without the vendor reader. Entries are keyed by the file's own identity
+/// Keeps the spectra of the raw files on disk, so the second time a project is opened the
+/// chromatograms, the channel tree and the product spectra all come back without the vendor reader. Entries are keyed by the file's own identity
 /// — path, size and last write time — so an edited or replaced file never serves a stale entry.
 ///
 /// The store is capped and evicted least-recently-used, which is what makes it safe to leave on: a
 /// lipidomics batch is a few hundred megabytes of survey scans and a working directory holds many.
 /// </summary>
-public sealed class Ms1SnapshotCache
+public sealed class RawSnapshotCache
 {
-    private const string Extension = ".od1";
+    private const string Extension = ".od2";
 
-    public Ms1SnapshotCache(string? root = null, long capacityBytes = 8L * 1024 * 1024 * 1024)
+    public RawSnapshotCache(string? root = null, long capacityBytes = 8L * 1024 * 1024 * 1024)
     {
         Root = root ?? DefaultRoot();
         CapacityBytes = capacityBytes;
@@ -29,7 +29,7 @@ public sealed class Ms1SnapshotCache
     public static string DefaultRoot()
     {
         var overridden = Environment.GetEnvironmentVariable("OPENDIAL_CACHE");
-        if (!string.IsNullOrWhiteSpace(overridden)) return Path.Combine(overridden, "ms1");
+        if (!string.IsNullOrWhiteSpace(overridden)) return Path.Combine(overridden, "spectra");
         string baseDir;
         if (OperatingSystem.IsMacOS())
         {
@@ -45,7 +45,7 @@ public sealed class Ms1SnapshotCache
                 ? xdg
                 : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".cache");
         }
-        return Path.Combine(baseDir, "OpenDIAL", "ms1");
+        return Path.Combine(baseDir, "OpenDIAL", "spectra");
     }
 
     /// <summary>Identity of the raw file: a different size or write time is a different entry.</summary>
@@ -73,7 +73,7 @@ public sealed class Ms1SnapshotCache
 
     public string PathFor(string rawPath) => Path.Combine(Root, KeyFor(rawPath) + Extension);
 
-    public Ms1Snapshot? TryLoad(string rawPath)
+    public RawSnapshot? TryLoad(string rawPath)
     {
         if (!Enabled) return null;
         var path = PathFor(rawPath);
@@ -81,7 +81,7 @@ public sealed class Ms1SnapshotCache
         try
         {
             using var stream = File.OpenRead(path);
-            var snapshot = Ms1Snapshot.Read(stream);
+            var snapshot = RawSnapshot.Read(stream);
             if (snapshot is not null) Touch(path);
             return snapshot;
         }
@@ -93,7 +93,7 @@ public sealed class Ms1SnapshotCache
         }
     }
 
-    public void Save(string rawPath, Ms1Snapshot snapshot)
+    public void Save(string rawPath, RawSnapshot snapshot)
     {
         if (!Enabled) return;
         try

@@ -301,7 +301,7 @@ public static class ResultLoader
             }
 
             var samples = files
-                .Select(f => new SampleInfo(f.AnalysisFileId, f.AnalysisFileName, f.AnalysisFileClass, AnalysisFileFactory.FromUpstream(f.AnalysisFileType).ToString()))
+                .Select(f => new SampleInfo(f.AnalysisFileId, f.AnalysisFileName, f.AnalysisFileClass, AnalysisFileFactory.FromUpstream(f.AnalysisFileType).ToString(), f.AnalysisFileAnalyticalOrder, f.AnalysisBatch))
                 .ToList();
             var byId = samples.ToDictionary(s => s.FileId);
             var spots = new List<AlignmentSpotRow>(container.AlignmentSpotProperties.Count);

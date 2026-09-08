@@ -14,11 +14,11 @@ public sealed class RawDataCache
 {
     private readonly ConcurrentDictionary<string, Task<RawMeasurement>> _raw = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, IReadOnlyList<RawChannel>> _channels = new(StringComparer.OrdinalIgnoreCase);
-    private readonly ConcurrentDictionary<string, Task<Ms1Snapshot>> _snapshots = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, Task<RawSnapshot>> _snapshots = new(StringComparer.OrdinalIgnoreCase);
     private readonly SemaphoreSlim _gate = new(2);
 
-    /// <summary>Survey scans kept on disk between sessions; see <see cref="Ms1SnapshotCache"/>.</summary>
-    public Ms1SnapshotCache Disk { get; } = new();
+    /// <summary>Spectra kept on disk between sessions; see <see cref="RawSnapshotCache"/>.</summary>
+    public RawSnapshotCache Disk { get; } = new();
 
     public event EventHandler<string>? Status;
 
@@ -39,6 +39,15 @@ public sealed class RawDataCache
             {
                 throw new FileNotFoundException("Raw data file not found (was the project folder moved?)", path);
             }
+            // the cache holds every spectrum, so a second visit skips the vendor library entirely
+            var cached = await Task.Run(() => Disk.TryLoad(path), ct).ConfigureAwait(false);
+            if (cached is not null)
+            {
+                var restored = await Task.Run(cached.ToMeasurement, ct).ConfigureAwait(false);
+                _snapshots[path] = Task.FromResult(cached);
+                Status?.Invoke(this, $"{Path.GetFileName(path)}: {restored.SpectrumList.Count} spectra from the cache");
+                return restored;
+            }
             Status?.Invoke(this, $"Reading {Path.GetFileName(path)}…");
             var raw = await Task.Run(() =>
             {
@@ -52,6 +61,11 @@ public sealed class RawDataCache
                 return m;
             }, ct).ConfigureAwait(false);
             Status?.Invoke(this, $"{Path.GetFileName(path)}: {raw.SpectrumList.Count} spectra");
+            _ = Task.Run(() =>
+            {
+                var snapshot = RawSnapshot.FromMeasurement(raw);
+                Disk.Save(path, snapshot);
+            }, CancellationToken.None);
             return raw;
         }
         catch
@@ -66,30 +80,28 @@ public sealed class RawDataCache
     }
 
     /// <summary>
-    /// The survey scans of a file, for extracting chromatograms. It comes from the disk cache when
-    /// it is there, which is the difference between a review pass starting straight away and one
-    /// that waits for the vendor reader on every file again.
+    /// The spectra of a file in their compact form, for extracting chromatograms. It comes from the
+    /// disk cache when it is there, which is the difference between a review pass starting straight
+    /// away and one that waits for the vendor reader on every file again.
     /// </summary>
-    public Task<Ms1Snapshot> GetMs1Async(string path, CancellationToken ct = default)
+    public Task<RawSnapshot> GetMs1Async(string path, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(path)) throw new FileNotFoundException("No raw file path.");
         return _snapshots.GetOrAdd(path, p => LoadSnapshotAsync(p, ct));
     }
 
-    private async Task<Ms1Snapshot> LoadSnapshotAsync(string path, CancellationToken ct)
+    private async Task<RawSnapshot> LoadSnapshotAsync(string path, CancellationToken ct)
     {
         try
         {
             var cached = await Task.Run(() => Disk.TryLoad(path), ct).ConfigureAwait(false);
             if (cached is not null)
             {
-                Status?.Invoke(this, $"{Path.GetFileName(path)}: survey scans from the cache");
+                Status?.Invoke(this, $"{Path.GetFileName(path)}: spectra from the cache");
                 return cached;
             }
             var raw = await GetAsync(path, ct).ConfigureAwait(false);
-            var ms1 = Channels(path, raw).FirstOrDefault(c => c.Kind == RawChannelKind.Ms1);
-            var indices = ms1?.SpectrumIndices ?? Array.Empty<int>();
-            var snapshot = await Task.Run(() => Ms1Snapshot.FromMeasurement(raw, indices), ct).ConfigureAwait(false);
+            var snapshot = await Task.Run(() => RawSnapshot.FromMeasurement(raw), ct).ConfigureAwait(false);
             _ = Task.Run(() => Disk.Save(path, snapshot), CancellationToken.None);
             return snapshot;
         }

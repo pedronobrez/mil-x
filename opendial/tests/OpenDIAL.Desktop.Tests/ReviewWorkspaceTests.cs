@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.VisualTree;
 using Avalonia.Headless.XUnit;
@@ -203,5 +204,28 @@ public class ReviewWorkspaceTests
         Assert.NotNull(tabs);
         Assert.Equal(9, tabs!.Items.Count);   // peaks, MS/MS, isotopes, candidates, abundance, map, samples, statistics, trend
         window.Close();
+    }
+
+    [AvaloniaFact]
+    public void The_filter_row_never_draws_over_the_counts_beside_it()
+    {
+        // On a laptop screen the filters are wider than the band, and a horizontal StackPanel does
+        // not give way: it used to draw straight over the confirmed and rejected counts.
+        var (vm, _, folder) = NewAnalyticsForVisuals();
+        var view = new AnalyticsView { DataContext = vm };
+        var window = new Window { Content = view, Width = 1280, Height = 820 };
+        window.Show();
+
+        var filters = view.GetVisualDescendants().OfType<ScrollViewer>().FirstOrDefault(c => c.Name == "FilterScroller");
+        var counts = view.GetVisualDescendants().OfType<StackPanel>().FirstOrDefault(c => c.Name == "FilterCounts");
+        Assert.NotNull(filters);
+        Assert.NotNull(counts);
+
+        var left = filters!.Bounds.Right + filters.TranslatePoint(new Point(0, 0), view)!.Value.X;
+        var right = counts!.TranslatePoint(new Point(0, 0), view)!.Value.X;
+        Assert.True(left <= right + 1, $"the filters run to {left:F0} but the counts start at {right:F0}");
+
+        window.Close();
+        try { Directory.Delete(folder, true); } catch { }
     }
 }

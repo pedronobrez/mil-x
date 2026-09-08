@@ -22,4 +22,11 @@
     <ProjectReference Include="..\OpenDIAL.Plugins.SciexWiff\OpenDIAL.Plugins.SciexWiff.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- so a test can hold the fast cross-validation to the plain one -->
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>OpenDIAL.Pipeline.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
 </Project>

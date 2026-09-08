@@ -94,7 +94,15 @@ public sealed record AnnotationCandidate(
 /// <summary>Mean height of one sample class, for the inline chart of the ion table.</summary>
 public readonly record struct ClassHeight(string Class, double Mean);
 
-public sealed record SampleInfo(int FileId, string FileName, string Class, string SampleType);
+/// <summary>
+/// One injection. The order and the batch are what a drift correction needs, and the type is what
+/// says which injections are the quality controls it corrects against.
+/// </summary>
+public sealed record SampleInfo(int FileId, string FileName, string Class, string SampleType, int InjectionOrder = 0, int Batch = 1)
+{
+    public bool IsQualityControl => SampleType.Equals("QC", StringComparison.OrdinalIgnoreCase);
+    public bool IsBlank => SampleType.Equals("Blank", StringComparison.OrdinalIgnoreCase);
+}
 
 public readonly record struct SampleValue(int FileId, string FileName, string Class, double Height);
 

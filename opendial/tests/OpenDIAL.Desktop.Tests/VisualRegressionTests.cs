@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media.Imaging;
+using Avalonia.VisualTree;
 using OpenDIAL.Desktop.ViewModels;
 using OpenDIAL.Desktop.Views;
 using Xunit;
@@ -121,5 +122,36 @@ public class VisualRegressionTests
         AssertLooksLike(window, "ion-table-window");
         window.Close();
         try { Directory.Delete(folder, true); } catch { }
+    }
+
+    [AvaloniaFact]
+    public async Task The_drift_correction_looks_like_its_reference()
+    {
+        var (vm, _) = StatisticsWorkspaceTests.Drifting();
+        await vm.ApplyCorrectionCommand.ExecuteAsync(null);
+        var view = new StatisticsView { DataContext = vm };
+        var window = new Window { Content = view, Width = 1500, Height = 900 };
+        window.Show();
+
+        var tabs = view.GetVisualDescendants().OfType<TabControl>().First(t => t.Name == "StatsTabs");
+        tabs.SelectedIndex = 1;   // the drift correction, with its table and its two traces
+        AssertLooksLike(window, "statistics-drift");
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task The_discriminant_model_looks_like_its_reference()
+    {
+        var (vm, _) = StatisticsWorkspaceTests.Comparison();   // two classes with a real difference
+        vm.PlsPermutations = "200";
+        await vm.FitDiscriminantCommand.ExecuteAsync(null);
+        var view = new StatisticsView { DataContext = vm };
+        var window = new Window { Content = view, Width = 1500, Height = 900 };
+        window.Show();
+
+        var tabs = view.GetVisualDescendants().OfType<TabControl>().First(t => t.Name == "StatsTabs");
+        tabs.SelectedIndex = 2;
+        AssertLooksLike(window, "statistics-discriminant");
+        window.Close();
     }
 }

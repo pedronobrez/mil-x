@@ -50,11 +50,17 @@
     <!-- filter band -->
     <Border DockPanel.Dock="Top" Classes="band" IsVisible="{Binding HasResults}">
       <DockPanel>
-        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+        <StackPanel x:Name="FilterCounts" DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
           <Border Classes="count" ToolTip.Tip="confirmed"><TextBlock Text="{Binding ConfirmedCount}" /></Border>
           <Border Classes="badge" ToolTip.Tip="misannotation"><TextBlock Classes="badge" Text="{Binding RejectedCount}" /></Border>
-          <TextBlock Classes="muted" Text="{Binding TableSummary}" VerticalAlignment="Center" Margin="6,0,4,0" />
+          <TextBlock Classes="muted" Text="{Binding TableSummary}" VerticalAlignment="Center" Margin="6,0,4,0" MaxWidth="230" TextTrimming="CharacterEllipsis" />
         </StackPanel>
+        <!--
+          The filters are wider than a laptop screen once they are all here, and a horizontal
+          StackPanel does not give way: it drew straight over the counts on the right. Inside a
+          scroller it is held to the space that is actually left.
+        -->
+        <ScrollViewer x:Name="FilterScroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
         <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
           <TextBox Text="{Binding FilterText}" Watermark="name, ontology, adduct, comment, id…" Width="230" />
           <TextBlock Classes="label" Text="m/z" Margin="6,0,0,0" />
@@ -70,6 +76,7 @@
           <CheckBox Classes="compact" Content="Molecular ion" IsChecked="{Binding MolecularIonOnly}" ToolTip.Tip="Drop the features the run marked as isotopes of another" />
           <CheckBox Classes="compact" Content="Hand-edited" IsChecked="{Binding ManuallyModifiedOnly}" ToolTip.Tip="Only features whose annotation or integration was changed by hand" />
         </StackPanel>
+        </ScrollViewer>
       </DockPanel>
     </Border>
 

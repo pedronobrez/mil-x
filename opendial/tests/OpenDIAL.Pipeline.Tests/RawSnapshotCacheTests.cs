@@ -7,7 +7,7 @@ using Xunit;
 
 namespace OpenDIAL.Pipeline.Tests;
 
-public class Ms1CacheTests
+public class RawSnapshotCacheTests
 {
     private static RawMeasurement Synthetic(int scans, int peaksPerScan)
     {
@@ -41,7 +41,7 @@ public class Ms1CacheTests
         var target = 100.0 + 20 * 0.5;
 
         var fromRaw = RawExplorer.Xic(raw, indices, target, 0.01);
-        var fromSnapshot = Ms1Snapshot.FromMeasurement(raw, indices).Xic(target, 0.01);
+        var fromSnapshot = RawSnapshot.FromMeasurement(raw).Xic(target, 0.01);
 
         Assert.Equal(fromRaw.Points.Count, fromSnapshot.Points.Count);
         for (var i = 0; i < fromRaw.Points.Count; i++)
@@ -56,12 +56,12 @@ public class Ms1CacheTests
     {
         var raw = Synthetic(120, 25);
         var indices = Enumerable.Range(0, 120).ToList();
-        var original = Ms1Snapshot.FromMeasurement(raw, indices);
+        var original = RawSnapshot.FromMeasurement(raw);
 
         using var buffer = new MemoryStream();
         original.Write(buffer);
         buffer.Position = 0;
-        var restored = Ms1Snapshot.Read(buffer);
+        var restored = RawSnapshot.Read(buffer);
 
         Assert.NotNull(restored);
         Assert.Equal(original.ScanCount, restored!.ScanCount);
@@ -69,6 +69,59 @@ public class Ms1CacheTests
         var a = original.Xic(110.0, 0.02);
         var b = restored.Xic(110.0, 0.02);
         for (var i = 0; i < a.Points.Count; i++) Assert.Equal(a.Points[i].Intensity, b.Points[i].Intensity, 3);
+    }
+
+    /// <summary>The measurement rebuilt from the cache has to be the one the interface would have read.</summary>
+    [Fact]
+    public void A_rebuilt_measurement_keeps_every_spectrum_and_its_identity()
+    {
+        var raw = Synthetic(30, 12);
+        // give half of them a precursor, as a data-dependent acquisition would
+        for (var i = 1; i < raw.SpectrumList.Count; i += 2)
+        {
+            var s = raw.SpectrumList[i];
+            s.MsLevel = 2;
+            s.ExperimentID = 3;
+            s.CollisionEnergy = 35;
+            s.Precursor = new CompMs.Common.DataObj.RawPrecursorIon
+            {
+                SelectedIonMz = 500.25,
+                IsolationTargetMz = 500.25,
+                IsolationWindowLowerOffset = 0.5,
+                IsolationWindowUpperOffset = 0.5,
+                CollisionEnergy = 35,
+            };
+        }
+
+        var rebuilt = RawSnapshot.FromMeasurement(raw).ToMeasurement();
+
+        Assert.Equal(raw.SpectrumList.Count, rebuilt.SpectrumList.Count);
+        for (var i = 0; i < raw.SpectrumList.Count; i++)
+        {
+            var a = raw.SpectrumList[i];
+            var b = rebuilt.SpectrumList[i];
+            Assert.Equal(a.Index, b.Index);
+            Assert.Equal(a.MsLevel, b.MsLevel);
+            Assert.Equal(a.ExperimentID, b.ExperimentID);
+            Assert.Equal(a.ScanStartTime, b.ScanStartTime, 6);
+            Assert.Equal(a.Spectrum.Length, b.Spectrum.Length);
+            for (var j = 0; j < a.Spectrum.Length; j++)
+            {
+                Assert.Equal(a.Spectrum[j].Mz, b.Spectrum[j].Mz, 4);
+                Assert.Equal(a.Spectrum[j].Intensity, b.Spectrum[j].Intensity, 3);
+            }
+            if (a.Precursor is null)
+            {
+                Assert.Null(b.Precursor);
+            }
+            else
+            {
+                Assert.NotNull(b.Precursor);
+                Assert.Equal(a.Precursor.SelectedIonMz, b.Precursor!.SelectedIonMz, 3);
+                Assert.Equal(a.Precursor.IsolationWindowLowerOffset, b.Precursor.IsolationWindowLowerOffset, 3);
+                Assert.Equal(a.CollisionEnergy, b.CollisionEnergy, 3);
+            }
+        }
     }
 
     [Fact]
@@ -81,8 +134,8 @@ public class Ms1CacheTests
         {
             var rawPath = Path.Combine(work, "sample.mzML");
             File.WriteAllText(rawPath, "first");
-            var cache = new Ms1SnapshotCache(root, capacityBytes: 1024 * 1024);
-            var snapshot = Ms1Snapshot.FromMeasurement(Synthetic(40, 10), Enumerable.Range(0, 40).ToList());
+            var cache = new RawSnapshotCache(root, capacityBytes: 1024 * 1024);
+            var snapshot = RawSnapshot.FromMeasurement(Synthetic(40, 10));
 
             Assert.Null(cache.TryLoad(rawPath));
             cache.Save(rawPath, snapshot);
@@ -94,7 +147,7 @@ public class Ms1CacheTests
             Assert.Null(cache.TryLoad(rawPath));
 
             // and a capacity of nothing empties the store on the next write
-            var tiny = new Ms1SnapshotCache(root, capacityBytes: 1);
+            var tiny = new RawSnapshotCache(root, capacityBytes: 1);
             tiny.Save(rawPath, snapshot);
             Assert.Equal(0, tiny.Count());
         }
@@ -121,15 +174,14 @@ public class Ms1CacheTests
         var root = Path.Combine(Path.GetTempPath(), "opendial-cache-" + Guid.NewGuid().ToString("N"));
         try
         {
-            var cache = new Ms1SnapshotCache(root);
+            var cache = new RawSnapshotCache(root);
             var vendor = Stopwatch.StartNew();
             RawMeasurement raw;
             using (var access = new RawDataAccess(wiff, 0, false, false, true))
             {
                 raw = access.GetMeasurement()!;
             }
-            var ms1 = RawExplorer.DiscoverChannels(raw).First(c => c.Kind == RawChannelKind.Ms1);
-            var snapshot = Ms1Snapshot.FromMeasurement(raw, ms1.SpectrumIndices);
+            var snapshot = RawSnapshot.FromMeasurement(raw);
             vendor.Stop();
             cache.Save(wiff, snapshot);
 
@@ -147,7 +199,8 @@ public class Ms1CacheTests
             for (var i = 0; i < a.Points.Count; i++) Assert.Equal(a.Points[i].Intensity, b.Points[i].Intensity, 3);
 
             Console.WriteLine($"[cache] vendor read {vendor.ElapsedMilliseconds} ms, from disk {fromDisk.ElapsedMilliseconds} ms, " +
-                              $"{snapshot.ScanCount} scans, {snapshot.PeakCount} centroids, {new FileInfo(cache.PathFor(wiff)).Length / 1024 / 1024} MB");
+                              $"{snapshot.Ms1Count} survey + {snapshot.MsnCount} product scans, {snapshot.PeakCount} centroids, " +
+                              $"{new FileInfo(cache.PathFor(wiff)).Length / 1024 / 1024} MB");
             Assert.True(fromDisk.ElapsedMilliseconds * 4 < vendor.ElapsedMilliseconds,
                 $"the cache should be far faster: vendor {vendor.ElapsedMilliseconds} ms, disk {fromDisk.ElapsedMilliseconds} ms");
         }

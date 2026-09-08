@@ -12,7 +12,8 @@
   <DockPanel>
     <Border DockPanel.Dock="Top" Classes="band">
       <DockPanel>
-        <TextBlock DockPanel.Dock="Right" Classes="muted" Text="{Binding Summary}" VerticalAlignment="Center" Margin="12,0,4,0" TextTrimming="CharacterEllipsis" />
+        <TextBlock DockPanel.Dock="Right" Classes="muted" Text="{Binding Summary}" VerticalAlignment="Center" Margin="12,0,4,0" MaxWidth="320" TextTrimming="CharacterEllipsis" />
+        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
         <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
           <TextBlock Classes="label" Text="Value" />
           <ComboBox Classes="compact" ItemsSource="{x:Static vm:StatisticsViewModel.ValueKinds}" SelectedItem="{Binding ValueKind}" Width="96" />
@@ -22,9 +23,12 @@
           <ComboBox Classes="compact" ItemsSource="{x:Static vm:StatisticsViewModel.Scalings}" SelectedItem="{Binding Scaling}" Width="180"
                     ToolTip.Tip="Unit variance gives every feature the same weight; centre only lets the abundant ones lead" />
           <CheckBox Classes="compact" Content="Annotated only" IsChecked="{Binding AnnotatedOnly}" Margin="6,0,0,0" />
+          <CheckBox Classes="compact" Content="Drift corrected" IsChecked="{Binding UseCorrectedValues}" IsVisible="{Binding HasCorrection}"
+                    ToolTip.Tip="Feed every view on this page the values corrected against the quality controls, instead of the raw ones" />
           <Button Classes="tool strong" Content="Recompute" Command="{Binding ComputeCommand}" IsEnabled="{Binding HasResults}" />
           <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" Width="70" Height="3" VerticalAlignment="Center" />
         </StackPanel>
+        </ScrollViewer>
       </DockPanel>
     </Border>
 
@@ -65,6 +69,102 @@
               </DockPanel>
             </Border>
           </Grid>
+        </TabItem>
+
+        <!-- drift and batch correction -->
+        <TabItem Header="Drift correction">
+          <Border Classes="panel" Margin="0,6,0,0">
+            <DockPanel Margin="6">
+              <Border DockPanel.Dock="Top" Classes="hairline-bottom" Padding="4,2,4,8" Margin="0,0,0,6">
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                  <TextBlock Classes="label" Text="Smoothing span" VerticalAlignment="Center" />
+                  <TextBox Text="{Binding CorrectionSpan}" Width="62"
+                           ToolTip.Tip="The share of the controls each local fit sees. Wide follows the slow fall; narrow follows every wobble, including noise." />
+                  <Button Classes="tool strong" Content="Correct against the controls" Command="{Binding ApplyCorrectionCommand}" IsEnabled="{Binding !IsCorrecting}" />
+                  <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsCorrecting}" Width="80" Height="3" VerticalAlignment="Center" />
+                  <TextBlock Classes="hint" Text="{Binding CorrectionVerdict}" VerticalAlignment="Center" Margin="8,0,0,0" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+              </Border>
+              <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,6,4,0" TextWrapping="Wrap" Text="{Binding CorrectionDetail}" />
+              <Grid ColumnDefinitions="380,6,*">
+                <DataGrid Grid.Column="0" ItemsSource="{Binding CorrectionRows}" SelectedItem="{Binding SelectedCorrectionRow}"
+                          AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" CanUserSortColumns="True">
+                  <DataGrid.Columns>
+                    <DataGridTextColumn Header="Feature" Binding="{Binding Label}" Width="*" />
+                    <DataGridTextColumn Header="CV before" Binding="{Binding CvBefore, StringFormat={}{0:F1} %}" Width="90" />
+                    <DataGridTextColumn Header="CV after" Binding="{Binding CvAfter, StringFormat={}{0:F1} %}" Width="90" />
+                  </DataGrid.Columns>
+                </DataGrid>
+                <GridSplitter Grid.Column="1" Classes="vertical" ResizeDirection="Columns" />
+                <Grid Grid.Column="2" RowDefinitions="*,6,*">
+                  <Border Grid.Row="0" Classes="panel">
+                    <DockPanel Margin="6">
+                      <TextBlock DockPanel.Dock="Top" Classes="eyebrow" Text="BEFORE · RESPONSE ACROSS THE RUN" Margin="4,4,4,6" />
+                      <c:ScatterChart Items="{Binding DriftBefore}" Connect="True" XLabel="Injection order" YLabel="Response" />
+                    </DockPanel>
+                  </Border>
+                  <GridSplitter Grid.Row="1" Classes="horizontal" ResizeDirection="Rows" />
+                  <Border Grid.Row="2" Classes="panel">
+                    <DockPanel Margin="6">
+                      <TextBlock DockPanel.Dock="Top" Classes="eyebrow" Text="AFTER" Margin="4,4,4,6" />
+                      <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,6,4,0" TextWrapping="Wrap"
+                                 Text="The controls are the same material every time, so whatever they do across the sequence is the instrument. A control trace that falls away or steps at a batch boundary is drift; after correcting it should be flat, and the samples should have moved with it." />
+                      <c:ScatterChart Items="{Binding DriftAfter}" Connect="True" XLabel="Injection order" YLabel="Corrected response" />
+                    </DockPanel>
+                  </Border>
+                </Grid>
+              </Grid>
+            </DockPanel>
+          </Border>
+        </TabItem>
+
+        <!-- supervised discriminant model -->
+        <TabItem Header="Discriminant">
+          <Border Classes="panel" Margin="0,6,0,0">
+            <DockPanel Margin="6">
+              <Border DockPanel.Dock="Top" Classes="hairline-bottom" Padding="4,2,4,8" Margin="0,0,0,6">
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                  <TextBlock Classes="label" Text="Components" VerticalAlignment="Center" />
+                  <TextBox Text="{Binding PlsComponents}" Width="52" />
+                  <TextBlock Classes="label" Text="Permutations" VerticalAlignment="Center" Margin="6,0,0,0" />
+                  <TextBox Text="{Binding PlsPermutations}" Width="62"
+                           ToolTip.Tip="How many times the labels are shuffled to see how well chance does. Zero skips the test." />
+                  <Button Classes="tool strong" Content="Fit against the classes" Command="{Binding FitDiscriminantCommand}" IsEnabled="{Binding !IsFittingPls}" />
+                  <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsFittingPls}" Width="80" Height="3" VerticalAlignment="Center" />
+                  <TextBlock Classes="hint" Text="{Binding PlsQuality}" VerticalAlignment="Center" Margin="8,0,0,0" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+              </Border>
+              <Border DockPanel.Dock="Bottom" Padding="4,8,4,0">
+                <TextBlock Classes="hint" TextWrapping="Wrap" Text="{Binding PlsVerdict}" />
+              </Border>
+              <Grid ColumnDefinitions="*,6,*">
+                <Border Grid.Column="0" Classes="panel">
+                  <DockPanel Margin="6">
+                    <TextBlock DockPanel.Dock="Top" Classes="eyebrow" Text="SCORES · ONE POINT PER INJECTION" Margin="4,4,4,6" />
+                    <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,6,4,0" Text="{Binding PlsScoreLabel}" />
+                    <c:ScatterChart Items="{Binding PlsScores}" XLabel="Component 1" YLabel="Component 2" />
+                  </DockPanel>
+                </Border>
+                <GridSplitter Grid.Column="1" Classes="vertical" ResizeDirection="Columns" />
+                <Border Grid.Column="2" Classes="panel">
+                  <DockPanel Margin="6">
+                    <TextBlock DockPanel.Dock="Top" Classes="eyebrow" Text="FEATURES BY VIP · CLICK ONE TO OPEN IT" Margin="4,4,4,6" />
+                    <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,6,4,0" TextWrapping="Wrap"
+                               Text="VIP above one is the usual mark of a feature the separation rests on, and the side says which class it goes with. None of it means anything if the model did not survive cross-validation." />
+                    <DataGrid ItemsSource="{Binding VipRows}" SelectedItem="{Binding SelectedVipRow}"
+                              AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" CanUserSortColumns="True">
+                      <DataGrid.Columns>
+                        <DataGridTextColumn Header="Feature" Binding="{Binding Label}" Width="*" />
+                        <DataGridTextColumn Header="Class" Binding="{Binding Group}" Width="90" />
+                        <DataGridTextColumn Header="Higher in" Binding="{Binding Side}" Width="110" />
+                        <DataGridTextColumn Header="VIP" Binding="{Binding Vip, StringFormat={}{0:F2}}" Width="70" />
+                      </DataGrid.Columns>
+                    </DataGrid>
+                  </DockPanel>
+                </Border>
+              </Grid>
+            </DockPanel>
+          </Border>
         </TabItem>
 
         <!-- hierarchical clustering -->

@@ -29,7 +29,7 @@ public partial class SettingsWindow : Window
         ShowCacheSize();
     }
 
-    private readonly OpenDIAL.Pipeline.Caching.Ms1SnapshotCache _ms1Cache = new();
+    private readonly OpenDIAL.Pipeline.Caching.RawSnapshotCache _ms1Cache = new();
 
     private void ShowCacheSize()
     {

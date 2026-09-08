@@ -66,11 +66,70 @@ public sealed class DataMatrix
             {
                 var v = column[i];
                 if (double.IsNaN(v) || v <= 0) v = smallest;
-                values[i, j] = transform == ValueTransform.Log10 ? Math.Log10(v) : v;
+                values[i, j] = v;
             }
         }
 
-        // centre, then scale each feature
+        Prepare(values, transform, scaling);
+        return new DataMatrix(values, samples, features);
+    }
+
+    /// <summary>
+    /// Builds the matrix from responses that have already been pulled out and worked on — the
+    /// drift-corrected values, above all — instead of reading them off the features again. The
+    /// array is [sample, feature] in the order of the lists given, and is not modified.
+    /// </summary>
+    public static DataMatrix From(
+        double[,] raw,
+        IReadOnlyList<SampleInfo> samples,
+        IReadOnlyList<AlignmentSpotRow> features,
+        ValueTransform transform = ValueTransform.Log10,
+        ValueScaling scaling = ValueScaling.Auto)
+    {
+        ArgumentNullException.ThrowIfNull(raw);
+        ArgumentNullException.ThrowIfNull(samples);
+        ArgumentNullException.ThrowIfNull(features);
+        var n = samples.Count;
+        var p = features.Count;
+        if (raw.GetLength(0) != n || raw.GetLength(1) != p)
+        {
+            throw new ArgumentException($"The values are {raw.GetLength(0)} by {raw.GetLength(1)}, but there are {n} injections and {p} features.", nameof(raw));
+        }
+
+        var values = new double[n, p];
+        for (var j = 0; j < p; j++)
+        {
+            // a feature that is zero everywhere has no floor of its own to stand on
+            var smallest = double.MaxValue;
+            for (var i = 0; i < n; i++)
+            {
+                var v = raw[i, j];
+                if (!double.IsNaN(v) && v > 0 && v < smallest) smallest = v;
+            }
+            if (smallest == double.MaxValue) smallest = 1;
+            for (var i = 0; i < n; i++)
+            {
+                var v = raw[i, j];
+                values[i, j] = double.IsNaN(v) || v <= 0 ? smallest : v;
+            }
+        }
+
+        Prepare(values, transform, scaling);
+        return new DataMatrix(values, samples, features);
+    }
+
+    /// <summary>Transforms in place, then centres and scales every feature.</summary>
+    private static void Prepare(double[,] values, ValueTransform transform, ValueScaling scaling)
+    {
+        var n = values.GetLength(0);
+        var p = values.GetLength(1);
+        if (transform == ValueTransform.Log10)
+        {
+            for (var j = 0; j < p; j++)
+                for (var i = 0; i < n; i++)
+                    values[i, j] = Math.Log10(values[i, j]);
+        }
+
         for (var j = 0; j < p; j++)
         {
             double sum = 0;
@@ -88,6 +147,5 @@ public sealed class DataMatrix
             var divisor = scaling == ValueScaling.Auto ? sd : Math.Sqrt(sd);
             for (var i = 0; i < n; i++) values[i, j] /= divisor;
         }
-        return new DataMatrix(values, samples, features);
     }
 }
