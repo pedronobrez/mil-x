@@ -186,6 +186,8 @@ public sealed class UiProbe
                     ["name"] = selected.DisplayName,
                     ["rt"] = Math.Round(selected.Rt, 4),
                     ["mz"] = Math.Round(selected.Mz, 5),
+                    // the m/z as the ion table prints it, which is what the filter box matches on
+                    ["mzText"] = selected.Mz.ToString("F4", CultureInfo.InvariantCulture),
                     ["meanHeight"] = Math.Round(selected.Height, 1),
                     ["fill"] = Math.Round(selected.Fill, 1),
                     ["manuallyQuantified"] = selected.Spot.IsManuallyQuantified,

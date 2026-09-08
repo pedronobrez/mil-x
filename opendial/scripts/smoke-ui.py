@@ -410,9 +410,12 @@ def main() -> int:
                 target = state["selected"]
                 check(target is not None, f"a feature is selected: #{target['id']} {target['name']}")
                 click_control(state, "control.FilterBox", "the filter box")
-                type_text(str(target["id"]))
-                state = wait_for(probe, lambda s: s.get("ionRows") == 1 and (s.get("review") or {}).get("filter") == str(target["id"]),
-                                 "the filter to narrow the table to the one id", 15)
+                # the m/z to four decimals is the one text that names a single feature; a short id
+                # such as "0" is a substring of half the table's m/z values
+                needle = target.get("mzText") or f"{target['mz']:.4f}"
+                type_text(needle)
+                state = wait_for(probe, lambda s: s.get("ionRows") == 1 and (s.get("review") or {}).get("filter") == needle,
+                                 f"the filter to narrow the table to the one feature at m/z {needle}", 15)
                 check(state["selected"]["id"] == target["id"], f"the table narrowed to feature #{target['id']} and kept it selected")
 
                 say("a peak is re-integrated by typing a window and clicking Apply to all")

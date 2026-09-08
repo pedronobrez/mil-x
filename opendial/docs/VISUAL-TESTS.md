@@ -110,7 +110,7 @@ folder (typing the injections by name: `BK` is a blank, `Eq` a control), presses
 the run, and checks that the SCIEX plugin inside the bundle read every `.wiff` natively, that the
 alignment table and the MS-DIAL project were written, and that the OpenDIAL project now points at
 them. Then it does what a reviewer does, through the keyboard and the mouse: types the selected
-feature's id into the filter box and sees the table narrow to it, types a narrower integration
+feature's m/z into the filter box and sees the table narrow to it, types a narrower integration
 window into the two boxes and clicks **Apply to all**, checks that every sample now sits inside the
 window and that heights changed, clicks **Save review** and checks the tag file and the
 `.before-curation` backups on disk, exports the reviewed table and the OpenQuant component list and
