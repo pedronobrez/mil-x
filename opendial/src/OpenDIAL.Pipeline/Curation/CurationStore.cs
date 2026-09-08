@@ -38,6 +38,19 @@ public sealed class CurationStore
     public string SidecarPath { get; }
     public bool IsDirty { get; private set; }
 
+    /// <summary>The internal standard chosen for each lipid class, by feature id; kept with the review because it refers to this alignment's ids.</summary>
+    public Dictionary<string, int> InternalStandards { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    public void SetInternalStandards(IEnumerable<KeyValuePair<string, int?>> assignments) {
+        var before = InternalStandards.OrderBy(kv => kv.Key).Select(kv => $"{kv.Key}={kv.Value}").ToList();
+        InternalStandards.Clear();
+        foreach (var (cls, id) in assignments) {
+            if (id is not null) InternalStandards[cls] = id.Value;
+        }
+        var after = InternalStandards.OrderBy(kv => kv.Key).Select(kv => $"{kv.Key}={kv.Value}").ToList();
+        if (!before.SequenceEqual(after)) IsDirty = true;
+    }
+
     public static string TagFileFor(string alignmentFilePath) =>
         Path.Combine(Path.GetDirectoryName(alignmentFilePath) ?? string.Empty,
                      Path.GetFileNameWithoutExtension(alignmentFilePath) + "_tags.xml");
@@ -130,7 +143,11 @@ public sealed class CurationStore
         try {
             using var stream = File.OpenRead(SidecarPath);
             var payload = JsonSerializer.Deserialize<Sidecar>(stream);
-            if (payload?.Spots is null) return;
+            if (payload is null) return;
+            if (payload.InternalStandards is not null) {
+                foreach (var (cls, id) in payload.InternalStandards) InternalStandards[cls] = id;
+            }
+            if (payload.Spots is null) return;
             foreach (var entry in payload.Spots) {
                 var c = Get(entry.Id);
                 c.Comment = entry.Comment ?? string.Empty;
@@ -179,12 +196,12 @@ public sealed class CurationStore
                 Reviewed = kv.Value.Reviewed,
             })
             .ToList();
-        if (spots.Count == 0) {
+        if (spots.Count == 0 && InternalStandards.Count == 0) {
             if (File.Exists(SidecarPath)) File.Delete(SidecarPath);
             return;
         }
         using var stream = File.Create(SidecarPath);
-        JsonSerializer.Serialize(stream, new Sidecar { Version = 1, Spots = spots },
+        JsonSerializer.Serialize(stream, new Sidecar { Version = 1, Spots = spots, InternalStandards = InternalStandards.Count == 0 ? null : new Dictionary<string, int>(InternalStandards) },
             new JsonSerializerOptions { WriteIndented = true, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull });
     }
 
@@ -192,6 +209,7 @@ public sealed class CurationStore
     {
         public int Version { get; set; }
         public List<SidecarSpot>? Spots { get; set; }
+        public Dictionary<string, int>? InternalStandards { get; set; }
     }
 
     private sealed class SidecarSpot

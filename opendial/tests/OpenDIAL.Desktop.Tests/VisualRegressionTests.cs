@@ -6,6 +6,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.VisualTree;
 using OpenDIAL.Desktop.ViewModels;
 using OpenDIAL.Desktop.Views;
+using OpenDIAL.Pipeline.Statistics;
 using Xunit;
 
 namespace OpenDIAL.Desktop.Tests;
@@ -187,7 +188,7 @@ public class VisualRegressionTests
         window.Show();
 
         var tabs = view.GetVisualDescendants().OfType<TabControl>().First(t => t.Name == "StatsTabs");
-        tabs.SelectedIndex = 1;   // the drift correction, with its table and its two traces
+        StatisticsWorkspaceTests.SelectPage(tabs, "Drift correction");   // its table and its two traces
         AssertLooksLike(window, "statistics-drift");
         window.Close();
     }
@@ -203,7 +204,7 @@ public class VisualRegressionTests
         window.Show();
 
         var tabs = view.GetVisualDescendants().OfType<TabControl>().First(t => t.Name == "StatsTabs");
-        tabs.SelectedIndex = 2;
+        StatisticsWorkspaceTests.SelectPage(tabs, "Discriminant");
         AssertLooksLike(window, "statistics-discriminant");
         window.Close();
     }
@@ -219,8 +220,101 @@ public class VisualRegressionTests
         window.Show();
 
         var tabs = view.GetVisualDescendants().OfType<TabControl>().First(t => t.Name == "StatsTabs");
-        tabs.SelectedIndex = 3;
+        StatisticsWorkspaceTests.SelectPage(tabs, "Orthogonal");
         AssertLooksLike(window, "statistics-orthogonal");
+        window.Close();
+    }
+
+    /// <summary>The one-factor pages on a reviewed result: the standards chosen, the comparison run.</summary>
+    private static (Window Window, TabControl Tabs) OneFactorWindow()
+    {
+        var (vm, _, _) = OneFactorTests.Reviewed();
+        vm.Analysis.ClassA = "treated";
+        vm.Analysis.ClassB = "control";
+        vm.Analysis.CompareCommand.Execute(null);
+        vm.Analysis.HeatmapTopText = "14";
+        vm.Analysis.BuildHeatmapCommand.Execute(null);
+        vm.Analysis.MinimumSetSizeText = "2";
+        vm.Analysis.RunEnrichmentCommand.Execute(null);
+        vm.Analysis.SelectedComparison = vm.Analysis.ComparisonRows.OrderBy(r => r.P).First();
+        var view = new StatisticsView { DataContext = vm };
+        var window = new Window { Content = view, Width = 1500, Height = 900 };
+        window.Show();
+        var tabs = view.GetVisualDescendants().OfType<TabControl>().First(t => t.Name == "StatsTabs");
+        return (window, tabs);
+    }
+
+    [AvaloniaFact]
+    public void The_data_page_looks_like_its_reference()
+    {
+        var (window, tabs) = OneFactorWindow();
+        StatisticsWorkspaceTests.SelectPage(tabs, "Data processing");
+        AssertLooksLike(window, "statistics-data");
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void The_normalisation_check_looks_like_its_reference()
+    {
+        var (window, tabs) = OneFactorWindow();
+        StatisticsWorkspaceTests.SelectPage(tabs, "Normalisation check");
+        AssertLooksLike(window, "statistics-normalisation");
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void The_volcano_plot_looks_like_its_reference()
+    {
+        var (window, tabs) = OneFactorWindow();
+        StatisticsWorkspaceTests.SelectPage(tabs, "Volcano plot");
+        AssertLooksLike(window, "statistics-volcano");
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void The_statistical_test_page_looks_like_its_reference()
+    {
+        var (window, tabs) = OneFactorWindow();
+        StatisticsWorkspaceTests.SelectPage(tabs, "Statistical test");
+        AssertLooksLike(window, "statistics-test");
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void The_heatmap_looks_like_its_reference()
+    {
+        var (window, tabs) = OneFactorWindow();
+        StatisticsWorkspaceTests.SelectPage(tabs, "Heatmap");
+        AssertLooksLike(window, "statistics-heatmap");
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void The_enrichment_page_looks_like_its_reference()
+    {
+        var (window, tabs) = OneFactorWindow();
+        StatisticsWorkspaceTests.SelectPage(tabs, "Lipid enrichment");
+        AssertLooksLike(window, "statistics-enrichment");
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void The_principal_components_look_like_their_reference()
+    {
+        var (window, tabs) = OneFactorWindow();
+        StatisticsWorkspaceTests.SelectPage(tabs, "Principal components");
+        AssertLooksLike(window, "statistics-pca");
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void The_standards_dialog_looks_like_its_reference()
+    {
+        var (_, _, spots) = OneFactorTests.Reviewed();
+        var confirmed = spots.Take(16).ToList();
+        var window = new StandardsWindow(confirmed, RelativeAbundance.Suggest(confirmed));
+        window.Show();
+        AssertLooksLike(window, "standards-dialog");
         window.Close();
     }
 }

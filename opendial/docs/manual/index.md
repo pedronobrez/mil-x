@@ -35,7 +35,7 @@ Pressing **F1** in the application opens the manual at the page for the workspac
 - Coming from MS-DIAL on Windows: [[concepts#What is the same as MS-DIAL]], then [[review-tags]] and [[projects-and-files]] — your projects and your curation carry over.
 - Setting up a batch: [[new-project-wizard]], [[samples-workspace]], [[method-workspace]], [[processing]].
 - Reviewing a result: [[analytics-workspace]] is the overview; [[ion-table]], [[review-tags]], [[evidence-panels]], [[reintegration]] and [[annotation]] go one level down.
-- Looking at the dataset as a whole: [[statistics-workspace]].
+- Looking at the dataset as a whole: [[statistics-workspace]], then [[one-factor-analysis]] and [[internal-standards]]; the charts leave as SVG or PNG, see [[chart-export]].
 - Getting data out: [[exports]] and [[openquant]].
 - Something is wrong: [[troubleshooting]].
 
@@ -43,14 +43,14 @@ Pressing **F1** in the application opens the manual at the page for the workspac
 
 **Start** — [[getting-started]] · [[concepts]] · [[shell]]
 
-**Workspaces** — [[new-project-wizard]] · [[samples-workspace]] · [[method-workspace]] · [[processing]] · [[explorer-workspace]] · [[analytics-workspace]] · [[statistics-workspace]]
+**Workspaces** — [[new-project-wizard]] · [[samples-workspace]] · [[method-workspace]] · [[processing]] · [[explorer-workspace]] · [[analytics-workspace]] · [[statistics-workspace]] · [[one-factor-analysis]] · [[internal-standards]]
 
-**Reviewing** — [[ion-table]] · [[review-tags]] · [[evidence-panels]] · [[reintegration]] · [[annotation]] · [[exports]]
+**Reviewing** — [[ion-table]] · [[review-tags]] · [[evidence-panels]] · [[reintegration]] · [[annotation]] · [[exports]] · [[chart-export]]
 
 **Data and files** — [[projects-and-files]] · [[raw-data-formats]] · [[openquant]] · [[caches-and-storage]]
 
 **Reference** — [[settings]] · [[keyboard-shortcuts]] · [[method-parameters]] · [[environment-variables]] · [[command-line]] · [[glossary]]
 
-**Under the hood** — [[algorithms]] · [[architecture]] · [[building-and-testing]]
+**Under the hood** — [[algorithms]] · [[architecture]] · [[building-and-testing]] · [[biopan-plan]]
 
 **Help** — [[troubleshooting]] · [[versions]] · [[about]]

@@ -2,20 +2,53 @@
 
 Review works one feature at a time. This workspace is the other half: the dataset seen whole, so a
 mislabelled injection, a batch that drifted or a class that fragments alike shows up before the
-per-feature work starts.
+per-feature work starts. Since 0.3.0 it follows MetaboAnalyst's *Statistical Analysis (one
+factor)* module, with eighteen pages down the left. The manual is the full reference — the pages
+`statistics-workspace`, `one-factor-analysis`, `internal-standards`, `chart-export` and
+`biopan-plan` under `docs/manual/`, or **Help** in the application; this file is the short form.
 
-One options band drives every reading on the page, because they are all readings of the same matrix:
+## One dataset
 
-| Option | What it changes |
+Every page reads one dataset, built on the **Data processing** page:
+
+| Step | Choices |
 | --- | --- |
-| value | peak height or peak area |
-| transform | log10, the usual choice, or none |
-| scaling | unit variance gives every feature the same weight; Pareto is between; centre only lets the abundant ones lead |
-| annotated only | drop the unknowns before computing |
-| drift corrected | feed every view the values corrected against the quality controls; appears once a correction has been run |
+| source | confirmed analytes as **area ratios to the internal standard of their class** (the lipidomics default; the standard per class is chosen in the **Internal standards…** dialog, suggested from labelled `d7`/`13C` names and odd chains, and kept in `<alignment>_curation.json`); confirmed analytes raw; or every feature |
+| missing values | drop features missing in more than *n* % of the injections; impute the rest by 1/5 of the minimum (MetaboAnalyst's default), half of it, the minimum, mean, median, or KNN |
+| filter | drop the flattest features by IQR, SD, MAD, RSD, mean or median; MetaboAnalyst's count rule when the fraction is left empty; a QC-RSD cut-off |
+| sample normalisation | none, sum, median, PQN, PQN to the controls, or a reference feature |
+| transformation | log10, log2, ln, square root, cube root, none |
+| scaling (models only) | auto (unit variance), Pareto, mean centre |
 
-Missing and non-positive values become the smallest positive value of their own feature, which is
-what a log transform needs and what most pipelines do.
+The fold changes read the normalised values, the tests the transformed ones, the models the scaled
+ones. The **Normalisation check** page is MetaboAnalyst's before-and-after boxes.
+
+## One feature at a time
+
+**Fold change**, the **Statistical test** (Welch by default; Student, paired, Mann–Whitney,
+Wilcoxon; FDR, Holm, Bonferroni; α), the **Volcano plot**, **ANOVA** and Kruskal–Wallis with
+Fisher's LSD post-hoc, **Correlations** (Pearson, Spearman, Kendall; features or injections),
+**Pattern search** (a feature's profile or the class order). Every table exports as TSV; choosing a
+feature draws its boxes per class and opens it in the ion table.
+
+## Models, clustering and enrichment
+
+**Principal components** (with the scree, the 95 % ellipses, the choice of components),
+**Discriminant** (PLS-DA with VIP, Q² and the permutation test), **Orthogonal** (OPLS-DA with the
+S-plot), the **Random forest** (out-of-bag error, permutation importance, confusion table);
+**Dendrogram** (four distances, four linkages), the clustered **Heatmap**, **K-means**; the
+**Lipid enrichment** — hypergeometric over-representation over lipid classes, chain lengths,
+unsaturation and species, the per-class mean fold change, and the chain map (carbons × double
+bonds). A BioPAN-style pathway module is planned; the plan is in the manual.
+
+## Charts
+
+Every chart sits in a frame with options (title, labels, point size, font scale, palette, colour
+scale, grid, legend, labels, ellipses, trees, values) and **Export…** as SVG — real lines and text,
+drawn by the same code as the screen through the `ChartCanvas` abstraction — or PNG at 2×, 4× and
+6×.
+
+The sections below describe the pages that predate 0.3.0 in more detail.
 
 ## Principal components
 

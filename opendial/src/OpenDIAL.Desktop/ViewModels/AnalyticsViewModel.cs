@@ -232,6 +232,10 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
 
     public string OutputFolder => _session?.Folder ?? string.Empty;
     public ResultSession? Session => _session;
+    /// <summary>The review of the loaded result: what says which features are confirmed, and where the standards are kept.</summary>
+    public CurationStore? Curation => _curation;
+    /// <summary>Raised after any change to the review, so the analysis can say its confirmed set is older than the review.</summary>
+    public event EventHandler? CurationChanged;
 
     /// <summary>Set by the shell; the toolbar's Process batch button routes here.</summary>
     public IAsyncRelayCommand? ProcessBatchCommand { get; set; }
@@ -890,6 +894,7 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     private void AfterCuration()
     {
         RefreshCounts();
+        CurationChanged?.Invoke(this, EventArgs.Empty);
         // a tag filter is a moving target while tagging: re-apply it so the list stays honest
         if (TagFilter != "All") RebuildRows();
     }

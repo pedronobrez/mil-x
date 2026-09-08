@@ -2,7 +2,7 @@
 title: Exports
 section: Reviewing
 order: 25
-summary: Every way a result leaves the application — the reviewed table, the re-exported matrix, the OpenQuant component list, the network tables, and what the run itself writes.
+summary: Every way a result leaves the application — the reviewed table, the re-exported matrix, the OpenQuant component list, the analysis tables and the charts, the network tables, and what the run itself writes.
 ---
 
 # Exports
@@ -37,6 +37,30 @@ statistics columns.
 **Export to OpenQuant…** turns the listed features into an OpenQuant component CSV — precursor,
 strongest fragment, retention window — so a discovery list becomes a targeted method in one step.
 The options and the columns are in [[openquant]].
+
+## The analysis tables
+
+Every page of the [[one-factor-analysis]] that produces a table has an **Export table…** button
+beside its options, and the **Data processing** page has **Export normalised data…**. All of them
+write tab-separated text with a header line, numbers with a period as the decimal mark, into a
+file named for the table:
+
+| File | Columns |
+| --- | --- |
+| `normalized-data.tsv` | `Feature id`, `Feature`, `Class`, then one column per injection with the transformed value — the dataset every page reads, ready for another tool |
+| `comparison.tsv` | `Feature id`, `Feature`, `Class`, the two class means, `Fold change`, `log2 FC`, `Statistic`, `p`, and the adjusted p under the name of the adjustment (`FDR`, `Holm`, `Bonferroni`) |
+| `anova.tsv` | `Feature id`, `Feature`, `Class`, `Statistic`, `p`, the adjusted p, and `Post hoc` — every pair with its p, semicolon-separated |
+| `pattern-search.tsv` | `Feature id`, `Feature`, `Class`, `Correlation`, `p` |
+| `random-forest.tsv` | `Feature id`, `Feature`, `Class`, `Mean decrease accuracy`, `Mean decrease Gini` |
+| `enrichment.tsv` | `Set`, `Kind`, `Size`, `Hits`, `Expected`, `Enrichment ratio`, `p`, the adjusted p, and `Members` — the significant features in the set, semicolon-separated |
+
+`Feature id` is MS-DIAL's alignment ID, the same number as in the reviewed table and the ion
+table, so the tables join. The internal standards themselves are not in the ratio tables.
+
+## The charts
+
+Every chart in the Statistics workspace writes itself out as **SVG** or as **PNG** at two, four
+or six times its on-screen size, from the **Export…** menu at its top right; see [[chart-export]].
 
 ## The network tables
 

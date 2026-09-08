@@ -158,7 +158,7 @@ public sealed class LineChart : ChartBase
         return left;
     }
 
-    protected override void RenderPlot(DrawingContext ctx, Rect plot, Func<double, double> tx, Func<double, double> ty, double xMin, double xMax, double yMin, double yMax)
+    protected override void RenderPlot(Charts.ChartCanvas ctx, Rect plot, Func<double, double> tx, Func<double, double> ty, double xMin, double xMax, double yMin, double yMax)
     {
         DrawWindows(ctx, plot, tx);
         var series = Effective();
@@ -176,23 +176,15 @@ public sealed class LineChart : ChartBase
             if (hi < lo) continue;
 
             double Y(int i) => ty(pts[i].Y * scale + offset);
-            var line = new StreamGeometry();
-            using (var g = line.Open())
-            {
-                g.BeginFigure(new Point(tx(pts[lo].X), Y(lo)), false);
-                for (var i = lo + 1; i <= hi; i++) g.LineTo(new Point(tx(pts[i].X), Y(i)));
-                g.EndFigure(false);
-            }
+            var linePoints = new List<Point>(hi - lo + 1);
+            for (var i = lo; i <= hi; i++) linePoints.Add(new Point(tx(pts[i].X), Y(i)));
+            var line = Polyline(linePoints);
             if (s.Fill || (n == 1 && FillArea))
             {
-                var area = new StreamGeometry();
-                using (var g = area.Open())
-                {
-                    g.BeginFigure(new Point(tx(pts[lo].X), ty(offset)), true);
-                    for (var i = lo; i <= hi; i++) g.LineTo(new Point(tx(pts[i].X), Y(i)));
-                    g.LineTo(new Point(tx(pts[hi].X), ty(offset)));
-                    g.EndFigure(true);
-                }
+                var areaPoints = new List<Point>(linePoints.Count + 2) { new(tx(pts[lo].X), ty(offset)) };
+                areaPoints.AddRange(linePoints);
+                areaPoints.Add(new Point(tx(pts[hi].X), ty(offset)));
+                var area = Polyline(areaPoints, close: true);
                 ctx.DrawGeometry(new SolidColorBrush(Color.FromArgb(n == 1 ? (byte)34 : (byte)18, color.R, color.G, color.B)), null, area);
             }
             var pen = new Pen(new SolidColorBrush(color), Compact ? 1.2 : 1.5, s.Dashed ? DashStyle.Dash : null);
@@ -236,7 +228,7 @@ public sealed class LineChart : ChartBase
         }
     }
 
-    private void DrawWindows(DrawingContext ctx, Rect plot, Func<double, double> tx)
+    private void DrawWindows(Charts.ChartCanvas ctx, Rect plot, Func<double, double> tx)
     {
         var windows = Windows;
         if (windows is null) return;
@@ -272,7 +264,7 @@ public sealed class LineChart : ChartBase
         }
     }
 
-    protected override void RenderOverlay(DrawingContext ctx, Rect plot, Func<double, double> tx, Func<double, double> ty, double xMin, double xMax)
+    protected override void RenderOverlay(Charts.ChartCanvas ctx, Rect plot, Func<double, double> tx, Func<double, double> ty, double xMin, double xMax)
     {
         var series = Series;
         if (!ShowLegend || Compact || series is null || series.Count < 1 || Stack) return;

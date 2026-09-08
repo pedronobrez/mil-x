@@ -10,9 +10,28 @@ summary: What each version of OpenDIAL brought; the notes are updated with every
 The version shown in **Help ▸ About OpenDIAL** and in the window's probe is the one stamped in
 `opendial/Directory.Build.props`. This page names it, and a test fails the build when it does not.
 
-## 0.2.0 — September 2026
+## 0.3.0 — September 2026
 
 The current version. It tracks MS-DIAL 5.5.260817.
+
+**New**
+
+- The Statistics workspace rebuilt around MetaboAnalyst's one-factor module, with its pages down the left: **Data processing** (missing values, the variance and QC-RSD filters, sample normalisation, transformation, scaling), the **Normalisation check**, **Fold change**, the **Statistical test** (Welch, Student, paired, Mann–Whitney, Wilcoxon; FDR, Holm, Bonferroni), the **Volcano plot**, **ANOVA** and Kruskal–Wallis with Fisher's LSD post-hoc, **Correlations**, **Pattern search**, the **Random forest**, the clustered **Heatmap**, **K-means**, and the **Lipid enrichment** (over-representation over classes, chain lengths and unsaturation, the class changes and the chain map). See [[one-factor-analysis]].
+- The **relative abundance** source: confirmed analytes as area ratios to the internal standard of their class, chosen per class in the **Internal standards…** dialog, suggested from labelled and odd-chain names, and kept in the curation sidecar. See [[internal-standards]].
+- Every chart in a frame with options — title, labels, point size, font scale, palette, colour scale, grid, legend, labels, ellipses, trees, values — and **Export…** as SVG (real lines and text) or PNG at 2×, 4× and 6×. See [[chart-export]].
+- The principal components page gained the scree plot, the 95 % confidence ellipses, the choice of components and the named top loadings; the discriminant page a VIP chart with the class means beside each bar; the dendrogram its distance and linkage choices.
+- **Reload from the review** when the review changes after the analysis was loaded; **Drift corrected** now feeds the corrected values in before the preprocessing, so the ratios and the tests read them too.
+- The engine: `Distributions` (gamma, beta, normal, Student, Fisher, chi-square, hypergeometric), `Preprocessing`, `Univariate`, `Correlations`, `Clustering` (four distances, four linkages, k-means++), `RandomForest`, `Enrichment`, `LipidNames`, `RelativeAbundance` and `AnalysisTable`, each with tests against hand-computed values and against the reviewed liver batch.
+- The plan for a BioPAN-style pathway module, [[biopan-plan]].
+
+**Changed**
+
+- The options band of the Statistics workspace is now the **Source** band; the transform and the scaling moved to the **Data processing** page, where the rest of the preprocessing is.
+- The manual gained four pages and eleven figures; the visual regression tests cover the new pages and the standards dialog.
+
+## 0.2.0 — September 2026
+
+It tracks MS-DIAL 5.5.260817.
 
 **New**
 

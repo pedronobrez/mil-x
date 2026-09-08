@@ -38,6 +38,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             // clicking a node of the molecular network opens that feature in the ion table
             RequestShowFeature = id => { SelectedWorkspace = 1; Analytics.SelectFeature(id); },
         };
+        Analytics.CurationChanged += (_, _) => Statistics.Analysis.ReviewIsNewer = true;
+        Statistics.Analysis.ReloadRequested += (_, _) => { if (Results is not null) Statistics.Load(Results, Analytics.AllSpots, Analytics.Samples, Analytics.Curation); };
         Run = new RunViewModel();
         Samples.Changed += (_, _) => { if (!_loading) IsDirty = true; };
         Method.Changed += (_, _) => { if (!_loading) IsDirty = true; Samples.DefaultAcquisition = Method.Parameters.AcquisitionType; };
@@ -269,7 +271,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             {
                 Explorer.Load(Samples.Samples.ToList(), Results);
                 await Analytics.LoadAsync(Results);
-                Statistics.Load(Results, Analytics.AllSpots, Analytics.Samples);
+                Statistics.Load(Results, Analytics.AllSpots, Analytics.Samples, Analytics.Curation);
                 SelectedWorkspace = 1;
                 Status = $"Opened {Results.AnalysisFiles.Count} file(s) from {Results.Folder}";
             }
@@ -572,7 +574,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         RawCache.Clear();
         Explorer.Load(Samples.Samples.ToList(), Results);
         await Analytics.LoadAsync(Results);
-        Statistics.Load(Results, Analytics.AllSpots, Analytics.Samples);
+        Statistics.Load(Results, Analytics.AllSpots, Analytics.Samples, Analytics.Curation);
         Status = $"Run finished in {result.Elapsed:mm\\:ss} — {result.ExportedFiles.Count} files exported to {result.OutputFolder}";
         if (!string.IsNullOrEmpty(ProjectPath))
         {

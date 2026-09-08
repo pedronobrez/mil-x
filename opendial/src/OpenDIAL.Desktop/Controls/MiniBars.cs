@@ -11,7 +11,7 @@ namespace OpenDIAL.Desktop.Controls;
 /// lets a reviewer scan the ion table for a feature that is as high in the blanks as in the samples
 /// without opening a panel.
 /// </summary>
-public sealed class MiniBars : Control
+public sealed class MiniBars : Control, Charts.IChartRenderable
 {
     public static readonly StyledProperty<IReadOnlyList<ClassHeight>?> ItemsProperty =
         AvaloniaProperty.Register<MiniBars, IReadOnlyList<ClassHeight>?>(nameof(Items));
@@ -25,7 +25,9 @@ public sealed class MiniBars : Control
 
     private bool _dark => (Application.Current?.ActualThemeVariant ?? Avalonia.Styling.ThemeVariant.Light) == Avalonia.Styling.ThemeVariant.Dark;
 
-    public override void Render(DrawingContext context)
+    public override void Render(DrawingContext context) => RenderTo(new Charts.AvaloniaCanvas(context));
+
+    public void RenderTo(Charts.ChartCanvas context)
     {
         var items = Items;
         if (items is null || items.Count == 0) return;
@@ -46,7 +48,7 @@ public sealed class MiniBars : Control
             var barHeight = Math.Max(1.0, value / max * (height - 3));
             var x = i * (barWidth + gap);
             var color = ChartPalette.ForIndex(_dark, i);
-            context.FillRectangle(new SolidColorBrush(color), new Rect(x, baseline - barHeight, barWidth, barHeight));
+            context.DrawRectangle(new SolidColorBrush(color), null, new Rect(x, baseline - barHeight, barWidth, barHeight));
         }
     }
 }

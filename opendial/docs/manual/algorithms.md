@@ -60,10 +60,92 @@ start, apex and end move to the first, highest and last scan inside. See [[reint
 
 ## Statistics
 
-Every view starts from the same matrix: injections down the rows, features across the columns,
-each value the peak height (or area), with missing and non-positive values replaced by the
-smallest positive value of their feature, then log10-transformed, centred, and scaled — unit
-variance, Pareto (divided by the square root of the standard deviation) or not at all.
+Every page starts from the same table: injections down the rows, features across the columns.
+What the values are, and what is done to them before a page reads them, is the first section.
+
+### Relative abundance
+
+With the ratio source, the features are the spots tagged Confirmed; each is assigned to the lipid
+class its ontology names (or the class parsed from its name), and every class with a standard has
+its analytes divided, injection by injection, by the standard's area (or height) in that
+injection: `ratio[i, j] = area[i, j] / area[i, standard of class(j)]`. A zero or missing standard
+makes the ratio missing. The standard is left out; a class without one keeps its raw values, and
+the report names it.
+
+### Lipid names
+
+A name is parsed into class, carbons and double bonds: `PC 34:1`, `PC 16:0_18:1` (chains summed),
+`SM 18:1;O2/23:0` (chains summed, the oxygen ignored), `Cer d18:1/17:0`, `TG 52:2|TG 16:0_18:1_18:1`
+(the part before the bar), with the class taken from the ontology when MS-DIAL gave one. A
+standard is a name carrying a label — `d7`, `d9`, `(d7)`, `-d5`, `13C`, `IS` as a token — and an
+odd-chain species is one whose total carbons are odd (15:0, 17:0, 19:0 chains). The score that
+suggests a standard is 100 for a labelled standard of the class, 40 for an odd-chain species of the
+class, 20 for a standard of another class, and a class is suggested one only at 40 or more.
+
+### Preprocessing
+
+In MetaboAnalyst's order. *Missing values*: a feature absent in more than the allowed share of the
+injections is dropped; the remaining gaps become a fraction of the feature's minimum positive
+value (a fifth by default), its mean, its median, or — KNN — the mean of the ten features that
+correlate best with it over the injections both have. *Filter*: the features are ranked by the
+chosen statistic (interquartile range, standard deviation, median absolute deviation, RSD, mean
+or median) and the lowest fraction dropped; empty, the fraction is MetaboAnalyst's rule by count
+(0 under 250, 5 % under 500, 10 % under 1000, 25 % beyond). *QC RSD*: a feature whose relative
+standard deviation over the QC injections exceeds the limit is dropped. *Sample normalisation*:
+by the injection's sum or median; by the probabilistic quotient — the median of the injection's
+ratios to the median profile of all injections (or of the QC injections); or by one reference
+feature. *Transformation*: log10, log2, ln, square root or cube root, with a non-positive value
+floored at a tenth of the smallest positive one first. *Scaling*, for the models only: centring,
+then division by the standard deviation (auto) or its square root (Pareto).
+
+### One-factor statistics
+
+*Two groups.* Welch's t-test by default, with the Welch–Satterthwaite degrees of freedom; the
+pooled-variance Student test on request; the paired t-test on the differences. Mann–Whitney's U
+with the exact distribution by the counting recursion up to twenty per group without ties and the
+normal approximation with tie correction otherwise; the Wilcoxon signed-rank test likewise. The
+fold change is the ratio of the class means on the normalised values before transformation; the
+tests run on the transformed ones. *Several groups.* The one-way ANOVA F, with Fisher's least
+significant difference between every pair as the post-hoc; Kruskal–Wallis' H with the
+chi-square approximation, and pairwise Mann–Whitney as its post-hoc. *Adjustment.*
+Benjamini–Hochberg (step-up, monotone), Holm (step-down) and Bonferroni.
+
+*Correlations.* Pearson; Spearman as Pearson on mid-ranks; Kendall's τ-b with the tie-corrected
+normal approximation for its p. The pattern search is the same correlation of every feature with
+a given feature's profile, or with the class order as integers.
+
+*Distributions.* Lanczos log-gamma; the regularised incomplete gamma by series and continued
+fraction; the regularised incomplete beta by Lentz's continued fraction; Student's t, Fisher's F
+and the chi-square from them; the normal CDF by the complementary error function and its
+quantile by Acklam's rational approximation; the hypergeometric upper tail by summed log-binomials.
+Each is tested against tabulated values.
+
+### Clustering, heatmap and k-means
+
+Agglomerative clustering over any of four distances — Euclidean, one minus Pearson, one minus
+Spearman, Manhattan — with average, complete, single or Ward linkage, the last three by the
+Lance–Williams update. The heatmap clusters the features by the same rule and, optionally, the
+injections, on the standardised rows (each feature centred and divided by its standard deviation
+across the injections). K-means with k-means++ seeding, Lloyd's iterations to convergence, twenty
+restarts and the lowest within-cluster sum of squares kept.
+
+### Random forest
+
+Breiman's: each tree grown on a bootstrap of the injections, at each node the best Gini split
+among a random √p of the features, to purity; the out-of-bag injections of each tree are
+classified by it and the majority over trees is the prediction, whose error rate is the out-of-bag
+error. Importance is the mean over trees of the fall in out-of-bag accuracy when the feature's
+values are permuted, and the total Gini decrease attributable to the feature.
+
+### Enrichment
+
+Every feature belongs to the sets its parsed name gives it — its lipid class, its carbon number,
+its degree of unsaturation, and, optionally, its sum composition. For each set with at least the
+minimum number of members among the tested features, the hypergeometric probability of at least
+the observed number of hits among the significant features, adjusted as the comparison was. The
+class change is the mean and median log2 fold change over the class's features with the count up
+and down and a one-sample t-test of the log2 fold changes against zero; the chain map is the mean
+log2 fold change per (carbons, double bonds) cell of a class.
 
 ### Principal components
 
@@ -111,12 +193,6 @@ removed from `X`, and this is repeated the requested number of times. One predic
 then fitted on what is left. The S-plot puts each feature's covariance with the predictive score
 across and its correlation with it up. R²Y, Q² and the permutation p are computed the same way as
 for the plain model, in the same reduced space, so the two are held to the same standard.
-
-### Clustering
-
-Average-linkage agglomerative clustering of the injections over the distance one minus the Pearson
-correlation of their feature profiles. The dendrogram joins two clusters at the height of their
-mean pairwise distance.
 
 ### The molecular network
 

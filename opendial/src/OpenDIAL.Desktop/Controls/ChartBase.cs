@@ -31,7 +31,7 @@ public sealed class ChartRangeEventArgs : RoutedEventArgs
 /// wheel zoom, right-drag pan, double-click fit, Shift+drag range selection, click events and a drawn tooltip.
 /// Subclasses supply the data extents and draw inside the plot rectangle.
 /// </summary>
-public abstract class ChartBase : Control
+public abstract class ChartBase : Control, Charts.IChartRenderable
 {
     public static readonly StyledProperty<string?> TitleProperty = AvaloniaProperty.Register<ChartBase, string?>(nameof(Title));
     public static readonly StyledProperty<string?> XLabelProperty = AvaloniaProperty.Register<ChartBase, string?>(nameof(XLabel));
@@ -45,6 +45,11 @@ public abstract class ChartBase : Control
     public static readonly StyledProperty<double> FixedYMaxProperty = AvaloniaProperty.Register<ChartBase, double>(nameof(FixedYMax), double.NaN);
     public static readonly StyledProperty<bool> IsHighlightedProperty = AvaloniaProperty.Register<ChartBase, bool>(nameof(IsHighlighted));
     public static readonly StyledProperty<bool> ShowTooltipProperty = AvaloniaProperty.Register<ChartBase, bool>(nameof(ShowTooltip), true);
+    public static readonly StyledProperty<double> PointSizeProperty = AvaloniaProperty.Register<ChartBase, double>(nameof(PointSize), 4.2);
+    public static readonly StyledProperty<double> FontScaleProperty = AvaloniaProperty.Register<ChartBase, double>(nameof(FontScale), 1.0);
+    public static readonly StyledProperty<bool> ShowGridProperty = AvaloniaProperty.Register<ChartBase, bool>(nameof(ShowGrid), true);
+    public static readonly StyledProperty<string> PaletteProperty = AvaloniaProperty.Register<ChartBase, string>(nameof(Palette), "Tableau");
+    public static readonly StyledProperty<bool> ShowPointLabelsProperty = AvaloniaProperty.Register<ChartBase, bool>(nameof(ShowPointLabels));
 
     public static readonly RoutedEvent<ChartPointEventArgs> PointClickedEvent = RoutedEvent.Register<ChartBase, ChartPointEventArgs>(nameof(PointClicked), RoutingStrategies.Bubble);
     public static readonly RoutedEvent<ChartRangeEventArgs> RangeSelectedEvent = RoutedEvent.Register<ChartBase, ChartRangeEventArgs>(nameof(RangeSelected), RoutingStrategies.Bubble);
@@ -74,7 +79,8 @@ public abstract class ChartBase : Control
     static ChartBase()
     {
         AffectsRender<ChartBase>(TitleProperty, XLabelProperty, YLabelProperty, CompactProperty, SelectionStartProperty, SelectionEndProperty,
-            FixedXMinProperty, FixedXMaxProperty, FixedYMaxProperty, IsHighlightedProperty, RangeSelectionModeProperty);
+            FixedXMinProperty, FixedXMaxProperty, FixedYMaxProperty, IsHighlightedProperty, RangeSelectionModeProperty,
+            PointSizeProperty, FontScaleProperty, ShowGridProperty, PaletteProperty, ShowPointLabelsProperty);
         FocusableProperty.OverrideDefaultValue<ChartBase>(true);
     }
 
@@ -102,6 +108,15 @@ public abstract class ChartBase : Control
     /// <summary>Draws an accent frame (the selected panel of a grid).</summary>
     public bool IsHighlighted { get => GetValue(IsHighlightedProperty); set => SetValue(IsHighlightedProperty, value); }
     public bool ShowTooltip { get => GetValue(ShowTooltipProperty); set => SetValue(ShowTooltipProperty, value); }
+    /// <summary>Radius of a plotted point, for the charts that draw points.</summary>
+    public double PointSize { get => GetValue(PointSizeProperty); set => SetValue(PointSizeProperty, value); }
+    /// <summary>Multiplies every font size on the chart; 1.3 is a figure for a slide.</summary>
+    public double FontScale { get => GetValue(FontScaleProperty); set => SetValue(FontScaleProperty, value); }
+    public bool ShowGrid { get => GetValue(ShowGridProperty); set => SetValue(ShowGridProperty, value); }
+    /// <summary>"Tableau", "Okabe-Ito" (colour-blind safe), "Grey" or "Accent".</summary>
+    public string Palette { get => GetValue(PaletteProperty); set => SetValue(PaletteProperty, value); }
+    /// <summary>Label every point with its name, for the charts that have names to show.</summary>
+    public bool ShowPointLabels { get => GetValue(ShowPointLabelsProperty); set => SetValue(ShowPointLabelsProperty, value); }
 
     public event EventHandler<ChartPointEventArgs> PointClicked { add => AddHandler(PointClickedEvent, value); remove => RemoveHandler(PointClickedEvent, value); }
     public event EventHandler<ChartRangeEventArgs> RangeSelected { add => AddHandler(RangeSelectedEvent, value); remove => RemoveHandler(RangeSelectedEvent, value); }
@@ -128,8 +143,29 @@ public abstract class ChartBase : Control
     protected IBrush PlotBackground => new SolidColorBrush(SurfaceColor);
     protected IBrush TooltipBackground => new SolidColorBrush(Color.FromArgb(0xEE, SurfaceColor.R, SurfaceColor.G, SurfaceColor.B));
 
-    /// <summary>Series colour by index: accent first, then the categorical palette.</summary>
-    protected Color SeriesColor(int index) => index == 0 ? AccentColor : Categorical[(index - 1) % Categorical.Length];
+    /// <summary>Series colour by index: accent first, then the categorical palette, or whatever palette was chosen.</summary>
+    protected Color SeriesColor(int index) => Palette switch
+    {
+        "Okabe-Ito" => OkabeIto[index % OkabeIto.Length],
+        "Grey" => Greys[index % Greys.Length],
+        "Accent" => index == 0 ? AccentColor : Color.FromArgb(255, (byte)Math.Min(255, AccentColor.R + 40 * index), (byte)Math.Min(255, AccentColor.G + 30 * index), (byte)Math.Min(255, AccentColor.B + 20 * index)),
+        _ => index == 0 ? AccentColor : Categorical[(index - 1) % Categorical.Length],
+    };
+
+    /// <summary>Okabe and Ito's eight colours, told apart by every kind of colour vision.</summary>
+    protected static readonly Color[] OkabeIto =
+    {
+        Color.Parse("#0072B2"), Color.Parse("#E69F00"), Color.Parse("#009E73"), Color.Parse("#D55E00"),
+        Color.Parse("#CC79A7"), Color.Parse("#56B4E9"), Color.Parse("#F0E442"), Color.Parse("#000000"),
+    };
+
+    protected static readonly Color[] Greys =
+    {
+        Color.Parse("#222222"), Color.Parse("#777777"), Color.Parse("#AAAAAA"), Color.Parse("#444444"), Color.Parse("#999999"), Color.Parse("#CCCCCC"),
+    };
+
+    /// <summary>A polyline the SVG export can write back out as a path.</summary>
+    protected static StreamGeometry Polyline(IReadOnlyList<Point> points, bool close = false) => Charts.ChartCanvas.Polyline(points, close);
 
     public static Color ColorForIndex(bool dark, int index) => index == 0 ? (dark ? Color.Parse("#6f9be0") : Color.Parse("#234b8c")) : Categorical[(index - 1) % Categorical.Length];
 
@@ -137,16 +173,16 @@ public abstract class ChartBase : Control
 
     protected abstract (double Min, double Max) DataXExtent();
     protected abstract (double Min, double Max) DataYExtent(double xMin, double xMax);
-    protected abstract void RenderPlot(DrawingContext ctx, Rect plot, Func<double, double> tx, Func<double, double> ty, double xMin, double xMax, double yMin, double yMax);
+    protected abstract void RenderPlot(Charts.ChartCanvas ctx, Rect plot, Func<double, double> tx, Func<double, double> ty, double xMin, double xMax, double yMin, double yMax);
     protected virtual IReadOnlyList<string>? GetTooltip(Point pos, Rect plot, Func<double, double> tx, Func<double, double> ty) => null;
     protected virtual bool PadYRange => true;
     protected virtual bool ShowXTicks => true;
-    protected virtual void RenderOverlay(DrawingContext ctx, Rect plot, Func<double, double> tx, Func<double, double> ty, double xMin, double xMax) { }
+    protected virtual void RenderOverlay(Charts.ChartCanvas ctx, Rect plot, Func<double, double> tx, Func<double, double> ty, double xMin, double xMax) { }
 
-    private double MarginLeft => Compact ? 40 : 64;
-    private double MarginTop => Compact ? 20 : (string.IsNullOrEmpty(Title) ? 12 : 26);
+    private double MarginLeft => Compact ? 40 : 64 * Math.Max(1, FontScale);
+    private double MarginTop => Compact ? 20 : (string.IsNullOrEmpty(Title) ? 12 : 26 * Math.Max(1, FontScale));
     private double MarginRight => Compact ? 8 : 14;
-    private double MarginBottom => Compact ? 18 : (string.IsNullOrEmpty(XLabel) ? 24 : 38);
+    private double MarginBottom => Compact ? 18 : (string.IsNullOrEmpty(XLabel) ? 24 : 38 * Math.Max(1, FontScale));
 
     protected Rect PlotRect => new(MarginLeft, MarginTop, Math.Max(1, Bounds.Width - MarginLeft - MarginRight), Math.Max(1, Bounds.Height - MarginTop - MarginBottom));
 
@@ -187,7 +223,10 @@ public abstract class ChartBase : Control
 
     // ------------------------------------------------------------------ rendering
 
-    public sealed override void Render(DrawingContext ctx)
+    public sealed override void Render(DrawingContext context) => RenderTo(new Charts.AvaloniaCanvas(context));
+
+    /// <summary>Draws the chart on any canvas: the screen, or the SVG writer of an export.</summary>
+    public void RenderTo(Charts.ChartCanvas ctx)
     {
         var plot = PlotRect;
         ctx.DrawRectangle(PlotBackground, null, new Rect(Bounds.Size));
@@ -237,7 +276,7 @@ public abstract class ChartBase : Control
         }
     }
 
-    private void DrawSelection(DrawingContext ctx, Rect plot, Func<double, double> tx)
+    private void DrawSelection(Charts.ChartCanvas ctx, Rect plot, Func<double, double> tx)
     {
         double s0, s1;
         if (_selecting) { s0 = _selX0; s1 = _selX1; }
@@ -261,14 +300,14 @@ public abstract class ChartBase : Control
         ctx.DrawLine(pen, new Point(px1, plot.Y), new Point(px1, plot.Bottom));
     }
 
-    private void DrawHighlightFrame(DrawingContext ctx)
+    private void DrawHighlightFrame(Charts.ChartCanvas ctx)
     {
         if (!IsHighlighted) return;
         var r = new Rect(Bounds.Size).Deflate(1);
         ctx.DrawRectangle(null, new Pen(new SolidColorBrush(AccentColor), 2), r, 4, 4);
     }
 
-    private void DrawTitle(DrawingContext ctx, Rect plot)
+    private void DrawTitle(Charts.ChartCanvas ctx, Rect plot)
     {
         if (string.IsNullOrEmpty(Title)) return;
         if (Compact)
@@ -281,7 +320,7 @@ public abstract class ChartBase : Control
         }
         else
         {
-            var ft = MakeText(Title!, 12, TextBrush, FontWeight.SemiBold);
+            var ft = Text(Title!, 12, TextBrush, FontWeight.SemiBold);
             ft.MaxTextWidth = Math.Max(20, Bounds.Width - MarginLeft - 8);
             ft.Trimming = TextTrimming.CharacterEllipsis;
             ft.MaxLineCount = 1;
@@ -289,7 +328,7 @@ public abstract class ChartBase : Control
         }
     }
 
-    private void DrawAxesFrame(DrawingContext ctx, Rect plot)
+    private void DrawAxesFrame(Charts.ChartCanvas ctx, Rect plot)
     {
         var pen = new Pen(AxisBrush, 1);
         ctx.DrawLine(pen, new Point(plot.X, plot.Bottom), new Point(plot.Right, plot.Bottom));
@@ -297,12 +336,12 @@ public abstract class ChartBase : Control
         if (Compact) return;
         if (!string.IsNullOrEmpty(XLabel))
         {
-            var ft = MakeText(XLabel!, 11, MutedBrush);
+            var ft = Text(XLabel!, 11, MutedBrush);
             ctx.DrawText(ft, new Point(plot.Center.X - ft.Width / 2, Bounds.Height - ft.Height - 2));
         }
         if (!string.IsNullOrEmpty(YLabel))
         {
-            var ft = MakeText(YLabel!, 11, MutedBrush);
+            var ft = Text(YLabel!, 11, MutedBrush);
             using (ctx.PushTransform(Matrix.CreateRotation(-Math.PI / 2) * Matrix.CreateTranslation(4 + ft.Height, plot.Center.Y + ft.Width / 2)))
             {
                 ctx.DrawText(ft, new Point(0, -ft.Height));
@@ -310,7 +349,7 @@ public abstract class ChartBase : Control
         }
     }
 
-    private void DrawGridAndTicks(DrawingContext ctx, Rect plot, double xMin, double xMax, double yMin, double yMax, Func<double, double> tx, Func<double, double> ty)
+    private void DrawGridAndTicks(Charts.ChartCanvas ctx, Rect plot, double xMin, double xMax, double yMin, double yMax, Func<double, double> tx, Func<double, double> ty)
     {
         var gridPen = new Pen(GridBrush, 1);
         var tickPen = new Pen(AxisBrush, 1);
@@ -321,9 +360,9 @@ public abstract class ChartBase : Control
         for (var x = Math.Ceiling(xMin / xStep) * xStep; x <= xMax + xStep * 1e-6 && ShowXTicks; x += xStep)
         {
             var px = tx(x);
-            ctx.DrawLine(gridPen, new Point(px, plot.Y), new Point(px, plot.Bottom));
+            if (ShowGrid) ctx.DrawLine(gridPen, new Point(px, plot.Y), new Point(px, plot.Bottom));
             ctx.DrawLine(tickPen, new Point(px, plot.Bottom), new Point(px, plot.Bottom + 3));
-            var ft = MakeText(FormatTick(x, xFormat), fontSize, MutedBrush);
+            var ft = Text(FormatTick(x, xFormat), fontSize, MutedBrush);
             ctx.DrawText(ft, new Point(px - ft.Width / 2, plot.Bottom + 4));
         }
 
@@ -332,14 +371,14 @@ public abstract class ChartBase : Control
         for (var y = Math.Ceiling(yMin / yStep) * yStep; y <= yMax + yStep * 1e-6; y += yStep)
         {
             var py = ty(y);
-            ctx.DrawLine(gridPen, new Point(plot.X, py), new Point(plot.Right, py));
+            if (ShowGrid) ctx.DrawLine(gridPen, new Point(plot.X, py), new Point(plot.Right, py));
             ctx.DrawLine(tickPen, new Point(plot.X - 3, py), new Point(plot.X, py));
-            var ft = MakeText(FormatTick(Math.Abs(y) < yStep * 1e-9 ? 0 : y, yFormat), fontSize, MutedBrush);
+            var ft = Text(FormatTick(Math.Abs(y) < yStep * 1e-9 ? 0 : y, yFormat), fontSize, MutedBrush);
             ctx.DrawText(ft, new Point(plot.X - 6 - ft.Width, py - ft.Height / 2));
         }
     }
 
-    private void DrawTooltip(DrawingContext ctx, Point at, IReadOnlyList<string> lines)
+    private void DrawTooltip(Charts.ChartCanvas ctx, Point at, IReadOnlyList<string> lines)
     {
         var texts = lines.Select(l => MakeText(l, 11, TextBrush)).ToList();
         var w = texts.Max(t => t.Width) + 14;
@@ -359,10 +398,10 @@ public abstract class ChartBase : Control
     }
 
     /// <summary>Legend box drawn top-right of the plot with a translucent surface.</summary>
-    protected void DrawLegend(DrawingContext ctx, Rect plot, IReadOnlyList<(string Label, Color Color)> entries)
+    protected void DrawLegend(Charts.ChartCanvas ctx, Rect plot, IReadOnlyList<(string Label, Color Color)> entries)
     {
         if (entries.Count == 0) return;
-        var texts = entries.Select(e => MakeText(e.Label.Length > 40 ? e.Label[..39] + "…" : e.Label, 10.5, TextBrush)).ToList();
+        var texts = entries.Select(e => Text(e.Label.Length > 40 ? e.Label[..39] + "…" : e.Label, 10.5, TextBrush)).ToList();
         var lineH = texts.Max(t => t.Height) + 2;
         var w = texts.Max(t => t.Width) + 34;
         var h = lineH * texts.Count + 8;
@@ -380,9 +419,13 @@ public abstract class ChartBase : Control
     // ------------------------------------------------------------------ helpers
 
     protected static FormattedText MakeText(string text, double size, IBrush brush, FontWeight weight = FontWeight.Normal)
-        => new(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, new Typeface(FontFamily.Default, FontStyle.Normal, weight), size, brush);
+        => Charts.ChartText.Make(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, new Typeface(FontFamily.Default, FontStyle.Normal, weight), size, brush);
 
-    protected static void DrawTextCentered(DrawingContext ctx, string text, Point center, IBrush brush, double size)
+    /// <summary>Text at the chart's font scale.</summary>
+    protected FormattedText Text(string text, double size, IBrush brush, FontWeight weight = FontWeight.Normal)
+        => MakeText(text, size * FontScale, brush, weight);
+
+    protected static void DrawTextCentered(Charts.ChartCanvas ctx, string text, Point center, IBrush brush, double size)
     {
         var ft = MakeText(text, size, brush);
         ctx.DrawText(ft, new Point(center.X - ft.Width / 2, center.Y - ft.Height / 2));

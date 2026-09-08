@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using OpenDIAL.Desktop.Controls;
 using OpenDIAL.Desktop.Services;
+using OpenDIAL.Pipeline.Curation;
 using OpenDIAL.Pipeline.Results;
 using OpenDIAL.Pipeline.Statistics;
 
@@ -28,8 +29,10 @@ public sealed record VipRow(int FeatureId, string Label, string Group, double Vi
 }
 
 /// <summary>
-/// The dataset seen whole rather than one feature at a time: where the injections fall against each
-/// other, how they group, and which features fragment alike.
+/// The dataset seen whole rather than one feature at a time. The one-factor analysis in
+/// <see cref="Analysis"/> builds the dataset — which features, as what numbers, preprocessed how —
+/// and every model here reads it: the principal components, the discriminant and orthogonal
+/// models, the clustering. The drift correction and the molecular network keep their own inputs.
 /// </summary>
 public sealed partial class StatisticsViewModel : ViewModelBase
 {
@@ -41,38 +44,50 @@ public sealed partial class StatisticsViewModel : ViewModelBase
     private BatchCorrectionResult? _corrected;
     private double[,]? _correctedRaw;
     private IReadOnlyList<AlignmentSpotRow> _correctedFeatures = Array.Empty<AlignmentSpotRow>();
+    private Action<int>? _requestShowFeature;
 
     public StatisticsViewModel(IFileDialogService dialogs)
     {
         _dialogs = dialogs;
+        Analysis = new OneFactorViewModel(dialogs);
+        Analysis.DataChanged += (_, _) => Compute();
     }
 
-    public static string[] ValueKinds { get; } = { "Height", "Area" };
-    public static string[] Transforms { get; } = { "Log10", "None" };
-    public static string[] Scalings { get; } = { "Auto (unit variance)", "Pareto", "None (centre only)" };
+    /// <summary>The one-factor analysis: the source of the dataset every model here reads.</summary>
+    public OneFactorViewModel Analysis { get; }
+
+    public static string[] ClusterDistances { get; } = OneFactorViewModel.Distances;
+    public static string[] ClusterLinkages { get; } = OneFactorViewModel.Linkages;
 
     [ObservableProperty] private bool _hasResults;
     [ObservableProperty] private string _summary = "No results loaded. Process the batch or open a project.";
-    [ObservableProperty] private string _valueKind = "Height";
-    [ObservableProperty] private string _transform = "Log10";
-    [ObservableProperty] private string _scaling = "Auto (unit variance)";
-    [ObservableProperty] private bool _annotatedOnly;
     [ObservableProperty] private bool _isBusy;
 
     // principal components
     [ObservableProperty] private IReadOnlyList<ScatterPoint> _scores = Array.Empty<ScatterPoint>();
     [ObservableProperty] private IReadOnlyList<ScatterPoint> _loadings = Array.Empty<ScatterPoint>();
+    [ObservableProperty] private ScatterPoint? _selectedLoading;
     [ObservableProperty] private IReadOnlyList<VarianceRow> _variance = Array.Empty<VarianceRow>();
+    [ObservableProperty] private IReadOnlyList<BarItem> _scree = Array.Empty<BarItem>();
     [ObservableProperty] private string _scoreLabel = "PC1 against PC2";
+    [ObservableProperty] private string _pcX = "PC1";
+    [ObservableProperty] private string _pcY = "PC2";
+    public static string[] ComponentNames { get; } = { "PC1", "PC2", "PC3", "PC4", "PC5" };
+    private PcaResult? _pca;
 
     // clustering
     [ObservableProperty] private ClusterNode? _clusterRoot;
     [ObservableProperty] private string _clusterLabel = string.Empty;
+    [ObservableProperty] private string _clusterDistance = "Pearson";
+    [ObservableProperty] private string _clusterLinkage = "Average";
 
     // supervised discriminant model
     [ObservableProperty] private IReadOnlyList<ScatterPoint> _plsScores = Array.Empty<ScatterPoint>();
     [ObservableProperty] private IReadOnlyList<ScatterPoint> _plsLoadings = Array.Empty<ScatterPoint>();
     [ObservableProperty] private IReadOnlyList<VipRow> _vipRows = Array.Empty<VipRow>();
+    [ObservableProperty] private IReadOnlyList<RankItem> _vipBars = Array.Empty<RankItem>();
+    [ObservableProperty] private IReadOnlyList<string> _plsClassNames = Array.Empty<string>();
+    [ObservableProperty] private object? _vipSelectedTag;
     [ObservableProperty] private VipRow? _selectedVipRow;
     [ObservableProperty] private string _plsComponents = "2";
     [ObservableProperty] private string _plsPermutations = "200";
@@ -118,8 +133,12 @@ public sealed partial class StatisticsViewModel : ViewModelBase
     [ObservableProperty] private bool _isBuildingNetwork;
     [ObservableProperty] private bool _showUnconnected;
 
-    /// <summary>Raised when a network node is chosen, so the shell can show it in the ion table.</summary>
-    public Action<int>? RequestShowFeature { get; set; }
+    /// <summary>Raised when a feature is chosen anywhere on the page, so the shell can show it in the ion table.</summary>
+    public Action<int>? RequestShowFeature
+    {
+        get => _requestShowFeature;
+        set { _requestShowFeature = value; Analysis.RequestShowFeature = value; }
+    }
 
     public void Clear()
     {
@@ -127,14 +146,18 @@ public sealed partial class StatisticsViewModel : ViewModelBase
         _spots = Array.Empty<AlignmentSpotRow>();
         _samples = Array.Empty<SampleInfo>();
         _network = null;
+        _pca = null;
+        Analysis.Clear();
         HasResults = false;
         Scores = Array.Empty<ScatterPoint>();
         Loadings = Array.Empty<ScatterPoint>();
         Variance = Array.Empty<VarianceRow>();
+        Scree = Array.Empty<BarItem>();
         ClusterRoot = null;
         PlsScores = Array.Empty<ScatterPoint>();
         PlsLoadings = Array.Empty<ScatterPoint>();
         VipRows = Array.Empty<VipRow>();
+        VipBars = Array.Empty<RankItem>();
         HasPls = false;
         PlsVerdict = "Not fitted yet.";
         PlsQuality = string.Empty;
@@ -158,7 +181,7 @@ public sealed partial class StatisticsViewModel : ViewModelBase
         Summary = "No results loaded. Process the batch or open a project.";
     }
 
-    public void Load(ResultSession session, IReadOnlyList<AlignmentSpotRow> spots, IReadOnlyList<SampleInfo> samples)
+    public void Load(ResultSession session, IReadOnlyList<AlignmentSpotRow> spots, IReadOnlyList<SampleInfo> samples, CurationStore? curation = null)
     {
         _session = session;
         _spots = spots;
@@ -167,35 +190,31 @@ public sealed partial class StatisticsViewModel : ViewModelBase
         Summary = HasResults
             ? $"{spots.Count} features across {samples.Count} injections."
             : samples.Count <= 1 ? "Multivariate views need more than one injection." : "No aligned features.";
-        if (HasResults) Compute();
+        if (!HasResults) return;
+        // loading the analysis builds the dataset and raises DataChanged, which computes the rest
+        Analysis.Load(spots, samples, curation, UseCorrectedValues ? CorrectTable : null);
     }
-
-    private ValueTransform TransformKind => Transform == "None" ? ValueTransform.None : ValueTransform.Log10;
-
-    private ValueScaling ScalingKind => Scaling switch
-    {
-        "Pareto" => ValueScaling.Pareto,
-        "None (centre only)" => ValueScaling.None,
-        _ => ValueScaling.Auto,
-    };
-
-    partial void OnValueKindChanged(string value) => Compute();
-    partial void OnTransformChanged(string value) => Compute();
-    partial void OnScalingChanged(string value) => Compute();
-    partial void OnAnnotatedOnlyChanged(bool value) => Compute();
 
     partial void OnSelectedNetworkFeatureChanged(int value)
     {
         if (value >= 0) RequestShowFeature?.Invoke(value);
     }
 
+    partial void OnClusterDistanceChanged(string value) => Compute();
+    partial void OnClusterLinkageChanged(string value) => Compute();
+    partial void OnPcXChanged(string value) => ProjectPca();
+    partial void OnPcYChanged(string value) => ProjectPca();
+
+    /// <summary>The matrix the models read: the analysis dataset, scaled as the Data page says.</summary>
+    private DataMatrix? Matrix => Analysis.Data?.Scaled;
+
     /// <summary>Recomputes the components and the clustering; both are cheap next to reading the data.</summary>
     [RelayCommand]
     private void Compute()
     {
-        if (!HasResults) return;
-        var features = AnnotatedOnly ? _spots.Where(s => s.IsAnnotated).ToList() : _spots.ToList();
-        if (features.Count < 2)
+        var matrix = Matrix;
+        if (!HasResults || matrix is null) return;
+        if (matrix.FeatureCount < 2 || matrix.SampleCount < 2)
         {
             Summary = "Not enough features for a multivariate view.";
             return;
@@ -203,30 +222,24 @@ public sealed partial class StatisticsViewModel : ViewModelBase
         IsBusy = true;
         try
         {
-            var corrected = UseCorrectedValues ? CorrectedFor(features) : null;
-            var matrix = corrected is null
-                ? DataMatrix.Build(features, _samples, ValueKind == "Area", TransformKind, ScalingKind)
-                : DataMatrix.From(corrected, _samples, features, TransformKind, ScalingKind);
-            var pca = Pca.Compute(matrix, Math.Min(3, Math.Max(2, _samples.Count - 1)));
-            Scores = pca.Scores
-                .Select(s => new ScatterPoint(s.Components[0], s.Components.Length > 1 ? s.Components[1] : 0, s.Sample, s.Class, s))
-                .ToList();
-            Loadings = pca.Loadings
-                .Select(l => new ScatterPoint(l.Components[0], l.Components.Length > 1 ? l.Components[1] : 0, l.Label, l.Group, l))
-                .ToList();
+            _pca = Pca.Compute(matrix, Math.Min(5, Math.Max(2, matrix.SampleCount - 1)));
+            ProjectPca();
             var cumulative = 0.0;
-            Variance = pca.ExplainedVariance
+            Variance = _pca.ExplainedVariance
                 .Select((v, i) => { cumulative += v; return new VarianceRow($"PC{i + 1}", v, cumulative); })
                 .ToList();
-            ScoreLabel = pca.ExplainedVariance.Count > 1
-                ? $"PC1 ({pca.ExplainedVariance[0]:F1} %) against PC2 ({pca.ExplainedVariance[1]:F1} %)"
-                : "PC1";
+            Scree = _pca.ExplainedVariance.Select((v, i) => new BarItem($"PC{i + 1}", v, "explained")).ToList();
 
-            var clustering = HierarchicalClustering.ClusterSamples(matrix);
-            ClusterRoot = clustering.Root;
-            ClusterLabel = $"{_samples.Count} injections, average linkage on one minus the Pearson correlation over {features.Count} features";
-            Summary = $"{features.Count} features across {_samples.Count} injections · {Transform.ToLowerInvariant()} transform · {Scaling.ToLowerInvariant()}"
-                + (corrected is null ? string.Empty : " · drift corrected");
+            var distance = ClusterDistance switch { "Euclidean" => DistanceKind.Euclidean, "Spearman" => DistanceKind.Spearman, "Manhattan" => DistanceKind.Manhattan, _ => DistanceKind.Pearson };
+            var linkage = ClusterLinkage switch { "Complete" => LinkageKind.Complete, "Single" => LinkageKind.Single, "Ward" => LinkageKind.Ward, _ => LinkageKind.Average };
+            var n = matrix.SampleCount;
+            var d = new double[n, n];
+            for (var a = 0; a < n; a++)
+                for (var b = a + 1; b < n; b++)
+                    d[a, b] = d[b, a] = Clustering.Distance(Row(matrix.Values, a), Row(matrix.Values, b), distance);
+            ClusterRoot = Clustering.Cluster(d, matrix.Samples.Select(s => s.FileName).ToList(), matrix.Samples.Select(AnalysisTable.ClassOf).ToList(), linkage);
+            ClusterLabel = $"{n} injections, {ClusterLinkage.ToLowerInvariant()} linkage on the {ClusterDistance.ToLowerInvariant()} distance over {matrix.FeatureCount} features";
+            Summary = $"{matrix.FeatureCount} features across {n} injections · {Analysis.Data!.Raw.ValueName} · {Analysis.DataSummary}";
         }
         catch (Exception ex)
         {
@@ -238,7 +251,36 @@ public sealed partial class StatisticsViewModel : ViewModelBase
         }
     }
 
-    partial void OnUseCorrectedValuesChanged(bool value) => Compute();
+    /// <summary>The scores and loadings on the two components chosen.</summary>
+    private void ProjectPca()
+    {
+        if (_pca is null) return;
+        var x = Math.Clamp(Array.IndexOf(ComponentNames, PcX), 0, Math.Max(0, _pca.ComponentCount - 1));
+        var y = Math.Clamp(Array.IndexOf(ComponentNames, PcY), 0, Math.Max(0, _pca.ComponentCount - 1));
+        double At(double[] c, int k) => k < c.Length ? c[k] : 0;
+        Scores = _pca.Scores.Select(s => new ScatterPoint(At(s.Components, x), At(s.Components, y), s.Sample, s.Class, s) { Labelled = true }).ToList();
+        var loadings = _pca.Loadings.Select(l => new ScatterPoint(At(l.Components, x), At(l.Components, y), l.Label, l.Group, l)).ToList();
+        // the ten features farthest from the centre are named; they are what drives the separation
+        var far = loadings.OrderByDescending(p => p.X * p.X + p.Y * p.Y).Take(10).ToHashSet();
+        Loadings = loadings.Select(p => far.Contains(p) ? p with { Labelled = true } : p).ToList();
+        ScoreLabel = _pca.ExplainedVariance.Count > Math.Max(x, y)
+            ? $"{PcX} ({_pca.ExplainedVariance[x]:F1} %) against {PcY} ({_pca.ExplainedVariance[y]:F1} %)"
+            : $"{PcX} against {PcY}";
+    }
+
+    partial void OnSelectedLoadingChanged(ScatterPoint? value)
+    {
+        if (value?.Tag is PcaLoading l) RequestShowFeature?.Invoke(l.FeatureId);
+    }
+
+    private static double[] Row(double[,] m, int r)
+    {
+        var row = new double[m.GetLength(1)];
+        for (var c = 0; c < row.Length; c++) row[c] = m[r, c];
+        return row;
+    }
+
+    partial void OnUseCorrectedValuesChanged(bool value) => Analysis.Corrector = value ? CorrectTable : null;
 
     partial void OnSelectedCorrectionRowChanged(FeatureCorrection? value) => ShowDrift(value);
 
@@ -247,23 +289,34 @@ public sealed partial class StatisticsViewModel : ViewModelBase
         if (value is not null) RequestShowFeature?.Invoke(value.FeatureId);
     }
 
-    /// <summary>
-    /// The corrected responses for exactly these features, or null when the correction has not been
-    /// run or no longer covers them.
-    /// </summary>
-    private double[,]? CorrectedFor(IReadOnlyList<AlignmentSpotRow> features)
+    partial void OnVipSelectedTagChanged(object? value)
     {
-        if (_correctedRaw is null || _correctedFeatures.Count == 0) return null;
+        if (value is int id) RequestShowFeature?.Invoke(id);
+    }
+
+    /// <summary>
+    /// The source table with the drift-corrected responses put in wherever the correction covers
+    /// the feature; a feature it did not cover keeps its raw values.
+    /// </summary>
+    private AnalysisTable CorrectTable(AnalysisTable table)
+    {
+        if (_correctedRaw is null || _correctedFeatures.Count == 0) return table;
         var column = new Dictionary<int, int>(_correctedFeatures.Count);
         for (var j = 0; j < _correctedFeatures.Count; j++) column[_correctedFeatures[j].Id] = j;
-        var n = _samples.Count;
-        var values = new double[n, features.Count];
-        for (var j = 0; j < features.Count; j++)
+        var byFile = new Dictionary<int, int>();
+        for (var i = 0; i < _samples.Count; i++) byFile[_samples[i].FileId] = i;
+        var values = (double[,])table.Values.Clone();
+        for (var j = 0; j < table.FeatureCount; j++)
         {
-            if (!column.TryGetValue(features[j].Id, out var source)) return null;
-            for (var i = 0; i < n; i++) values[i, j] = _correctedRaw[i, source];
+            if (!column.TryGetValue(table.Features[j].Id, out var source)) continue;
+            for (var i = 0; i < table.SampleCount; i++)
+            {
+                if (!byFile.TryGetValue(table.Samples[i].FileId, out var row)) continue;
+                var v = _correctedRaw[row, source];
+                values[i, j] = v > 0 ? v : double.NaN;
+            }
         }
-        return values;
+        return table.With(values, table.ValueName + ", drift corrected");
     }
 
     /// <summary>
@@ -274,9 +327,9 @@ public sealed partial class StatisticsViewModel : ViewModelBase
     [RelayCommand]
     private async Task FitDiscriminant()
     {
-        if (!HasResults) return;
-        var features = AnnotatedOnly ? _spots.Where(s => s.IsAnnotated).ToList() : _spots.ToList();
-        if (features.Count < 2)
+        var matrix = Matrix;
+        if (!HasResults || matrix is null) return;
+        if (matrix.FeatureCount < 2)
         {
             PlsVerdict = "Not enough features to fit anything.";
             HasPls = false;
@@ -288,17 +341,11 @@ public sealed partial class StatisticsViewModel : ViewModelBase
         PlsVerdict = "Fitting, cross-validating and permuting…";
         try
         {
-            var corrected = UseCorrectedValues ? CorrectedFor(features) : null;
-            var result = await Task.Run(() =>
-            {
-                var matrix = corrected is null
-                    ? DataMatrix.Build(features, _samples, ValueKind == "Area", TransformKind, ScalingKind)
-                    : DataMatrix.From(corrected, _samples, features, TransformKind, ScalingKind);
-                return PartialLeastSquares.Compute(matrix, components, permutations);
-            });
+            var transformed = Analysis.Data?.Transformed;
+            var result = await Task.Run(() => PartialLeastSquares.Compute(matrix, components, permutations));
 
             PlsScores = result.Scores
-                .Select(s => new ScatterPoint(s.Components[0], s.Components.Length > 1 ? s.Components[1] : 0, s.Sample, s.Class, s))
+                .Select(s => new ScatterPoint(s.Components[0], s.Components.Length > 1 ? s.Components[1] : 0, s.Sample, s.Class, s) { Labelled = true })
                 .ToList();
             PlsLoadings = result.Loadings
                 .Select(l => new ScatterPoint(l.Weights[0], l.Weights.Length > 1 ? l.Weights[1] : 0, l.Label, l.Group, l))
@@ -315,7 +362,7 @@ public sealed partial class StatisticsViewModel : ViewModelBase
                 var meansByClass = result.Scores
                     .GroupBy(s => s.Class)
                     .ToDictionary(g => g.Key, g => g.Average(s => s.Components[0]));
-                var ordered = result.Classes.OrderBy(c => meansByClass.TryGetValue(c, out var m) ? m : 0).ToList();
+                var ordered = result.Classes.OrderBy(cl => meansByClass.TryGetValue(cl, out var m) ? m : 0).ToList();
                 first = ordered[0];    // the negative side
                 second = ordered[1];   // the positive one
             }
@@ -327,6 +374,18 @@ public sealed partial class StatisticsViewModel : ViewModelBase
                     Side = twoSided ? (l.Weights[0] < 0 ? first : second) : string.Empty,
                 })
                 .ToList();
+            PlsClassNames = result.Classes;
+            var groups = transformed is null ? null : Univariate.GroupIndices(transformed);
+            VipBars = VipRows.Take(25).Select(r =>
+            {
+                IReadOnlyList<double>? levels = null;
+                if (transformed is not null && groups is not null)
+                {
+                    var j = transformed.Features.ToList().FindIndex(f => f.Id == r.FeatureId);
+                    if (j >= 0) levels = result.Classes.Select(cl => groups.TryGetValue(cl, out var idx) ? idx.Select(i => transformed.Values[i, j]).Where(v => !double.IsNaN(v)).DefaultIfEmpty(0).Average() : 0).ToList();
+                }
+                return new RankItem(r.Label, r.Vip, r.Group, r.FeatureId, levels, twoSided ? $"higher in {r.Side}" : null);
+            }).ToList();
 
             HasPls = result.Scores.Count > 0;
             PlsScoreLabel = result.ExplainedX.Count > 1
@@ -379,9 +438,9 @@ public sealed partial class StatisticsViewModel : ViewModelBase
     [RelayCommand]
     private async Task FitOrthogonal()
     {
-        if (!HasResults) return;
-        var features = AnnotatedOnly ? _spots.Where(s => s.IsAnnotated).ToList() : _spots.ToList();
-        if (features.Count < 2)
+        var matrix = Matrix;
+        if (!HasResults || matrix is null) return;
+        if (matrix.FeatureCount < 2)
         {
             OplsVerdict = "Not enough features to fit anything.";
             HasOpls = false;
@@ -393,14 +452,7 @@ public sealed partial class StatisticsViewModel : ViewModelBase
         OplsVerdict = "Stripping the orthogonal variation, then cross-validating…";
         try
         {
-            var corrected = UseCorrectedValues ? CorrectedFor(features) : null;
-            var result = await Task.Run(() =>
-            {
-                var matrix = corrected is null
-                    ? DataMatrix.Build(features, _samples, ValueKind == "Area", TransformKind, ScalingKind)
-                    : DataMatrix.From(corrected, _samples, features, TransformKind, ScalingKind);
-                return OrthogonalProjection.Compute(matrix, orthogonal, permutations);
-            });
+            var result = await Task.Run(() => OrthogonalProjection.Compute(matrix, orthogonal, permutations));
 
             HasOpls = result.Scores.Count > 0;
             if (!HasOpls)
@@ -414,10 +466,11 @@ public sealed partial class StatisticsViewModel : ViewModelBase
             }
 
             OplsScores = result.Scores
-                .Select(s => new ScatterPoint(s.Predictive, s.Orthogonal, s.Sample, s.Class, s))
+                .Select(s => new ScatterPoint(s.Predictive, s.Orthogonal, s.Sample, s.Class, s) { Labelled = true })
                 .ToList();
+            var corners = result.Loadings.OrderByDescending(l => Math.Abs(l.Covariance) * Math.Abs(l.Correlation)).Take(8).Select(l => l.FeatureId).ToHashSet();
             SPlot = result.Loadings
-                .Select(l => new ScatterPoint(l.Covariance, l.Correlation, l.Label, string.IsNullOrEmpty(l.Group) ? "unknown" : l.Group, l))
+                .Select(l => new ScatterPoint(l.Covariance, l.Correlation, l.Label, string.IsNullOrEmpty(l.Group) ? "unknown" : l.Group, l) { Labelled = corners.Contains(l.FeatureId) })
                 .ToList();
             SPlotRows = result.Loadings
                 .OrderByDescending(l => Math.Abs(l.Covariance))
@@ -448,7 +501,7 @@ public sealed partial class StatisticsViewModel : ViewModelBase
     /// <summary>
     /// Fits the drift out of every feature against the quality controls, and reports what it did to
     /// their spread. Nothing is written to the result: the corrected values live here and feed the
-    /// other views only while the box is ticked.
+    /// analysis only while the box is ticked.
     /// </summary>
     [RelayCommand]
     private async Task ApplyCorrection()
@@ -458,11 +511,12 @@ public sealed partial class StatisticsViewModel : ViewModelBase
             ? Math.Clamp(s, 0.2, 1.0)
             : 0.75;
         var features = _spots.ToList();
+        var useArea = Analysis.UseArea;
         IsCorrecting = true;
         CorrectionVerdict = $"Correcting {features.Count} features…";
         try
         {
-            var result = await Task.Run(() => BatchCorrection.Apply(features, _samples, ValueKind == "Area", span));
+            var result = await Task.Run(() => BatchCorrection.Apply(features, _samples, useArea, span));
             _corrected = result;
             _correctedFeatures = features;
             _correctedRaw = result.Corrected > 0 ? result.Values : null;
@@ -474,6 +528,7 @@ public sealed partial class StatisticsViewModel : ViewModelBase
                 : $"{result.QualityControls} quality control(s) across {result.Batches} batch(es) · median CV over the controls {result.MedianCvBefore:F1} % before, {result.MedianCvAfter:F1} % after · {result.Corrected} feature(s) corrected, {result.Skipped} left alone.";
             SelectedCorrectionRow = CorrectionRows.FirstOrDefault(f => f.Corrected) ?? CorrectionRows.FirstOrDefault();
             if (!HasCorrection) UseCorrectedValues = false;
+            else if (UseCorrectedValues) Analysis.Corrector = CorrectTable;
         }
         catch (Exception ex)
         {
@@ -498,7 +553,7 @@ public sealed partial class StatisticsViewModel : ViewModelBase
         var column = _correctedFeatures.ToList().FindIndex(f => f.Id == row.FeatureId);
         if (column < 0) return;
 
-        var useArea = ValueKind == "Area";
+        var useArea = Analysis.UseArea;
         var before = new List<ScatterPoint>(_samples.Count);
         var after = new List<ScatterPoint>(_samples.Count);
         var feature = _correctedFeatures[column];
@@ -526,7 +581,7 @@ public sealed partial class StatisticsViewModel : ViewModelBase
         if (!HasResults || _session?.AlignmentFile is null) return;
         var cutoff = double.TryParse(NetworkCutoff?.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var c) ? c : 0.7;
         var tolerance = double.TryParse(NetworkTolerance?.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var t) ? t : 0.05;
-        var features = (AnnotatedOnly ? _spots.Where(s => s.IsAnnotated) : _spots).Where(s => s.MsmsAssigned).ToList();
+        var features = (Analysis.AnnotatedOnly ? _spots.Where(s => s.IsAnnotated) : _spots).Where(s => s.MsmsAssigned).ToList();
         if (features.Count == 0)
         {
             NetworkLabel = "No feature in this result carries a product spectrum.";

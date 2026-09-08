@@ -23,7 +23,7 @@ public sealed class NetworkNodeEventArgs : RoutedEventArgs
 /// pair, attraction along the edges, cooling over a fixed number of steps. It is deterministic, so
 /// the same network always draws the same way.
 /// </summary>
-public sealed class NetworkGraph : Control
+public sealed class NetworkGraph : Control, Charts.IChartRenderable
 {
     public static readonly StyledProperty<SpectralNetworkResult?> NetworkProperty =
         AvaloniaProperty.Register<NetworkGraph, SpectralNetworkResult?>(nameof(Network));
@@ -146,7 +146,9 @@ public sealed class NetworkGraph : Control
         for (var i = 0; i < n; i++) _positions[nodes[i].FeatureId] = new Point(x[i], y[i]);
     }
 
-    public override void Render(DrawingContext context)
+    public override void Render(DrawingContext context) => RenderTo(new Charts.AvaloniaCanvas(context));
+
+    public void RenderTo(Charts.ChartCanvas context)
     {
         var network = Network;
         var width = Bounds.Width;
@@ -155,7 +157,7 @@ public sealed class NetworkGraph : Control
         {
             if (width > 40 && height > 20)
             {
-                var hint = new FormattedText("No network. Lower the similarity cut-off, or process a run with MS/MS.",
+                var hint = Charts.ChartText.Make("No network. Lower the similarity cut-off, or process a run with MS/MS.",
                     System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Typeface.Default, 12,
                     new SolidColorBrush(ChartPalette.Faint(Dark)));
                 context.DrawText(hint, new Point((width - hint.Width) / 2, height / 2));
@@ -207,7 +209,7 @@ public sealed class NetworkGraph : Control
         if (selected is not null && _positions.TryGetValue(selected.FeatureId, out var sp))
         {
             var centre = Map(sp);
-            var text = new FormattedText($"{selected.Label}  ·  {selected.Group}", System.Globalization.CultureInfo.InvariantCulture,
+            var text = Charts.ChartText.Make($"{selected.Label}  ·  {selected.Group}", System.Globalization.CultureInfo.InvariantCulture,
                 FlowDirection.LeftToRight, Typeface.Default, 11.5, new SolidColorBrush(ChartPalette.Ink(Dark)));
             var box = new Rect(centre.X + 10, centre.Y - text.Height / 2 - 2, text.Width + 10, text.Height + 4);
             context.DrawRectangle(new SolidColorBrush(Color.FromArgb(0xEE, ChartPalette.Surface(Dark).R, ChartPalette.Surface(Dark).G, ChartPalette.Surface(Dark).B)),

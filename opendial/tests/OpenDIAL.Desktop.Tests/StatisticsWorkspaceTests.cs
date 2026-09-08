@@ -22,6 +22,16 @@ public class StatisticsWorkspaceTests
         public Task<string?> SaveFileAsync(string title, string suggestedName, string extension, string? startFolder = null) => Task.FromResult<string?>(null);
     }
 
+    /// <summary>Selects a page of the statistics workspace by its header; the order is not part of the contract.</summary>
+    internal static void SelectPage(TabControl tabs, string header)
+    {
+        var item = tabs.Items.OfType<TabItem>().FirstOrDefault(t => (t.Header as string) == header);
+        Assert.NotNull(item);
+        tabs.SelectedItem = item;
+        // the page's content is built on the next layout pass; make it now
+        (TopLevel.GetTopLevel(tabs) as Window)?.UpdateLayout();
+    }
+
     internal static (StatisticsViewModel Vm, int Features) Loaded()
     {
         var samples = new[]
@@ -82,10 +92,10 @@ public class StatisticsWorkspaceTests
         var (vm, _) = Loaded();
         var before = vm.Variance[0].Percent;
 
-        vm.AnnotatedOnly = true;
+        vm.Analysis.AnnotatedOnly = true;
         Assert.Equal(10, vm.Loadings.Count);   // one feature in three is annotated
 
-        vm.Scaling = "None (centre only)";
+        vm.Analysis.Scaling = "Mean centre only";
         Assert.NotEqual(before, vm.Variance[0].Percent);
     }
 
@@ -99,32 +109,56 @@ public class StatisticsWorkspaceTests
 
         var tabs = view.GetVisualDescendants().OfType<TabControl>().FirstOrDefault(t => t.Name == "StatsTabs");
         Assert.NotNull(tabs);
-        Assert.Equal(6, tabs!.Items.Count);
+        // eighteen pages under six headings, and the workspace opens on a page, not a heading
+        Assert.Equal(18, tabs!.Items.OfType<TabItem>().Count(t => !t.Classes.Contains("section")));
+        Assert.Equal(6, tabs.Items.OfType<TabItem>().Count(t => t.Classes.Contains("section")));
+        Assert.Equal("Data processing", (tabs.SelectedItem as TabItem)?.Header);
 
+        SelectPage(tabs, "Principal components");
         var scatters = view.GetVisualDescendants().OfType<ScatterChart>().ToList();
         Assert.True(scatters.Count >= 2, "scores and loadings");
-        Assert.Equal(vm.Scores, scatters[0].Items);
+        Assert.Contains(scatters, s => s.Items == vm.Scores);
+        Assert.Contains(scatters, s => s.Items == vm.Loadings);
+        Assert.Contains(view.GetVisualDescendants().OfType<BarChart>(), b => b.Items == vm.Scree);
 
         // drift correction: the same feature drawn before and after
-        tabs.SelectedIndex = 1;
+        SelectPage(tabs, "Drift correction");
         var drift = view.GetVisualDescendants().OfType<ScatterChart>().ToList();
         Assert.True(drift.Count >= 2, "before and after");
 
         // the discriminant model
-        tabs.SelectedIndex = 2;
+        SelectPage(tabs, "Discriminant");
         Assert.Contains(view.GetVisualDescendants().OfType<DataGrid>(), g => g.Columns.Any(c => (c.Header as string) == "VIP"));
 
         // the orthogonal rotation
-        tabs.SelectedIndex = 3;
+        SelectPage(tabs, "Orthogonal");
         Assert.Contains(view.GetVisualDescendants().OfType<DataGrid>(), g => g.Columns.Any(c => (c.Header as string) == "Covariance"));
 
-        tabs.SelectedIndex = 4;
+        SelectPage(tabs, "Dendrogram");
         var dendrogram = view.GetVisualDescendants().OfType<Dendrogram>().FirstOrDefault();
         Assert.NotNull(dendrogram);
         Assert.Same(vm.ClusterRoot, dendrogram!.Root);
 
-        tabs.SelectedIndex = 5;
+        SelectPage(tabs, "Molecular network");
         Assert.NotNull(view.GetVisualDescendants().OfType<NetworkGraph>().FirstOrDefault());
+
+        // the one-factor pages bind to the analysis: every one shows its chart and its table
+        SelectPage(tabs, "Volcano plot");
+        Assert.Contains(view.GetVisualDescendants().OfType<ScatterChart>(), c => c.Items == vm.Analysis.VolcanoPoints);
+        SelectPage(tabs, "Heatmap");
+        Assert.NotNull(view.GetVisualDescendants().OfType<HeatmapChart>().FirstOrDefault());
+        SelectPage(tabs, "Lipid enrichment");
+        Assert.True(view.GetVisualDescendants().OfType<RankChart>().Count() >= 2, "enrichment and class changes");
+        SelectPage(tabs, "Normalisation check");
+        Assert.Equal(4, view.GetVisualDescendants().OfType<BoxPlotChart>().Count());
+
+        // every chart on every page sits in a frame that can write it out
+        foreach (var page in tabs.Items.OfType<TabItem>().Where(t => !t.Classes.Contains("section")))
+        {
+            SelectPage(tabs, (string)page.Header!);
+            foreach (var frame in view.GetVisualDescendants().OfType<ChartFrame>())
+                Assert.True(frame.Chart is not null, $"{page.Header}: {frame.HeadingText} has no chart");
+        }
         window.Close();
     }
 

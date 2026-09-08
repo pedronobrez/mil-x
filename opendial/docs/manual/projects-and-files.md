@@ -133,10 +133,14 @@ Overannotation). An unreadable tag file is ignored rather than stopping the resu
 review never rewrites them:
 
 ```json
-{ "Version": 1, "Spots": [ { "Id": 123, "Comment": "shoulder", "ManualName": "PC 34:1", "Reviewed": true } ] }
+{ "Version": 1, "Spots": [ { "Id": 123, "Comment": "shoulder", "ManualName": "PC 34:1", "Reviewed": true } ],
+  "InternalStandards": { "PC": 88, "PE": 412 } }
 ```
 
 Only spots with something to say are listed; the file is deleted when there is nothing left.
+`InternalStandards` is the standard chosen for each lipid class in the Statistics workspace,
+as the alignment ID of the confirmed feature (see [[internal-standards]]); a class set to none is
+absent.
 
 ## Backups
 

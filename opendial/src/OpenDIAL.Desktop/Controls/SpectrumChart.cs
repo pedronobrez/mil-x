@@ -83,7 +83,7 @@ public sealed class SpectrumChart : ChartBase
         return max <= 0 ? 1 : 100.0 / max;
     }
 
-    protected override void RenderPlot(DrawingContext ctx, Rect plot, Func<double, double> tx, Func<double, double> ty, double xMin, double xMax, double yMin, double yMax)
+    protected override void RenderPlot(Charts.ChartCanvas ctx, Rect plot, Func<double, double> tx, Func<double, double> ty, double xMin, double xMax, double yMin, double yMax)
     {
         var zero = ty(0);
         var measuredColor = AccentColor;
@@ -108,19 +108,12 @@ public sealed class SpectrumChart : ChartBase
             var px = tx(PrecursorMz);
             var pen = new Pen(new SolidColorBrush(Categorical[1]), 1, dashStyle: DashStyle.Dot);
             ctx.DrawLine(pen, new Point(px, plot.Y), new Point(px, plot.Bottom));
-            var tri = new StreamGeometry();
-            using (var g = tri.Open())
-            {
-                g.BeginFigure(new Point(px, zero - 7), true);
-                g.LineTo(new Point(px - 5, zero - 1));
-                g.LineTo(new Point(px + 5, zero - 1));
-                g.EndFigure(true);
-            }
+            var tri = Polyline(new[] { new Point(px, zero - 7), new Point(px - 5, zero - 1), new Point(px + 5, zero - 1) }, close: true);
             ctx.DrawGeometry(new SolidColorBrush(Categorical[1]), null, tri);
         }
     }
 
-    private void DrawSticks(DrawingContext ctx, Rect plot, Func<double, double> tx, Func<double, double> ty, IReadOnlyList<Point> peaks, double scale, Color color,
+    private void DrawSticks(Charts.ChartCanvas ctx, Rect plot, Func<double, double> tx, Func<double, double> ty, IReadOnlyList<Point> peaks, double scale, Color color,
         double xMin, double xMax, bool mirrored)
     {
         var pen = new Pen(new SolidColorBrush(color), Compact ? 1 : 1.2);

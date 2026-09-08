@@ -21,6 +21,10 @@ summary: Short definitions of the terms used in the application and this manual.
 
 **Annotation level** — confident, suggested or m/z only, read from the name MS-DIAL wrote. See [[concepts#Annotation levels]].
 
+**Area ratio** — an analyte's peak area divided by the area of its class's internal standard in the same injection; the *relative abundance* a lipidomics result is reported in. See [[internal-standards]].
+
+**Auto-scaling** — dividing every feature by its standard deviation after centring, so each weighs the same in a model; *unit variance* scaling.
+
 **Batch** — the list of injections a project processes together; also the number that groups injections run in one sequence, for the drift correction.
 
 **Candidate** — one library match kept for a feature; the best is the annotation.
@@ -35,15 +39,27 @@ summary: Short definitions of the terms used in the application and this manual.
 
 **Drift** — the slow change of the instrument's response across a sequence; corrected against the QC injections. See [[statistics-workspace#Drift correction]].
 
+**FDR** — the false discovery rate: the share of the features called significant that are expected to be false. Benjamini–Hochberg controls it, and its adjusted p is the default on the test pages.
+
 **Feature** — one compound-ion across the injections: a retention time, an m/z, a name, one peak per injection.
 
 **Fill percentage** — the share of injections in which a feature's peak was detected rather than gap-filled.
 
+**Fold change** — the ratio of a feature's mean in one class to its mean in another, on the normalised values before the transformation; log2 of it on the volcano plot.
+
 **Gap filling** — integrating the chromatogram at a feature's place in an injection where no peak was detected.
+
+**Hypergeometric test** — the test of over-representation: the chance of drawing at least this many members of a set among the significant features, when they are drawn from the tested ones without replacement.
 
 **IDA** — SCIEX's name for DDA.
 
+**Imputation** — replacing a missing value with an estimate: a fraction of the feature's minimum, its mean, or the mean of the nearest features. See [[one-factor-analysis#Data processing]].
+
+**Internal standard** — a compound of a lipid class, labelled or odd-chain, spiked into every sample at the same amount so that the class's analytes can be reported as ratios to it. See [[internal-standards]].
+
 **Isotope weight** — 0 for the monoisotopic ion, 1 for M+1, and so on; a feature marked 1 or more is an isotope of another.
+
+**KNN** — k nearest neighbours; as an imputation, the mean of the *k* features that correlate best with the one missing a value.
 
 **Loadings** — how much each feature contributes to a component, in the principal-component and discriminant plots.
 
@@ -59,19 +75,27 @@ summary: Short definitions of the terms used in the application and this manual.
 
 **Orthogonal component** — in OPLS-DA, variation stripped out because it does not separate the classes.
 
+**Over-representation (ORA)** — asking whether the features that changed fall into a set more often than chance would put them there. See [[one-factor-analysis#Lipid enrichment]].
+
+**Pareto scaling** — dividing every feature by the square root of its standard deviation after centring; between auto-scaling and centring only.
+
 **Peak** — one chromatographic peak of one injection at one m/z.
 
 **Permutation test** — refitting a model on shuffled class labels many times to see how often chance does as well.
+
+**PQN** — probabilistic quotient normalisation: each injection scaled by the median of its feature-by-feature ratios to a reference profile; the usual correction for a dilution effect.
 
 **Q²** — the share of the class membership a model predicts for injections it was not fitted on.
 
 **QC** — a pooled quality-control injection, the same material every time; the type the drift correction reads.
 
-**R²Y** — the share of the class membership a model reproduces on its own injections.
+**Relative abundance** — see *area ratio*.
 
 **Representative** — the injection whose peak scored best for a feature; its spectrum and name are the feature's.
 
 **Reviewed** — a feature carrying any tag, or marked so by the reviewer.
+
+**R²Y** — the share of the class membership a model reproduces on its own injections.
 
 **Scores** — where each injection lands on a model's components.
 
@@ -85,4 +109,11 @@ summary: Short definitions of the terms used in the application and this manual.
 
 **VIP** — variable importance in projection; how much of a model's separation rests on one feature.
 
+**Volcano plot** — every feature's log2 fold change across against −log10 of its p up, so the features that changed a lot and reliably sit in the top corners.
+
+**Welch's t-test** — the two-group t-test that does not assume the two classes spread alike; the default comparison.
+
 **XIC / EIC** — an extracted ion chromatogram: intensity within a mass window against retention time.
+
+
+**Z-score** — a value minus its mean, divided by its standard deviation; what a standardised heatmap row shows.

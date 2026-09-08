@@ -118,6 +118,17 @@ public sealed class DataMatrix
         return new DataMatrix(values, samples, features);
     }
 
+    /// <summary>A matrix whose values were already transformed, centred and scaled by the caller.</summary>
+    public static DataMatrix Prepared(double[,] values, IReadOnlyList<SampleInfo> samples, IReadOnlyList<AlignmentSpotRow> features)
+    {
+        ArgumentNullException.ThrowIfNull(values);
+        if (values.GetLength(0) != samples.Count || values.GetLength(1) != features.Count)
+        {
+            throw new ArgumentException($"The values are {values.GetLength(0)} by {values.GetLength(1)}, but there are {samples.Count} injections and {features.Count} features.", nameof(values));
+        }
+        return new DataMatrix(values, samples, features);
+    }
+
     /// <summary>Transforms in place, then centres and scales every feature.</summary>
     private static void Prepare(double[,] values, ValueTransform transform, ValueScaling scaling)
     {

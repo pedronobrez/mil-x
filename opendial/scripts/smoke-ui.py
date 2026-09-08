@@ -515,6 +515,24 @@ def main() -> int:
                 check(state["statistics"]["hasResults"], "the statistics workspace has the batch")
             shot("statistics")
 
+            if args.project or args.process:
+                say("the one-factor pages answer, and a chart leaves as SVG and PNG")
+                stats = state["statistics"]
+                say(f"       source: {stats.get('source')} · {stats.get('features')} feature(s) · {stats.get('standards')}")
+                check(stats.get("features", 0) > 1, "the analysis dataset has features")
+                for page in ("Volcano plot", "Principal components", "Heatmap", "Lipid enrichment"):
+                    send_command(probe, {"action": "selectStatisticsPage", "page": page})
+                    state = wait_for(probe, lambda s, p=page: (s.get("statistics") or {}).get("page") == p, f"the {page} page", 15)
+                    check(state["statistics"]["page"] == page, f"the {page} page is showing")
+                    shot("statistics-" + page.lower().replace(" ", "-"))
+                for fmt in ("svg", "png"):
+                    chart = os.path.join(work, f"volcano.{fmt}")
+                    result = send_command(probe, {"action": "exportChart", "page": "Volcano plot", "index": 0, "format": fmt, "scale": 2, "path": chart})["lastCommand"]
+                    ok = os.path.exists(chart) and os.path.getsize(chart) > 500
+                    if ok and fmt == "svg":
+                        ok = open(chart, encoding="utf-8").read().lstrip().startswith("<svg")
+                    check(ok, f"the volcano plot was written as {fmt}: {(result or {}).get('message')}")
+
         say("nothing fell over")
         alive = subprocess.run(["pgrep", "-f", "OpenDIAL.app/Contents/MacOS"], capture_output=True)
         check(bool(alive.stdout.strip()), "the application is still running")

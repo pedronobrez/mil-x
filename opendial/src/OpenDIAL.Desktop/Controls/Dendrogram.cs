@@ -11,7 +11,7 @@ namespace OpenDIAL.Desktop.Controls;
 /// blanks should hang off on their own; an injection that joins the wrong group is the thing to
 /// look at.
 /// </summary>
-public sealed class Dendrogram : Control
+public sealed class Dendrogram : Control, Charts.IChartRenderable
 {
     public static readonly StyledProperty<ClusterNode?> RootProperty =
         AvaloniaProperty.Register<Dendrogram, ClusterNode?>(nameof(Root));
@@ -25,7 +25,9 @@ public sealed class Dendrogram : Control
 
     private bool Dark => (Application.Current?.ActualThemeVariant ?? Avalonia.Styling.ThemeVariant.Light) == Avalonia.Styling.ThemeVariant.Dark;
 
-    public override void Render(DrawingContext context)
+    public override void Render(DrawingContext context) => RenderTo(new Charts.AvaloniaCanvas(context));
+
+    public void RenderTo(Charts.ChartCanvas context)
     {
         var root = Root;
         var width = Bounds.Width;
@@ -65,10 +67,10 @@ public sealed class Dendrogram : Control
                 var colour = ChartPalette.ForIndex(Dark, groups.IndexOf(node.Group));
                 var leafX = padding + plotWidth;
                 context.DrawEllipse(new SolidColorBrush(colour), null, new Point(leafX, yy), 3, 3);
-                var text = new FormattedText(node.Label, System.Globalization.CultureInfo.InvariantCulture,
+                var text = Charts.ChartText.Make(node.Label, System.Globalization.CultureInfo.InvariantCulture,
                     FlowDirection.LeftToRight, Typeface.Default, 11, textBrush);
                 context.DrawText(text, new Point(leafX + 8, yy - text.Height / 2));
-                var groupText = new FormattedText(node.Group, System.Globalization.CultureInfo.InvariantCulture,
+                var groupText = Charts.ChartText.Make(node.Group, System.Globalization.CultureInfo.InvariantCulture,
                     FlowDirection.LeftToRight, Typeface.Default, 9.5, mutedBrush);
                 context.DrawText(groupText, new Point(leafX + 8 + Math.Min(text.Width + 6, labelWidth - 60), yy - groupText.Height / 2));
                 return;
@@ -93,10 +95,10 @@ public sealed class Dendrogram : Control
         // a scale for the merge height, which is one minus the correlation
         var axisPen = new Pen(new SolidColorBrush(ChartPalette.Line(Dark)), 1);
         context.DrawLine(axisPen, new Point(padding, height - padding + 2), new Point(padding + plotWidth, height - padding + 2));
-        var far = new FormattedText(maxHeight.ToString("F2", System.Globalization.CultureInfo.InvariantCulture),
+        var far = Charts.ChartText.Make(maxHeight.ToString("F2", System.Globalization.CultureInfo.InvariantCulture),
             System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Typeface.Default, 9.5, mutedBrush);
         context.DrawText(far, new Point(padding, height - padding + 4));
-        var near = new FormattedText("0", System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Typeface.Default, 9.5, mutedBrush);
+        var near = Charts.ChartText.Make("0", System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Typeface.Default, 9.5, mutedBrush);
         context.DrawText(near, new Point(padding + plotWidth - 6, height - padding + 4));
     }
 

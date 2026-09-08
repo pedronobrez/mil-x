@@ -207,6 +207,13 @@ public sealed class UiProbe
                     ["hasDiscriminant"] = vm.Statistics.HasPls,
                     ["hasOrthogonal"] = vm.Statistics.HasOpls,
                     ["hasCorrection"] = vm.Statistics.HasCorrection,
+                    ["page"] = StatisticsPage(window),
+                    ["source"] = vm.Statistics.Analysis.SourceMode,
+                    ["confirmed"] = vm.Statistics.Analysis.ConfirmedCount,
+                    ["features"] = vm.Statistics.Analysis.Data?.Scaled.FeatureCount,
+                    ["standards"] = vm.Statistics.Analysis.StandardsSummary,
+                    ["comparison"] = vm.Statistics.Analysis.ComparisonCounts,
+                    ["summary"] = vm.Statistics.Summary,
                 },
                 ["help"] = vm.Help is null ? null : new Dictionary<string, object?>
                 {
@@ -258,6 +265,10 @@ public sealed class UiProbe
     /// the script that already has to know about the platform. The client size is reported with them
     /// so that conversion has everything it needs.
     /// </summary>
+    /// <summary>The header of the statistics page showing, or null when the workspace is not built.</summary>
+    private static string? StatisticsPage(Window window) =>
+        (window.GetVisualDescendants().OfType<TabControl>().FirstOrDefault(t => t.Name == "StatsTabs")?.SelectedItem as TabItem)?.Header?.ToString();
+
     private static Dictionary<string, object?> Controls(Window window)
     {
         var found = new Dictionary<string, object?>();

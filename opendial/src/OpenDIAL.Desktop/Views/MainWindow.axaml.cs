@@ -72,6 +72,8 @@ public partial class MainWindow : Window
         _vm.ShowAbout = async () => await new AboutWindow().ShowDialog(this);
         _vm.ShowOpenQuantExport = async () => await new OpenQuantExportWindow().ShowDialog<OpenDIAL.Interop.OpenQuant.OpenQuantExportOptions?>(this);
         _vm.ShowHelpWindow = ShowHelp;
+        _vm.Statistics.Analysis.ShowStandardsDialog = async (confirmed, current) =>
+            await new StandardsWindow(confirmed, current).ShowDialog<IReadOnlyList<OpenDIAL.Pipeline.Statistics.StandardAssignment>?>(this);
         _vm.LogLines.CollectionChanged += OnLogChanged;
         _vm.Analytics.RequestDetachIonTable = DetachIonTable;
         // the column order the reviewer arranged is theirs, and should survive a restart
@@ -203,6 +205,39 @@ public partial class MainWindow : Window
             case "closeHelp":
                 _helpWindow?.Close();
                 return "help closed";
+            case "selectStatisticsPage":
+            {
+                // the page by its header, the way a person picks it; the workspace is shown first
+                var header = command.TryGetProperty("page", out var pg) ? pg.GetString() : null;
+                _vm.SelectedWorkspace = 4;
+                var tabs = this.GetVisualDescendants().OfType<TabControl>().FirstOrDefault(t => t.Name == "StatsTabs") ?? throw new InvalidOperationException("the statistics workspace is not built");
+                var item = tabs.Items.OfType<TabItem>().FirstOrDefault(t => string.Equals(t.Header as string, header, StringComparison.OrdinalIgnoreCase)) ?? throw new ArgumentException($"no page '{header}'");
+                tabs.SelectedItem = item;
+                UpdateLayout();
+                return $"{header} shown";
+            }
+            case "exportChart":
+            {
+                // a chart of a statistics page, by its index on the page, written without the save panel
+                var header = command.TryGetProperty("page", out var pg) ? pg.GetString() : null;
+                if (header is not null) await RunProbeCommandAsync(System.Text.Json.JsonDocument.Parse($"{{\"action\":\"selectStatisticsPage\",\"page\":{System.Text.Json.JsonSerializer.Serialize(header)}}}").RootElement);
+                var index = command.TryGetProperty("index", out var ix) ? ix.GetInt32() : 0;
+                var format = command.TryGetProperty("format", out var f) ? f.GetString() ?? "svg" : "svg";
+                var scale = command.TryGetProperty("scale", out var sc) ? sc.GetDouble() : 3;
+                var frames = this.GetVisualDescendants().OfType<Controls.ChartFrame>().Where(c => c.IsEffectivelyVisible).ToList();
+                if (index < 0 || index >= frames.Count) throw new ArgumentException($"the page has {frames.Count} chart(s)");
+                var frame = frames[index];
+                frame.ExportPathOverride = Path();
+                try
+                {
+                    var written = await frame.ExportAsync(format, scale);
+                    return written is null ? "nothing written" : $"{frame.HeadingText} written to {written}";
+                }
+                finally
+                {
+                    frame.ExportPathOverride = null;
+                }
+            }
             default:
                 throw new ArgumentException($"unknown action '{action}'");
         }

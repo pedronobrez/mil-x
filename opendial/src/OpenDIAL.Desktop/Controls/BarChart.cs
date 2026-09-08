@@ -60,7 +60,7 @@ public sealed class BarChart : ChartBase
         return map;
     }
 
-    protected override void RenderPlot(DrawingContext ctx, Rect plot, Func<double, double> tx, Func<double, double> ty, double xMin, double xMax, double yMin, double yMax)
+    protected override void RenderPlot(Charts.ChartCanvas ctx, Rect plot, Func<double, double> tx, Func<double, double> ty, double xMin, double xMax, double yMin, double yMax)
     {
         var items = Items!;
         var colors = GroupColors();
@@ -91,7 +91,7 @@ public sealed class BarChart : ChartBase
         }
     }
 
-    protected override void RenderOverlay(DrawingContext ctx, Rect plot, Func<double, double> tx, Func<double, double> ty, double xMin, double xMax)
+    protected override void RenderOverlay(Charts.ChartCanvas ctx, Rect plot, Func<double, double> tx, Func<double, double> ty, double xMin, double xMax)
     {
         var items = Items;
         if (items is null || items.Count == 0) return;

@@ -367,6 +367,46 @@
   <Style Selector="TabControl /template/ ItemsPresenter#PART_ItemsPresenter">
     <Setter Property="Margin" Value="0" />
   </Style>
+  <!-- a vertical strip of pages, the navigation of the statistics workspace -->
+  <Style Selector="TabControl.side-tabs">
+    <Setter Property="TabStripPlacement" Value="Left" />
+    <Setter Property="Padding" Value="0" />
+  </Style>
+  <Style Selector="TabControl.side-tabs /template/ ItemsPresenter#PART_ItemsPresenter">
+    <Setter Property="Margin" Value="0,4,10,0" />
+  </Style>
+  <Style Selector="TabControl.side-tabs TabItem">
+    <Setter Property="Padding" Value="12,5,14,5" />
+    <Setter Property="MinHeight" Value="26" />
+    <Setter Property="FontSize" Value="12.5" />
+    <Setter Property="FontWeight" Value="Normal" />
+    <Setter Property="Foreground" Value="{DynamicResource OdInkMuted}" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="2,0,0,0" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="Margin" Value="0" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+  </Style>
+  <Style Selector="TabControl.side-tabs TabItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource OdSurfaceAlt}" />
+  </Style>
+  <Style Selector="TabControl.side-tabs TabItem:selected">
+    <Setter Property="Foreground" Value="{DynamicResource OdAccent}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="BorderBrush" Value="{DynamicResource OdAccent}" />
+    <Setter Property="Background" Value="{DynamicResource OdAccentSoft}" />
+  </Style>
+  <Style Selector="TabControl.side-tabs TabItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource OdAccentSoft}" />
+  </Style>
+  <Style Selector="TabControl.side-tabs TabItem.section">
+    <Setter Property="IsEnabled" Value="False" />
+    <Setter Property="FontSize" Value="10.5" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource OdInkFaint}" />
+    <Setter Property="MinHeight" Value="20" />
+    <Setter Property="Padding" Value="12,8,14,1" />
+  </Style>
 
   <!-- ===================== lists and trees ===================== -->
   <Style Selector="ListBox">
