@@ -82,3 +82,16 @@ captured at a laptop's width: the review filter row drawing straight over the co
 That one is now held by a direct assertion in `ReviewWorkspaceTests` instead, comparing the two
 bounds at 1280 points wide, because an assertion about two rectangles says what it means more
 plainly than a picture does. Prefer that shape where the property can be named.
+
+## A note on driving the running application
+
+Screenshots of the real application are worth taking, and the way to drive it from a script on macOS
+is `key code`, not `keystroke`. System Events' `click at` asks the accessibility layer to press a
+control, and Avalonia exposes almost nothing to that layer, so a click at a coordinate does nothing
+at all. Keystrokes do arrive, but `keystroke "5" using command down` sends a character event that
+does not reach the binding, while `key code 23 using command down` sends the physical key and does.
+
+Driving it that way is what turned up the fact that none of the workspace shortcuts had ever worked:
+`Gesture="Cmd+5"` parses without complaint and binds `Key.Clear`, because the parser reads the digit
+as the numeric value of the key enumeration. They are written `Cmd+D5` now, and the menu still shows
+them as a plain digit because the platform converter turns the key name back.

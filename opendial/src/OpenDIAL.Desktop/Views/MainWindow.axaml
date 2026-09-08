@@ -11,17 +11,22 @@
         FontSize="13"
         Background="{DynamicResource OdCanvas}"
         WindowStartupLocation="CenterScreen">
+  <!--
+    The digits are written D1 to D5 rather than 1 to 5. "Cmd+5" parses without complaint and binds
+    Key.Clear, because the parser reads the digit as the numeric value of the Key enumeration; the
+    shortcut then simply never fires. GestureTests holds every one of these to the key it names.
+  -->
   <Window.KeyBindings>
-    <KeyBinding Gesture="Cmd+1" Command="{Binding SelectWorkspaceCommand}" CommandParameter="0" />
-    <KeyBinding Gesture="Cmd+2" Command="{Binding SelectWorkspaceCommand}" CommandParameter="1" />
-    <KeyBinding Gesture="Cmd+3" Command="{Binding SelectWorkspaceCommand}" CommandParameter="2" />
-    <KeyBinding Gesture="Cmd+4" Command="{Binding SelectWorkspaceCommand}" CommandParameter="3" />
-    <KeyBinding Gesture="Cmd+5" Command="{Binding SelectWorkspaceCommand}" CommandParameter="4" />
-    <KeyBinding Gesture="Ctrl+1" Command="{Binding SelectWorkspaceCommand}" CommandParameter="0" />
-    <KeyBinding Gesture="Ctrl+2" Command="{Binding SelectWorkspaceCommand}" CommandParameter="1" />
-    <KeyBinding Gesture="Ctrl+3" Command="{Binding SelectWorkspaceCommand}" CommandParameter="2" />
-    <KeyBinding Gesture="Ctrl+4" Command="{Binding SelectWorkspaceCommand}" CommandParameter="3" />
-    <KeyBinding Gesture="Ctrl+5" Command="{Binding SelectWorkspaceCommand}" CommandParameter="4" />
+    <KeyBinding Gesture="Cmd+D1" Command="{Binding SelectWorkspaceCommand}" CommandParameter="0" />
+    <KeyBinding Gesture="Cmd+D2" Command="{Binding SelectWorkspaceCommand}" CommandParameter="1" />
+    <KeyBinding Gesture="Cmd+D3" Command="{Binding SelectWorkspaceCommand}" CommandParameter="2" />
+    <KeyBinding Gesture="Cmd+D4" Command="{Binding SelectWorkspaceCommand}" CommandParameter="3" />
+    <KeyBinding Gesture="Cmd+D5" Command="{Binding SelectWorkspaceCommand}" CommandParameter="4" />
+    <KeyBinding Gesture="Ctrl+D1" Command="{Binding SelectWorkspaceCommand}" CommandParameter="0" />
+    <KeyBinding Gesture="Ctrl+D2" Command="{Binding SelectWorkspaceCommand}" CommandParameter="1" />
+    <KeyBinding Gesture="Ctrl+D3" Command="{Binding SelectWorkspaceCommand}" CommandParameter="2" />
+    <KeyBinding Gesture="Ctrl+D4" Command="{Binding SelectWorkspaceCommand}" CommandParameter="3" />
+    <KeyBinding Gesture="Ctrl+D5" Command="{Binding SelectWorkspaceCommand}" CommandParameter="4" />
     <KeyBinding Gesture="Cmd+S" Command="{Binding SaveProjectCommand}" />
     <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveProjectCommand}" />
     <KeyBinding Gesture="Cmd+N" Command="{Binding NewProjectCommand}" />
@@ -86,11 +91,11 @@
           <MenuItem Header="Save method file…" Command="{Binding Method.SaveMethodCommand}" />
         </MenuItem>
         <MenuItem Header="_Workspace">
-          <MenuItem Header="Explorer" Command="{Binding SelectWorkspaceCommand}" CommandParameter="0" InputGesture="Cmd+1" />
-          <MenuItem Header="Analytics" Command="{Binding SelectWorkspaceCommand}" CommandParameter="1" InputGesture="Cmd+2" />
-          <MenuItem Header="Method" Command="{Binding SelectWorkspaceCommand}" CommandParameter="2" InputGesture="Cmd+3" />
-          <MenuItem Header="Samples" Command="{Binding SelectWorkspaceCommand}" CommandParameter="3" InputGesture="Cmd+4" />
-          <MenuItem Header="Statistics" Command="{Binding SelectWorkspaceCommand}" CommandParameter="4" InputGesture="Cmd+5" />
+          <MenuItem Header="Explorer" Command="{Binding SelectWorkspaceCommand}" CommandParameter="0" InputGesture="Cmd+D1" />
+          <MenuItem Header="Analytics" Command="{Binding SelectWorkspaceCommand}" CommandParameter="1" InputGesture="Cmd+D2" />
+          <MenuItem Header="Method" Command="{Binding SelectWorkspaceCommand}" CommandParameter="2" InputGesture="Cmd+D3" />
+          <MenuItem Header="Samples" Command="{Binding SelectWorkspaceCommand}" CommandParameter="3" InputGesture="Cmd+D4" />
+          <MenuItem Header="Statistics" Command="{Binding SelectWorkspaceCommand}" CommandParameter="4" InputGesture="Cmd+D5" />
         </MenuItem>
         <MenuItem Header="_Help">
           <MenuItem Header="About OpenDIAL" Command="{Binding OpenAboutCommand}" />
