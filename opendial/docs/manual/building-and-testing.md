@@ -120,7 +120,8 @@ protected folder — stops the run until a person answers it; the script cannot 
 Both forms end in the Statistics workspace: they read the analysis dataset from the probe
 (`statistics.source`, `statistics.features`, `statistics.standards`), turn the **Volcano plot**,
 **Principal components**, **Heatmap** and **Lipid enrichment** pages through the `selectStatisticsPage`
-command, screenshot each, and write the volcano plot as SVG and PNG through `exportChart`,
+command, screenshot each, click **Build** on the heatmap and **Compute** on the enrichment and check
+that both answer, and write the volcano plot as SVG and PNG through `exportChart`,
 which names the page, the chart's index on it, the format, the scale and the path.
 
 ## Building this manual

@@ -531,6 +531,26 @@ def main() -> int:
                     state = wait_for(probe, lambda s, p=page: (s.get("statistics") or {}).get("page") == p, f"the {page} page", 15)
                     check(state["statistics"]["page"] == page, f"the {page} page is showing")
                     shot("statistics-" + page.lower().replace(" ", "-"))
+                if can_click:
+                    say("the heatmap is built and the enrichment computed by clicking their buttons")
+                    send_command(probe, {"action": "selectStatisticsPage", "page": "Heatmap"})
+                    state = wait_for(probe, lambda s: (s.get("statistics") or {}).get("page") == "Heatmap", "the Heatmap page", 15)
+                    click_control(state, "control.HeatmapBuild", "the Build button")
+                    state = wait_for(probe, lambda s: (s.get("statistics") or {}).get("heatmapRows", 0) > 0, "the heatmap to be built", 60)
+                    check(state["statistics"]["heatmapRows"] > 0, f"the heatmap holds {state['statistics']['heatmapRows']} feature row(s): {state['statistics']['heatmap']}")
+                    shot("statistics-heatmap-built")
+
+                    send_command(probe, {"action": "selectStatisticsPage", "page": "Lipid enrichment"})
+                    state = wait_for(probe, lambda s: (s.get("statistics") or {}).get("page") == "Lipid enrichment", "the Lipid enrichment page", 15)
+                    before = state["statistics"].get("enrichment")
+                    click_control(state, "control.EnrichmentCompute", "the Compute button")
+                    state = wait_for(probe, lambda s: (s.get("statistics") or {}).get("enrichment") not in (before, "", None),
+                                     "the enrichment to be computed", 60)
+                    stats = state["statistics"]
+                    # with one injection per class there is no comparison to enrich, and the page must say so
+                    check(bool(stats.get("enrichment")), f"the enrichment answered: {stats.get('enrichment')} ({stats.get('enrichmentSets')} set(s))")
+                    shot("statistics-enrichment-computed")
+
                 for fmt in ("svg", "png"):
                     chart = os.path.join(work, f"volcano.{fmt}")
                     result = send_command(probe, {"action": "exportChart", "page": "Volcano plot", "index": 0, "format": fmt, "scale": 2, "path": chart})["lastCommand"]

@@ -555,7 +555,7 @@
                   <ComboBox Classes="compact" ItemsSource="{x:Static vm:OneFactorViewModel.Linkages}" SelectedItem="{Binding Analysis.HeatmapLinkage}" Width="100" />
                   <CheckBox Classes="compact" Content="Standardise rows" IsChecked="{Binding Analysis.HeatmapStandardize}" ToolTip.Tip="Each feature to zero mean and unit variance across the injections, so the colours compare features" />
                   <CheckBox Classes="compact" Content="Cluster injections" IsChecked="{Binding Analysis.HeatmapClusterColumns}" />
-                  <Button Classes="tool strong" Content="Build" Command="{Binding Analysis.BuildHeatmapCommand}" />
+                  <Button x:Name="HeatmapBuild" Classes="tool strong" Content="Build" Command="{Binding Analysis.BuildHeatmapCommand}" />
                   <TextBlock Classes="hint" Text="{Binding Analysis.HeatmapMessage}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                 </StackPanel>
               </Border>
@@ -595,7 +595,7 @@
                   <TextBlock Classes="label" Text="minimum set size" />
                   <TextBox Text="{Binding Analysis.MinimumSetSizeText}" Width="44" />
                   <CheckBox Classes="compact" Content="Species sets too" IsChecked="{Binding Analysis.IncludeSpecies}" ToolTip.Tip="Also test each sum composition (PC 34:1 and so on) as a set" />
-                  <Button Classes="tool strong" Content="Compute" Command="{Binding Analysis.RunEnrichmentCommand}" />
+                  <Button x:Name="EnrichmentCompute" Classes="tool strong" Content="Compute" Command="{Binding Analysis.RunEnrichmentCommand}" />
                   <Button Classes="tool" Content="Export table…" Command="{Binding Analysis.ExportTableCommand}" CommandParameter="enrichment" />
                   <TextBlock Classes="hint" Text="{Binding Analysis.EnrichmentMessage}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                 </StackPanel>

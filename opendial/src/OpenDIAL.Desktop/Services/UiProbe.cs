@@ -215,6 +215,10 @@ public sealed class UiProbe
                     ["features"] = vm.Statistics.Analysis.Data?.Scaled.FeatureCount,
                     ["standards"] = vm.Statistics.Analysis.StandardsSummary,
                     ["comparison"] = vm.Statistics.Analysis.ComparisonCounts,
+                    ["heatmapRows"] = vm.Statistics.Analysis.Heatmap?.RowLabels.Count ?? 0,
+                    ["heatmap"] = vm.Statistics.Analysis.HeatmapMessage,
+                    ["enrichmentSets"] = vm.Statistics.Analysis.EnrichmentRows.Count,
+                    ["enrichment"] = vm.Statistics.Analysis.EnrichmentMessage,
                     ["summary"] = vm.Statistics.Summary,
                 },
                 ["help"] = vm.Help is null ? null : new Dictionary<string, object?>
