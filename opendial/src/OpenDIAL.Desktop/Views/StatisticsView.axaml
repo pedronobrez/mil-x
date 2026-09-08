@@ -167,6 +167,65 @@
           </Border>
         </TabItem>
 
+        <!-- the orthogonal rotation of the same question -->
+        <TabItem Header="Orthogonal">
+          <Border Classes="panel" Margin="0,6,0,0">
+            <DockPanel Margin="6">
+              <Border DockPanel.Dock="Top" Classes="hairline-bottom" Padding="4,2,4,8" Margin="0,0,0,6">
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                  <TextBlock Classes="label" Text="Orthogonal components" VerticalAlignment="Center" />
+                  <TextBox Text="{Binding OrthogonalComponents}" Width="52"
+                           ToolTip.Tip="How many rounds of variation unrelated to the classes to strip out before the predictive one is taken" />
+                  <TextBlock Classes="label" Text="Permutations" VerticalAlignment="Center" Margin="6,0,0,0" />
+                  <TextBox Text="{Binding OplsPermutations}" Width="62" />
+                  <Button Classes="tool strong" Content="Fit the orthogonal model" Command="{Binding FitOrthogonalCommand}" IsEnabled="{Binding !IsFittingOpls}" />
+                  <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsFittingOpls}" Width="80" Height="3" VerticalAlignment="Center" />
+                  <TextBlock Classes="hint" Text="{Binding OplsQuality}" VerticalAlignment="Center" Margin="8,0,0,0" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+              </Border>
+              <Border DockPanel.Dock="Bottom" Padding="4,8,4,0">
+                <TextBlock Classes="hint" TextWrapping="Wrap" Text="{Binding OplsVerdict}" />
+              </Border>
+              <Grid ColumnDefinitions="*,6,*">
+                <Border Grid.Column="0" Classes="panel">
+                  <DockPanel Margin="6">
+                    <TextBlock DockPanel.Dock="Top" Classes="eyebrow" Text="SCORES · THE SEPARATION ON ONE AXIS" Margin="4,4,4,6" />
+                    <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,6,4,0" TextWrapping="Wrap" Text="{Binding OplsScoreLabel}" />
+                    <c:ScatterChart Items="{Binding OplsScores}" XLabel="Predictive" YLabel="Orthogonal" />
+                  </DockPanel>
+                </Border>
+                <GridSplitter Grid.Column="1" Classes="vertical" ResizeDirection="Columns" />
+                <Grid Grid.Column="2" RowDefinitions="*,6,220">
+                  <Border Grid.Row="0" Classes="panel">
+                    <DockPanel Margin="6">
+                      <TextBlock DockPanel.Dock="Top" Classes="eyebrow" Text="S-PLOT · MAGNITUDE ACROSS, RELIABILITY UP" Margin="4,4,4,6" />
+                      <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,6,4,0" TextWrapping="Wrap"
+                                 Text="Across is how much of the separation a feature carries; up is how consistently it carries it. Only the two far corners are worth acting on: a feature high up but near the middle is reliable and tiny, and one far out but low down is one loud injection. Click a point to open it." />
+                      <c:ScatterChart Items="{Binding SPlot}" SelectedItem="{Binding SelectedSPlotPoint, Mode=TwoWay}" XLabel="Covariance with the predictive component" YLabel="Correlation" />
+                    </DockPanel>
+                  </Border>
+                  <GridSplitter Grid.Row="1" Classes="horizontal" ResizeDirection="Rows" />
+                  <Border Grid.Row="2" Classes="panel">
+                    <DockPanel Margin="6">
+                      <TextBlock DockPanel.Dock="Top" Classes="eyebrow" Text="THE CORNERS, IN ORDER" Margin="4,4,4,6" />
+                      <DataGrid ItemsSource="{Binding SPlotRows}" SelectedItem="{Binding SelectedSPlotRow}"
+                                AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" CanUserSortColumns="True">
+                        <DataGrid.Columns>
+                          <DataGridTextColumn Header="Feature" Binding="{Binding Label}" Width="*" />
+                          <DataGridTextColumn Header="Higher in" Binding="{Binding Side}" Width="110" />
+                          <DataGridTextColumn Header="Covariance" Binding="{Binding Covariance, StringFormat={}{0:F2}}" Width="96" />
+                          <DataGridTextColumn Header="r" Binding="{Binding Correlation, StringFormat={}{0:F2}}" Width="60" />
+                          <DataGridTextColumn Header="VIP" Binding="{Binding Vip, StringFormat={}{0:F2}}" Width="60" />
+                        </DataGrid.Columns>
+                      </DataGrid>
+                    </DockPanel>
+                  </Border>
+                </Grid>
+              </Grid>
+            </DockPanel>
+          </Border>
+        </TabItem>
+
         <!-- hierarchical clustering -->
         <TabItem Header="Clustering">
           <Border Classes="panel" Margin="0,6,0,0">

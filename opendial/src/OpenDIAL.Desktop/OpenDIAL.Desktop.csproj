@@ -25,6 +25,13 @@
   <ItemGroup>
     <!-- Theme.axaml/AppStyles.axaml are picked up by Avalonia's default glob; the icon is not. -->
     <AvaloniaResource Include="Assets/icon.png" />
+    <!--
+      The monospace face is carried rather than borrowed. Menlo exists on macOS, Consolas on
+      Windows and DejaVu on most Linuxes, and each has different advance widths, so a table of
+      numbers laid out on one machine does not line up on another. JetBrains Mono NL is under the
+      Open Font License (Assets/Fonts/OFL.txt); no ligatures, which is what a column of masses wants.
+    -->
+    <AvaloniaResource Include="Assets/Fonts/JetBrainsMonoNL-Regular.ttf" />
   </ItemGroup>
 
   <ItemGroup>

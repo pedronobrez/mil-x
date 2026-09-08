@@ -7,6 +7,7 @@ using OpenDIAL.Desktop.ViewModels;
 using OpenDIAL.Desktop.Views;
 using OpenDIAL.Pipeline.Model;
 using OpenDIAL.Pipeline.Results;
+using OpenDIAL.Pipeline.Statistics;
 using Xunit;
 
 namespace OpenDIAL.Desktop.Tests;
@@ -89,7 +90,7 @@ public class StatisticsWorkspaceTests
     }
 
     [AvaloniaFact]
-    public void The_statistics_view_binds_and_shows_its_three_readings()
+    public void The_statistics_view_binds_and_shows_every_reading()
     {
         var (vm, _) = Loaded();
         var view = new StatisticsView { DataContext = vm };
@@ -98,7 +99,7 @@ public class StatisticsWorkspaceTests
 
         var tabs = view.GetVisualDescendants().OfType<TabControl>().FirstOrDefault(t => t.Name == "StatsTabs");
         Assert.NotNull(tabs);
-        Assert.Equal(5, tabs!.Items.Count);
+        Assert.Equal(6, tabs!.Items.Count);
 
         var scatters = view.GetVisualDescendants().OfType<ScatterChart>().ToList();
         Assert.True(scatters.Count >= 2, "scores and loadings");
@@ -113,12 +114,16 @@ public class StatisticsWorkspaceTests
         tabs.SelectedIndex = 2;
         Assert.Contains(view.GetVisualDescendants().OfType<DataGrid>(), g => g.Columns.Any(c => (c.Header as string) == "VIP"));
 
+        // the orthogonal rotation
         tabs.SelectedIndex = 3;
+        Assert.Contains(view.GetVisualDescendants().OfType<DataGrid>(), g => g.Columns.Any(c => (c.Header as string) == "Covariance"));
+
+        tabs.SelectedIndex = 4;
         var dendrogram = view.GetVisualDescendants().OfType<Dendrogram>().FirstOrDefault();
         Assert.NotNull(dendrogram);
         Assert.Same(vm.ClusterRoot, dendrogram!.Root);
 
-        tabs.SelectedIndex = 4;
+        tabs.SelectedIndex = 5;
         Assert.NotNull(view.GetVisualDescendants().OfType<NetworkGraph>().FirstOrDefault());
         window.Close();
     }
@@ -307,5 +312,53 @@ public class StatisticsWorkspaceTests
         Assert.False(vm.HasCorrection);
         Assert.False(vm.UseCorrectedValues);
         Assert.Contains("QC", vm.CorrectionDetail);
+    }
+
+    [AvaloniaFact]
+    public async Task The_orthogonal_model_puts_the_separation_on_one_axis_and_the_rest_beside_it()
+    {
+        var (vm, _) = Comparison();
+        vm.OplsPermutations = "100";
+        await vm.FitOrthogonalCommand.ExecuteAsync(null);
+
+        Assert.True(vm.HasOpls, vm.OplsVerdict);
+        Assert.Equal(12, vm.OplsScores.Count);
+        Assert.NotEmpty(vm.SPlotRows);
+        Assert.Contains(vm.SPlotRows, r => r.Reliable);
+        Assert.Contains("survives cross-validation", vm.OplsVerdict);
+
+        // the classes sit on opposite ends of the predictive axis, and do not overlap
+        var treated = vm.OplsScores.Where(s => s.Group == "treated").Select(s => s.X).ToList();
+        var control = vm.OplsScores.Where(s => s.Group == "control").Select(s => s.X).ToList();
+        Assert.True(treated.Max() < control.Min() || control.Max() < treated.Min());
+    }
+
+    [AvaloniaFact]
+    public async Task Clicking_the_S_plot_opens_that_feature()
+    {
+        var (vm, _) = Comparison();
+        vm.OplsPermutations = "0";
+        await vm.FitOrthogonalCommand.ExecuteAsync(null);
+
+        var opened = -1;
+        vm.RequestShowFeature = id => opened = id;
+        vm.SelectedSPlotPoint = vm.SPlot[0];
+        Assert.Equal(((OplsLoading)vm.SPlot[0].Tag!).FeatureId, opened);
+
+        opened = -1;
+        vm.SelectedSPlotRow = vm.SPlotRows[0];
+        Assert.Equal(vm.SPlotRows[0].FeatureId, opened);
+    }
+
+    [AvaloniaFact]
+    public async Task Three_classes_get_a_reason_rather_than_an_empty_plot()
+    {
+        var (vm, _) = Drifting();   // QC, treated and control
+        vm.OplsPermutations = "0";
+        await vm.FitOrthogonalCommand.ExecuteAsync(null);
+
+        Assert.False(vm.HasOpls);
+        Assert.Empty(vm.OplsScores);
+        Assert.Contains("two classes", vm.OplsVerdict);
     }
 }

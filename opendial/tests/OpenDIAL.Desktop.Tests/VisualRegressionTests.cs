@@ -17,9 +17,16 @@ namespace OpenDIAL.Desktop.Tests;
 /// nothing, a strip that overflows, a column that clips its own text all bind perfectly and look
 /// wrong. These catch that.
 ///
-/// Text rasterisation differs a little between machines, so the comparison allows a small share of
-/// differing pixels rather than demanding an exact match. Set OPENDIAL_UPDATE_BASELINES=1 to write
-/// the current frames as the new reference, and look at the result before committing it.
+/// The frames are meant to travel. Both fonts the interface uses are carried in the application
+/// rather than borrowed from the machine — Inter for the text, JetBrains Mono for the columns of
+/// numbers — and the test application builds with the same font stack the real one does, so the
+/// layout that is captured here is the layout everywhere.
+///
+/// What is left is sub-pixel: hinting and anti-aliasing still differ a little between machines and
+/// Skia versions. So the comparison is made on a coarsened copy of both frames, three pixels to
+/// one, which throws that away and keeps everything that moved, resized or disappeared. Set
+/// OPENDIAL_UPDATE_BASELINES=1 to write the current frames as the new reference, and look at the
+/// result before committing it.
 /// </summary>
 public class VisualRegressionTests
 {
@@ -65,7 +72,7 @@ public class VisualRegressionTests
 
         var (differing, total) = Compare(expected, frame);
         var share = total == 0 ? 0 : (double)differing / total;
-        if (share > 0.02)
+        if (share > 0.01)
         {
             var actual = Path.Combine(Path.GetTempPath(), name + ".actual.png");
             frame.Save(actual);
@@ -73,27 +80,62 @@ public class VisualRegressionTests
         }
     }
 
-    /// <summary>Pixels differing by more than a little, so anti-aliasing and hinting do not count.</summary>
+    /// <summary>
+    /// Compares the two frames after averaging each three-by-three block into one value. A glyph
+    /// hinted a shade differently disappears into its block; a control that moved, changed width or
+    /// stopped being drawn does not.
+    /// </summary>
     private static (int Differing, int Total) Compare(Bitmap expected, Bitmap actual)
     {
         var size = expected.PixelSize;
-        var count = size.Width * size.Height;
-        var a = new byte[count * 4];
-        var b = new byte[count * 4];
-        unsafe
-        {
-            fixed (byte* pa = a) expected.CopyPixels(new PixelRect(size), (IntPtr)pa, a.Length, size.Width * 4);
-            fixed (byte* pb = b) actual.CopyPixels(new PixelRect(size), (IntPtr)pb, b.Length, size.Width * 4);
-        }
+        var a = Coarsen(expected, size, out var width, out var height);
+        var b = Coarsen(actual, size, out _, out _);
         var differing = 0;
-        for (var i = 0; i < a.Length; i += 4)
+        for (var i = 0; i < a.Length; i += 3)
         {
             var dr = Math.Abs(a[i] - b[i]);
             var dg = Math.Abs(a[i + 1] - b[i + 1]);
             var db = Math.Abs(a[i + 2] - b[i + 2]);
             if (dr + dg + db > 48) differing++;
         }
-        return (differing, count);
+        return (differing, width * height);
+    }
+
+    private const int Block = 3;
+
+    /// <summary>Averages each block of pixels into one red, green and blue triple.</summary>
+    private static double[] Coarsen(Bitmap bitmap, PixelSize size, out int width, out int height)
+    {
+        var count = size.Width * size.Height;
+        var raw = new byte[count * 4];
+        unsafe
+        {
+            fixed (byte* p = raw) bitmap.CopyPixels(new PixelRect(size), (IntPtr)p, raw.Length, size.Width * 4);
+        }
+        width = (size.Width + Block - 1) / Block;
+        height = (size.Height + Block - 1) / Block;
+        var sums = new double[width * height * 3];
+        var counts = new int[width * height];
+        for (var y = 0; y < size.Height; y++)
+        {
+            for (var x = 0; x < size.Width; x++)
+            {
+                var source = (y * size.Width + x) * 4;
+                var cell = (y / Block) * width + (x / Block);
+                sums[cell * 3] += raw[source];
+                sums[cell * 3 + 1] += raw[source + 1];
+                sums[cell * 3 + 2] += raw[source + 2];
+                counts[cell]++;
+            }
+        }
+        for (var cell = 0; cell < counts.Length; cell++)
+        {
+            if (counts[cell] == 0) continue;
+            sums[cell * 3] /= counts[cell];
+            sums[cell * 3 + 1] /= counts[cell];
+            sums[cell * 3 + 2] /= counts[cell];
+        }
+        return sums;
     }
 
     [AvaloniaFact]
@@ -152,6 +194,22 @@ public class VisualRegressionTests
         var tabs = view.GetVisualDescendants().OfType<TabControl>().First(t => t.Name == "StatsTabs");
         tabs.SelectedIndex = 2;
         AssertLooksLike(window, "statistics-discriminant");
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task The_orthogonal_model_looks_like_its_reference()
+    {
+        var (vm, _) = StatisticsWorkspaceTests.Comparison();
+        vm.OplsPermutations = "200";
+        await vm.FitOrthogonalCommand.ExecuteAsync(null);
+        var view = new StatisticsView { DataContext = vm };
+        var window = new Window { Content = view, Width = 1500, Height = 900 };
+        window.Show();
+
+        var tabs = view.GetVisualDescendants().OfType<TabControl>().First(t => t.Name == "StatsTabs");
+        tabs.SelectedIndex = 3;
+        AssertLooksLike(window, "statistics-orthogonal");
         window.Close();
     }
 }

@@ -59,7 +59,9 @@ A TripleTOF `.wiff` opened natively in the Explorer:
 Documentation: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (reverse-engineering report),
 [docs/SCIEX-IDA.md](docs/SCIEX-IDA.md) (how SCIEX IDA is read, and how a run compares with MS-DIAL),
 [docs/REVIEW-WORKFLOW.md](docs/REVIEW-WORKFLOW.md) (the ion table, the tags and the review panels),
-[docs/STATISTICS.md](docs/STATISTICS.md) (principal components, clustering, molecular network),
+[docs/STATISTICS.md](docs/STATISTICS.md) (principal components, drift correction, the discriminant
+and orthogonal models, clustering, molecular network),
+[docs/VISUAL-TESTS.md](docs/VISUAL-TESTS.md) (how the stored frames are kept machine-independent),
 [docs/PORTING.md](docs/PORTING.md) (status, vendor formats, limitations),
 [docs/OPENQUANT-ALIGNMENT.md](docs/OPENQUANT-ALIGNMENT.md) (what is shared with OpenQuant),
 [docs/adr/](docs/adr/) (decisions), [upstream-patches/](upstream-patches/README.md)

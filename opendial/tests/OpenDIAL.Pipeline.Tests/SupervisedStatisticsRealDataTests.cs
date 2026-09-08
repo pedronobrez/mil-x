@@ -71,6 +71,19 @@ public class SupervisedStatisticsRealDataTests
         Assert.True(design.Q2 >= 0.4, $"a real difference should survive cross-validation; Q2 {design.Q2:F2}");
         Assert.True(design.PermutationP <= 0.05, $"and beat shuffled labels; p {design.PermutationP:F3}");
 
+        // the same design through the orthogonal rotation: it should agree, and say so more tidily
+        var orthogonal = OrthogonalProjection.Compute(DataMatrix.Build(features, real), 1, 200);
+        _output.WriteLine($"[orthogonal] R2Y {orthogonal.R2Y:F2}, Q2 {orthogonal.Q2:F2}, p {orthogonal.PermutationP:F3}, "
+            + $"{orthogonal.PredictiveVarianceX:F1} % of X predictive against {orthogonal.OrthogonalVarianceX:F1} % stripped out, "
+            + $"{orthogonal.CorrectlyClassified}/{real.Count} classified back");
+        _output.WriteLine("  corners of the S-plot: " + string.Join(", ", orthogonal.Loadings
+            .Where(l => Math.Abs(l.Correlation) > 0.9)
+            .OrderByDescending(l => Math.Abs(l.Covariance))
+            .Take(5)
+            .Select(l => $"{l.Label} (cov {l.Covariance:F2}, r {l.Correlation:F2}, {l.Side})")));
+        Assert.True(orthogonal.Q2 >= 0.4, $"the orthogonal model should hold up too; Q2 {orthogonal.Q2:F2}");
+        Assert.Equal(real.Count, orthogonal.CorrectlyClassified);
+
         // Labels with nothing behind them: the first replicate of everything against the second,
         // which puts liver, blank and mix on both sides and so describes no chemistry at all.
         var invented = names

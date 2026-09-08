@@ -12,6 +12,13 @@ namespace OpenDIAL.Desktop.ViewModels;
 /// <summary>One row of the variance table beside the score plot.</summary>
 public sealed record VarianceRow(string Component, double Percent, double Cumulative);
 
+/// <summary>A feature's standing in the orthogonal model: how much of the separation it carries, and how reliably.</summary>
+public sealed record SPlotRow(int FeatureId, string Label, string Group, double Covariance, double Correlation, double Vip, string Side)
+{
+    /// <summary>Far out on both axes is the only place a feature is worth believing.</summary>
+    public bool Reliable => Math.Abs(Correlation) >= 0.7 && Vip >= 1.0;
+}
+
 /// <summary>A feature's standing in the discriminant model, for the table under the score plot.</summary>
 public sealed record VipRow(int FeatureId, string Label, string Group, double Vip, double Weight)
 {
@@ -76,6 +83,20 @@ public sealed partial class StatisticsViewModel : ViewModelBase
     [ObservableProperty] private bool _isFittingPls;
     [ObservableProperty] private bool _hasPls;
 
+    // orthogonal discriminant model
+    [ObservableProperty] private IReadOnlyList<ScatterPoint> _oplsScores = Array.Empty<ScatterPoint>();
+    [ObservableProperty] private IReadOnlyList<ScatterPoint> _sPlot = Array.Empty<ScatterPoint>();
+    [ObservableProperty] private ScatterPoint? _selectedSPlotPoint;
+    [ObservableProperty] private IReadOnlyList<SPlotRow> _sPlotRows = Array.Empty<SPlotRow>();
+    [ObservableProperty] private SPlotRow? _selectedSPlotRow;
+    [ObservableProperty] private string _orthogonalComponents = "1";
+    [ObservableProperty] private string _oplsPermutations = "200";
+    [ObservableProperty] private string _oplsScoreLabel = "Predictive against the first orthogonal component";
+    [ObservableProperty] private string _oplsVerdict = "Not fitted yet.";
+    [ObservableProperty] private string _oplsQuality = string.Empty;
+    [ObservableProperty] private bool _isFittingOpls;
+    [ObservableProperty] private bool _hasOpls;
+
     // drift and batch correction
     [ObservableProperty] private IReadOnlyList<FeatureCorrection> _correctionRows = Array.Empty<FeatureCorrection>();
     [ObservableProperty] private FeatureCorrection? _selectedCorrectionRow;
@@ -117,6 +138,12 @@ public sealed partial class StatisticsViewModel : ViewModelBase
         HasPls = false;
         PlsVerdict = "Not fitted yet.";
         PlsQuality = string.Empty;
+        OplsScores = Array.Empty<ScatterPoint>();
+        SPlot = Array.Empty<ScatterPoint>();
+        SPlotRows = Array.Empty<SPlotRow>();
+        HasOpls = false;
+        OplsVerdict = "Not fitted yet.";
+        OplsQuality = string.Empty;
         CorrectionRows = Array.Empty<FeatureCorrection>();
         DriftBefore = Array.Empty<ScatterPoint>();
         DriftAfter = Array.Empty<ScatterPoint>();
@@ -331,6 +358,90 @@ public sealed partial class StatisticsViewModel : ViewModelBase
         finally
         {
             IsFittingPls = false;
+        }
+    }
+
+    partial void OnSelectedSPlotRowChanged(SPlotRow? value)
+    {
+        if (value is not null) RequestShowFeature?.Invoke(value.FeatureId);
+    }
+
+    partial void OnSelectedSPlotPointChanged(ScatterPoint? value)
+    {
+        if (value?.Tag is OplsLoading loading) RequestShowFeature?.Invoke(loading.FeatureId);
+    }
+
+    /// <summary>
+    /// Fits the orthogonal model: the same separation the plain discriminant finds, rotated so that
+    /// it sits on one component and everything else sits beside it. Easier to read, no more true —
+    /// the same cross-validation and permutation test decide whether to believe it.
+    /// </summary>
+    [RelayCommand]
+    private async Task FitOrthogonal()
+    {
+        if (!HasResults) return;
+        var features = AnnotatedOnly ? _spots.Where(s => s.IsAnnotated).ToList() : _spots.ToList();
+        if (features.Count < 2)
+        {
+            OplsVerdict = "Not enough features to fit anything.";
+            HasOpls = false;
+            return;
+        }
+        var orthogonal = int.TryParse(OrthogonalComponents?.Trim(), out var o) ? Math.Clamp(o, 0, 5) : 1;
+        var permutations = int.TryParse(OplsPermutations?.Trim(), out var k) ? Math.Clamp(k, 0, 2000) : 200;
+        IsFittingOpls = true;
+        OplsVerdict = "Stripping the orthogonal variation, then cross-validating…";
+        try
+        {
+            var corrected = UseCorrectedValues ? CorrectedFor(features) : null;
+            var result = await Task.Run(() =>
+            {
+                var matrix = corrected is null
+                    ? DataMatrix.Build(features, _samples, ValueKind == "Area", TransformKind, ScalingKind)
+                    : DataMatrix.From(corrected, _samples, features, TransformKind, ScalingKind);
+                return OrthogonalProjection.Compute(matrix, orthogonal, permutations);
+            });
+
+            HasOpls = result.Scores.Count > 0;
+            if (!HasOpls)
+            {
+                OplsScores = Array.Empty<ScatterPoint>();
+                SPlot = Array.Empty<ScatterPoint>();
+                SPlotRows = Array.Empty<SPlotRow>();
+                OplsVerdict = result.Message;
+                OplsQuality = string.Empty;
+                return;
+            }
+
+            OplsScores = result.Scores
+                .Select(s => new ScatterPoint(s.Predictive, s.Orthogonal, s.Sample, s.Class, s))
+                .ToList();
+            SPlot = result.Loadings
+                .Select(l => new ScatterPoint(l.Covariance, l.Correlation, l.Label, string.IsNullOrEmpty(l.Group) ? "unknown" : l.Group, l))
+                .ToList();
+            SPlotRows = result.Loadings
+                .OrderByDescending(l => Math.Abs(l.Covariance))
+                .Take(300)
+                .Select(l => new SPlotRow(l.FeatureId, l.Label, l.Group, l.Covariance, l.Correlation, l.Vip, l.Side))
+                .ToList();
+
+            OplsScoreLabel = $"Predictive ({result.PredictiveVarianceX:F1} % of the features) against the first of {result.OrthogonalComponents} orthogonal component(s) ({result.OrthogonalVarianceX:F1} % stripped out)";
+            OplsQuality = $"R²Y {result.R2Y:F2} · Q² {result.Q2:F2} · {result.CorrectlyClassified} of {result.Scores.Count} injections classified back correctly"
+                + (result.Permutations > 0 ? $" · permutation p {result.PermutationP:F3} over {result.Permutations} shuffles" : string.Empty);
+            OplsVerdict = result.Q2 >= 0.4 && result.PermutationP <= 0.05
+                ? $"The separation between {string.Join(" and ", result.Classes)} survives cross-validation. The rotation only made it easier to read."
+                : result.Q2 < 0.4
+                    ? "The rotation is not evidence. This model does not survive cross-validation, so read the plot as a picture of this batch and nothing more."
+                    : "Chance did about as well on shuffled labels. Treat the separation as unproven.";
+        }
+        catch (Exception ex)
+        {
+            HasOpls = false;
+            OplsVerdict = "The orthogonal model failed: " + ex.Message;
+        }
+        finally
+        {
+            IsFittingOpls = false;
         }
     }
 

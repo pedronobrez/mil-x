@@ -126,7 +126,7 @@
   <Thickness x:Key="MenuBarItemPadding">10,4,10,4</Thickness>
   <x:Double x:Key="ScrollBarSize">10</x:Double>
   <FontFamily x:Key="OdWordmarkFont">Didot, Bodoni 72, Hoefler Text, Georgia, Times New Roman, serif</FontFamily>
-  <FontFamily x:Key="OdMonoFont">Menlo, SF Mono, Consolas, DejaVu Sans Mono, monospace</FontFamily>
+  <FontFamily x:Key="OdMonoFont">avares://OpenDIAL/Assets/Fonts#JetBrains Mono NL, Menlo, SF Mono, Consolas, DejaVu Sans Mono, monospace</FontFamily>
 
   <!-- brushes that Fluent reads dynamically; they alias the tokens above -->
   <SolidColorBrush x:Key="TextControlBackground" Color="{DynamicResource OdSurfaceColor}" />

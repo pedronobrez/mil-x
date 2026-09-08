@@ -82,7 +82,7 @@ public static class PartialLeastSquares
         // that scales with the number of features is done once, here, and never again: each fold is
         // reduced to the products between its injections. With a couple of thousand features and a
         // couple of hundred shuffles that is the difference between a minute and an instant.
-        var folds = BuildFolds(matrix.Values);
+        var folds = CrossValidation.BuildFolds(matrix.Values);
         var q2 = CrossValidate(folds, y, components);
         var permutationP = permutations > 0 ? Permute(folds, classes, distinct, components, q2, permutations, seed) : double.NaN;
 
@@ -259,79 +259,8 @@ public static class PartialLeastSquares
     }
 
     /// <summary>Leave one injection out, refit, predict it: the honest measure of a small model.</summary>
-    /// <summary>
-    /// One leave-one-out fold, reduced to what a fit actually needs from the features: the products
-    /// between the training injections, and between them and the one left out. Both are worked out
-    /// from the training rows alone, scaling included.
-    /// </summary>
-    private sealed class Fold
-    {
-        public double[,] Gram = new double[0, 0];        // training injections against each other
-        public double[] Cross = Array.Empty<double>();   // and against the one left out
-    }
-
-    /// <summary>Builds every fold. This is the only place the feature count is paid for.</summary>
-    private static Fold[] BuildFolds(double[,] x)
-    {
-        var n = x.GetLength(0);
-        var p = x.GetLength(1);
-        var folds = new Fold[n];
-        for (var left = 0; left < n; left++)
-        {
-            var trainX = new double[n - 1, p];
-            var r = 0;
-            for (var i = 0; i < n; i++)
-            {
-                if (i == left) continue;
-                for (var j = 0; j < p; j++) trainX[r, j] = x[i, j];
-                r++;
-            }
-
-            // Centre and scale from the training rows alone. Doing it once over the whole matrix
-            // lets the held-out injection influence its own prediction, and a model fitted to noise
-            // then comes back with a respectable Q squared — the very thing this is here to catch.
-            var held = new double[p];
-            for (var j = 0; j < p; j++) held[j] = x[left, j];
-            for (var j = 0; j < p; j++)
-            {
-                double mean = 0;
-                for (var i = 0; i < n - 1; i++) mean += trainX[i, j];
-                mean /= n - 1;
-                double ss = 0;
-                for (var i = 0; i < n - 1; i++)
-                {
-                    trainX[i, j] -= mean;
-                    ss += trainX[i, j] * trainX[i, j];
-                }
-                held[j] -= mean;
-                var sd = n > 2 ? Math.Sqrt(ss / (n - 2)) : 0;
-                if (sd <= 1e-12) continue;
-                for (var i = 0; i < n - 1; i++) trainX[i, j] /= sd;
-                held[j] /= sd;
-            }
-
-            var gram = new double[n - 1, n - 1];
-            var cross = new double[n - 1];
-            for (var a = 0; a < n - 1; a++)
-            {
-                for (var b = a; b < n - 1; b++)
-                {
-                    double s = 0;
-                    for (var j = 0; j < p; j++) s += trainX[a, j] * trainX[b, j];
-                    gram[a, b] = s;
-                    gram[b, a] = s;
-                }
-                double c = 0;
-                for (var j = 0; j < p; j++) c += trainX[a, j] * held[j];
-                cross[a] = c;
-            }
-            folds[left] = new Fold { Gram = gram, Cross = cross };
-        }
-        return folds;
-    }
-
     /// <summary>Leave-one-out Q squared over prepared folds.</summary>
-    private static double CrossValidate(Fold[] folds, double[,] y, int components)
+    private static double CrossValidate(CrossValidation.Fold[] folds, double[,] y, int components)
     {
         var n = folds.Length;
         var m = y.GetLength(1);
@@ -374,7 +303,7 @@ public static class PartialLeastSquares
     /// test holds it to the plain version — but the cost stops depending on how many features there
     /// are, which is what makes a permutation test finish on a real result.
     /// </summary>
-    private static double[] FitAndPredict(Fold fold, double[,] y, int components, int m)
+    private static double[] FitAndPredict(CrossValidation.Fold fold, double[,] y, int components, int m)
     {
         var g = fold.Gram;
         var n = g.GetLength(0);
@@ -382,8 +311,7 @@ public static class PartialLeastSquares
         if (n < 2 || components < 1) return result;
 
         var f = Copy(y);
-        var rotation = new double[n, n];                       // R: the deflation so far
-        for (var i = 0; i < n; i++) rotation[i, i] = 1;
+        var rotation = CrossValidation.Identity(n);            // R: the deflation so far
 
         var omegas = new List<double[]>(components);           // weights, as combinations of rows
         var gOmegas = new List<double[]>(components);
@@ -408,17 +336,17 @@ public static class PartialLeastSquares
             for (var iteration = 0; iteration < 200; iteration++)
             {
                 // omega ∝ R'u, scaled so the weight it stands for has unit length
-                var raw = TransposeTimes(rotation, u);
-                var graw = Times(g, raw);
-                var norm = Dot(raw, graw);
+                var raw = CrossValidation.TransposeTimes(rotation, u);
+                var graw = CrossValidation.Times(g, raw);
+                var norm = CrossValidation.Dot(raw, graw);
                 if (norm < 1e-18) break;
                 var scale = 1.0 / Math.Sqrt(norm);
                 omega = new double[n];
                 gOmega = new double[n];
                 for (var i = 0; i < n; i++) { omega[i] = raw[i] * scale; gOmega[i] = graw[i] * scale; }
 
-                t = Times(rotation, gOmega);
-                tt = Dot(t, t);
+                t = CrossValidation.Times(rotation, gOmega);
+                tt = CrossValidation.Dot(t, t);
                 if (tt < 1e-18) { t = null; break; }
 
                 q = new double[m];
@@ -428,7 +356,7 @@ public static class PartialLeastSquares
                     for (var i = 0; i < n; i++) s += f[i, c] * t[i];
                     q[c] = s / tt;
                 }
-                var qq = Dot(q, q);
+                var qq = CrossValidation.Dot(q, q);
                 if (qq < 1e-18) { t = null; break; }
 
                 var previous = (double[])u.Clone();
@@ -444,20 +372,14 @@ public static class PartialLeastSquares
             }
             if (t is null || omega is null || gOmega is null || q is null) break;
 
-            var pi = TransposeTimes(rotation, t);
+            var pi = CrossValidation.TransposeTimes(rotation, t);
             for (var i = 0; i < n; i++) pi[i] /= tt;
 
             for (var i = 0; i < n; i++)
                 for (var c = 0; c < m; c++)
                     f[i, c] -= t[i] * q[c];
 
-            // R ← (I − t t'/t't) R
-            var tr = TransposeTimes(rotation, t);              // R' t, reused as the row to subtract
-            for (var i = 0; i < n; i++)
-            {
-                var factor = t[i] / tt;
-                for (var j = 0; j < n; j++) rotation[i, j] -= factor * tr[j];
-            }
+            CrossValidation.Deflate(rotation, t, tt);
 
             omegas.Add(omega);
             gOmegas.Add(gOmega);
@@ -469,45 +391,12 @@ public static class PartialLeastSquares
         var scores = new double[omegas.Count];
         for (var k = 0; k < omegas.Count; k++)
         {
-            var s = Dot(fold.Cross, omegas[k]);
-            for (var j = 0; j < k; j++) s -= scores[j] * Dot(pis[j], gOmegas[k]);
+            var s = CrossValidation.Dot(fold.Cross, omegas[k]);
+            for (var j = 0; j < k; j++) s -= scores[j] * CrossValidation.Dot(pis[j], gOmegas[k]);
             scores[k] = s;
             for (var c = 0; c < m; c++) result[c] += s * qs[k][c];
         }
         return result;
-    }
-
-    private static double[] Times(double[,] a, double[] v)
-    {
-        var n = a.GetLength(0);
-        var result = new double[n];
-        for (var i = 0; i < n; i++)
-        {
-            double s = 0;
-            for (var j = 0; j < v.Length; j++) s += a[i, j] * v[j];
-            result[i] = s;
-        }
-        return result;
-    }
-
-    private static double[] TransposeTimes(double[,] a, double[] v)
-    {
-        var n = a.GetLength(1);
-        var result = new double[n];
-        for (var j = 0; j < n; j++)
-        {
-            double s = 0;
-            for (var i = 0; i < v.Length; i++) s += a[i, j] * v[i];
-            result[j] = s;
-        }
-        return result;
-    }
-
-    private static double Dot(double[] a, double[] b)
-    {
-        double s = 0;
-        for (var i = 0; i < a.Length; i++) s += a[i] * b[i];
-        return s;
     }
 
     /// <summary>
@@ -572,7 +461,7 @@ public static class PartialLeastSquares
 
     /// <summary>The fast path on its own, so a test can compare the two.</summary>
     internal static double CrossValidateQuickly(double[,] x, double[,] y, int components)
-        => CrossValidate(BuildFolds(x), y, components);
+        => CrossValidate(CrossValidation.BuildFolds(x), y, components);
 
     /// <summary>The class labels as a centred dummy response, exposed for the same test.</summary>
     internal static double[,] DummyFor(string[] classes, string[] distinct) => Dummy(classes, distinct);
@@ -607,7 +496,7 @@ public static class PartialLeastSquares
     }
 
     /// <summary>Shuffles the labels and refits: how often does chance reach this Q squared?</summary>
-    private static double Permute(Fold[] folds, string[] classes, string[] distinct, int components, double q2, int permutations, int seed)
+    private static double Permute(CrossValidation.Fold[] folds, string[] classes, string[] distinct, int components, double q2, int permutations, int seed)
     {
         if (double.IsNaN(q2)) return double.NaN;
         var rng = new Random(seed);
