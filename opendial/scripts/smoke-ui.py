@@ -353,7 +353,10 @@ def main() -> int:
 
     try:
         say("the window comes up")
-        state = wait_for(probe, lambda s: bool(s.get("title")), "the window to report itself", 90)
+        # a freshly installed bundle may sit behind the system's "access files in Documents"
+        # prompt before its window is up; a person has to answer that, so this waits as long as
+        # opening the project is allowed to take
+        state = wait_for(probe, lambda s: bool(s.get("title")), "the window to report itself (answer the privacy prompt if one is showing)", max(90, args.open_timeout))
         check(APP_PROCESS in state["title"], f"the title reads {state['title']!r}")
         check(bool(state.get("controls")), "the window can say where its workspace tabs are")
         check(bool(state.get("version")), f"the build calls itself version {state.get('version')}")
