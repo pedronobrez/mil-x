@@ -46,6 +46,9 @@ public class RawDataAccess : IDisposable
     private readonly List<double>? _correctedRtList;
     private readonly BackgroundWorker? _bgWorker;
     private readonly string _extensionString = string.Empty;
+
+    private static bool IsVendorExtension(RawDataExtension ext) =>
+        ext is RawDataExtension.raw or RawDataExtension.d or RawDataExtension.wiff or RawDataExtension.wiff2 or RawDataExtension.lcd or RawDataExtension.qgd or RawDataExtension.lrp;
     private LegacyReaderPlugin.LegacyAccessHandle? _legacyHandle;
 
     public double PeakCutOff { get; set; }
@@ -111,14 +114,21 @@ public class RawDataAccess : IDisposable
             var plugin = RawReaderPlugins.Find(Filepath);
             if (plugin != null) {
                 RawDataAccessOptions.Log($"[reader] {plugin.Name}: {Filepath}");
-                var measurement = plugin.Read(Filepath, FileID, new RawReadOptions {
-                    GetProfileData = _getProfileData,
-                    IsImagingMsData = _isImagingMsData,
-                    IsGuiProcess = _isGuiProcess,
-                    PeakCutOff = PeakCutOff,
-                    Log = RawDataAccessOptions.Log,
-                });
-                return Measurement = ApplyRtCorrection(measurement);
+                try {
+                    var measurement = plugin.Read(Filepath, FileID, new RawReadOptions {
+                        GetProfileData = _getProfileData,
+                        IsImagingMsData = _isImagingMsData,
+                        IsGuiProcess = _isGuiProcess,
+                        PeakCutOff = PeakCutOff,
+                        Log = RawDataAccessOptions.Log,
+                    });
+                    return Measurement = ApplyRtCorrection(measurement);
+                }
+                catch (Exception ex) when (IsVendorExtension(Extension)) {
+                    // the plugin claimed the file and could not read it: say so and let the vendor
+                    // bridge have it, rather than failing the whole run on one reader's limits
+                    RawDataAccessOptions.Log($"[reader] {plugin.Name} could not read {Path.GetFileName(Filepath)} ({ex.GetType().Name}: {ex.Message}); trying the vendor bridge");
+                }
             }
             switch (Extension) {
                 case RawDataExtension.mzml:

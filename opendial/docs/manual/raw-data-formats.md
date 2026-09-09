@@ -16,7 +16,7 @@ badge in the [[samples-workspace]] says which route a file takes.
 | --- | --- | --- |
 | **mzML**, indexedmzML | read directly | nothing |
 | **SCIEX `.wiff`** (+ `.wiff.scan`) | native reader | the SCIEX plugin in the bundle (`plugins/sciex`) |
-| SCIEX `.wiff2` | msconvert | msconvert or Docker |
+| SCIEX `.wiff2` | native reader, through the `.wiff` beside it | the plugin, and the `.wiff` SCIEX OS writes with every `.wiff2`; a `.wiff2` on its own goes to msconvert |
 | Thermo `.raw` | msconvert | msconvert or Docker |
 | Agilent, Bruker `.d` folders | msconvert | msconvert or Docker; added with **Add folder…** |
 | Shimadzu `.lcd`, `.qgd` | msconvert | msconvert or Docker |
@@ -44,9 +44,18 @@ the `.wiff`. Three things the reader does that decide whether a run matches MS-D
 - **Profile spectra are centroided by SCIEX's own peak finder**, which fits the apex and reports it about a quarter higher than a local maximum would. Peak heights feed the minimum-height cut-off, so this is the difference between a height ratio of 0.85 and one of 1.000 against MS-DIAL. `OPENDIAL_WIFF_CENTROID` selects `sciex` (default), `msdial` (the local-maximum method) or `0` (keep profile, and set the method to Profile).
 - **A multi-sample batch file becomes one injection per sample.** The application creates a `wiff-samples` folder beside the file with one link per sample (`name.s1.wiff`, `name.s2.wiff`, …, each with its `.wiff.scan` link) and remembers which sample each stands for; a project reopened later re-registers them from the `.sN` suffix. On a share that refuses links the file is copied instead.
 
-A `.wiff2` beside a `.wiff` is the same acquisition in the newer container; add the `.wiff`.
+**`.wiff2`.** SCIEX OS writes every acquisition twice — a `.wiff2`, its newer container, and a
+`.wiff` for compatibility — both over the one `.wiff.scan` that holds the spectra. The SDK's own
+`.wiff2` reader needs a native SQLite library that does not exist for this platform, so OpenDIAL
+reads a `.wiff2` through the `.wiff` beside it: the same spectra, the same sample names, the log
+says `read through …`. Adding a folder takes one file per acquisition — the `.wiff` — and a
+`.wiff2` picked by hand beside its `.wiff` is swapped for the `.wiff` with a note in the message
+line, so an injection is never processed twice. A `.wiff2` on its own, with no `.wiff` next to
+it, is not claimed by the plugin and goes through msconvert; its badge says `wiff · msconvert`.
+
 Without the plugin — a build made without the SDK, or the folder missing from the bundle — `.wiff`
-falls back to msconvert, and the badge says `wiff · msconvert`.
+falls back to msconvert too. And a file the plugin claims but cannot open is handed to msconvert
+rather than failing the run; the log says which reader gave up and why.
 
 ## The msconvert bridge
 

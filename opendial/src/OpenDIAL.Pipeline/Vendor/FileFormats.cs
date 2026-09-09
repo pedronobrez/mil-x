@@ -27,17 +27,45 @@ public static class FileFormats
     public static string GetBadge(string path)
         => IsVendorFormat(path) ? (WiffSupport.CanReadNatively(path) ? "read natively" : "vendor format – requires msconvert bridge") : string.Empty;
 
-    /// <summary>Enumerates supported raw files (and vendor directories) directly under <paramref name="folder"/>.</summary>
+    /// <summary>Enumerates supported raw files (and vendor directories) directly under <paramref name="folder"/>, one per acquisition.</summary>
     public static IEnumerable<string> EnumerateRawFiles(string folder)
     {
+        var found = new List<string>();
         foreach (var entry in Directory.EnumerateFileSystemEntries(folder, "*", SearchOption.TopDirectoryOnly).OrderBy(e => e, StringComparer.OrdinalIgnoreCase))
         {
             var ext = GetExtension(entry);
             var isVendorDirectory = Directory.Exists(entry) && (ext == ".raw" || ext == ".d");
             if (isVendorDirectory || (File.Exists(entry) && IsSupported(entry)))
             {
-                yield return entry;
+                found.Add(entry);
             }
         }
+        return OnePerAcquisition(found);
     }
+
+    /// <summary>
+    /// SCIEX OS writes a .wiff and a .wiff2 for every acquisition, both over the one .wiff.scan;
+    /// adding both would process the same injection twice. The .wiff is kept — it is the one the
+    /// reader opens — and the .wiff2 beside it is dropped.
+    /// </summary>
+    public static IEnumerable<string> OnePerAcquisition(IEnumerable<string> paths)
+    {
+        var list = paths.ToList();
+        var wiffs = new HashSet<string>(list.Where(p => GetExtension(p) == ".wiff").Select(p => Path.ChangeExtension(Path.GetFullPath(p), null)), StringComparer.OrdinalIgnoreCase);
+        foreach (var p in list)
+        {
+            if (GetExtension(p) == ".wiff2")
+            {
+                var stem = Path.ChangeExtension(Path.GetFullPath(p), null);
+                if (wiffs.Contains(stem) || File.Exists(Path.ChangeExtension(Path.GetFullPath(p), ".wiff"))) continue;
+            }
+            yield return p;
+        }
+    }
+
+    /// <summary>Why a path was left out of a batch, or null when it was not.</summary>
+    public static string? WhyDropped(string path) =>
+        GetExtension(path) == ".wiff2" && File.Exists(Path.ChangeExtension(Path.GetFullPath(path), ".wiff"))
+            ? $"{Path.GetFileName(path)} is the same acquisition as {Path.GetFileNameWithoutExtension(path)}.wiff, which is the one read"
+            : null;
 }

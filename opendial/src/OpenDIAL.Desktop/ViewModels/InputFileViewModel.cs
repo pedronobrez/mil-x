@@ -24,7 +24,7 @@ public sealed partial class InputFileViewModel : ViewModelBase
         Exists = File.Exists(path) || Directory.Exists(path);
         var ext = FileFormats.GetExtension(path);
         var isWiff = ext == ".wiff" || ext == ".wiff2";
-        ReadsNatively = isWiff && WiffSupport.IsNativeAvailable;
+        ReadsNatively = isWiff && WiffSupport.CanReadNatively(path);
         Badge = IsVendorFormat
             ? (isWiff ? (ReadsNatively ? "wiff · native" : "wiff · msconvert") : $"{ext.TrimStart('.')} · msconvert")
             : ext == ".mzml" ? "mzML" : ext.TrimStart('.').ToUpperInvariant();

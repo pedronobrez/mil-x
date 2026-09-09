@@ -30,7 +30,8 @@ public static class WiffSampleLinks
     /// (default: a "wiff-samples" folder next to the file).
     /// </summary>
     public static IReadOnlyList<WiffSampleEntry> Expand(string wiffPath, string? cacheDir = null) {
-        var full = Path.GetFullPath(wiffPath);
+        // a .wiff2 is read through the .wiff beside it, so that is what the links point at
+        var full = Path.GetFullPath(SciexWiffReaderPlugin.ResolvePath(wiffPath));
         var names = SciexWiffReaderPlugin.ListSamples(full);
         if (names.Count <= 1) {
             return new[] { new WiffSampleEntry(full, 0, names.Count == 1 ? names[0] : Path.GetFileNameWithoutExtension(full)) };

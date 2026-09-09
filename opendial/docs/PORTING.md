@@ -8,7 +8,8 @@
 | Console `MSDIALCUI` (`lcms`, `gcms`, `dims`, `imms`, `lcimms`, `msn`, `eic`) | **works, self-contained binary in `dist/`** | works (CI) | invariant culture forced; LC-MS DDA and GC-MS EI validated end to end on synthetic data (12/12 compounds each) |
 | mzML / indexedmzML input | **works (open reader, tested)** | works | zlib, numpress, 32/64-bit, ion mobility |
 | SCIEX `.wiff` | **works natively** (Clearcore2 plugin, ~1 s per file) | untested | `scripts/fetch-sciex-assemblies.sh`; see §2a |
-| Thermo `.raw`, Agilent/Bruker `.d`, Sciex `.wiff2`, Shimadzu `.lcd` | **works through msconvert** (native or Docker) | same | conversion is automatic and cached; see §2 |
+| Sciex `.wiff2` | **works natively through the `.wiff` beside it** (SCIEX OS writes both) | same | a lone `.wiff2` goes through msconvert; the SDK's own `.wiff2` path needs System.Data.SQLite's native library |
+| Thermo `.raw`, Agilent/Bruker `.d`, Shimadzu `.lcd` | **works through msconvert** (native or Docker) | same | conversion is automatic and cached; see §2 |
 | `.abf` (Reifycs) | no | no | Windows-only native library; convert to mzML |
 | `.ibf` / `.cdf` / `.imzML` | with the legacy dll | with the legacy dll (+ libnetcdf) | drop `RawDataHandler-Vendor-UnSupported.dll` into `plugins/legacy` |
 | Desktop GUI | Avalonia app in `src/OpenDIAL.Desktop` (Explorer / Analytics / Method / Samples, OpenQuant's look) | same | the WPF GUI is not portable |

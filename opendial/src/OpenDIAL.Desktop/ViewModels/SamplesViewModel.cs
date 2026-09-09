@@ -91,10 +91,19 @@ public sealed partial class SamplesViewModel : ViewModelBase
     {
         var added = 0;
         var problems = new List<string>();
-        foreach (var path in paths)
+        var wanted = paths.ToList();
+        foreach (var path in wanted)
         {
             if (Samples.Any(f => string.Equals(f.Path, path, StringComparison.OrdinalIgnoreCase))) continue;
             if (!FileFormats.IsSupported(path)) { problems.Add($"skipped unsupported file {Path.GetFileName(path)}"); continue; }
+            if (FileFormats.WhyDropped(path) is { } why)
+            {
+                // the .wiff of the pair is taken in its place, whether it was picked or not
+                var wiff = Path.ChangeExtension(path, ".wiff");
+                if (!wanted.Contains(wiff, StringComparer.OrdinalIgnoreCase) && !Samples.Any(f => string.Equals(f.Path, wiff, StringComparison.OrdinalIgnoreCase))) wanted.Add(wiff);
+                problems.Add(why);
+                continue;
+            }
             foreach (var row in InputFileViewModel.FromPath(path, Samples.Count + 1, DefaultAcquisition, out var error))
             {
                 if (error is not null) problems.Add(error);

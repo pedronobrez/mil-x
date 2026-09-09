@@ -10,9 +10,19 @@ summary: What each version of OpenDIAL brought; the notes are updated with every
 The version shown in **Help ▸ About OpenDIAL** and in the window's probe is the one stamped in
 `opendial/Directory.Build.props`. This page names it, and a test fails the build when it does not.
 
-## 0.4.1 — September 2026
+## 0.4.2 — September 2026
 
 The current version. It tracks MS-DIAL 5.5.260817.
+
+**New**
+
+- SCIEX `.wiff2` acquisitions are read natively, through the `.wiff` SCIEX OS writes beside every one of them: the same spectra and sample names, verified on the ZenoTOF batch. A `.wiff2` on its own still goes through msconvert, and says so.
+- One injection per acquisition: adding a folder with a `.wiff`/`.wiff2` pair takes the `.wiff`, and a `.wiff2` picked beside its `.wiff` is swapped for it with a note, so nothing is processed twice.
+- A raw-file plugin that claims a file and cannot open it hands the file to the msconvert bridge instead of failing the run.
+
+## 0.4.1 — September 2026
+
+It tracks MS-DIAL 5.5.260817.
 
 **Changed**
 

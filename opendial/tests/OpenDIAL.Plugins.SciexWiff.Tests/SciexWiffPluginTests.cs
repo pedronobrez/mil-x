@@ -103,4 +103,63 @@ public class SciexWiffPluginTests
             "an IDA dependent experiment reported a single precursor for all of its cycles");
         Assert.All(ms2, s => Assert.True(s.Precursor.SelectedIonMz > 0));
     }
+
+    /// <summary>
+    /// SCIEX OS writes a .wiff and a .wiff2 for one acquisition, both over the one .wiff.scan. The
+    /// SDK's own .wiff2 reader needs System.Data.SQLite's native library, which this platform does
+    /// not have, so the .wiff2 is read through the .wiff beside it; a .wiff2 on its own is not
+    /// claimed and goes to the msconvert bridge.
+    /// </summary>
+    [Fact]
+    public void A_wiff2_is_read_through_the_wiff_beside_it() {
+        var dir = Path.Combine(Path.GetTempPath(), "opendial-wiff2-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        try {
+            var wiff = Path.Combine(dir, "run.wiff");
+            var wiff2 = Path.Combine(dir, "run.wiff2");
+            var lone = Path.Combine(dir, "alone.wiff2");
+            File.WriteAllBytes(wiff, new byte[8]);
+            File.WriteAllBytes(wiff2, new byte[8]);
+            File.WriteAllBytes(lone, new byte[8]);
+            Assert.Equal(wiff, SciexWiffReaderPlugin.SiblingWiff(wiff2));
+            Assert.Equal(wiff, SciexWiffReaderPlugin.ResolvePath(wiff2));
+            Assert.Null(SciexWiffReaderPlugin.SiblingWiff(lone));
+            Assert.Equal(lone, SciexWiffReaderPlugin.ResolvePath(lone));
+            Assert.Null(SciexWiffReaderPlugin.SiblingWiff(wiff));
+            var plugin = new SciexWiffReaderPlugin();
+            Assert.Equal(SciexWiffReaderPlugin.IsSdkAvailable, plugin.CanRead(wiff2));
+            Assert.False(plugin.CanRead(lone));
+        }
+        finally {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void A_real_wiff2_gives_the_same_spectra_as_its_wiff() {
+        var wiff = TestWiff;
+        var wiff2 = wiff is null ? null : Path.ChangeExtension(wiff, ".wiff2");
+        if (wiff == null || wiff2 == null || !File.Exists(wiff2) || !SciexWiffReaderPlugin.IsSdkAvailable) {
+            Console.WriteLine("skipped: needs OPENDIAL_TEST_WIFF with a .wiff2 beside it, and the SCIEX assemblies");
+            return;
+        }
+        RawReaderPlugins.Register(new SciexWiffReaderPlugin());
+        var log = new List<string>();
+        var previous = RawDataAccessOptions.Log;
+        RawDataAccessOptions.Log = log.Add;
+        try {
+            using var viaWiff2 = new RawDataAccess(wiff2, 0, false, false, true);
+            var m2 = viaWiff2.GetMeasurement();
+            Assert.NotNull(m2);
+            Assert.Contains(log, l => l.Contains("read through", StringComparison.Ordinal) && l.Contains(Path.GetFileName(wiff), StringComparison.Ordinal));
+            Assert.Equal(SciexWiffReaderPlugin.ListSamples(wiff), SciexWiffReaderPlugin.ListSamples(wiff2));
+            using var viaWiff = new RawDataAccess(wiff, 1, false, false, true);
+            var m1 = viaWiff.GetMeasurement();
+            Assert.Equal(m1!.SpectrumList.Count, m2!.SpectrumList.Count);
+            Assert.Equal(m1.SpectrumList[^1].ScanStartTime, m2.SpectrumList[^1].ScanStartTime);
+        }
+        finally {
+            RawDataAccessOptions.Log = previous;
+        }
+    }
 }
