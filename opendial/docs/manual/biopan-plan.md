@@ -73,14 +73,9 @@ preserving reaction links species of the same sum composition; a chain-removing 
 reactant species to a product species when the difference of their compositions is a free fatty
 acid measured in the dataset (`PC 34:1` → `LPC 16:0` needs `FA 18:1`); a chain-adding one when the
 difference is an acyl-CoA measured in the dataset (`LPC 16:0` → `PC 34:1` needs `FACoA 18:1`).
-Resolved chains are not consulted, as BioPAN does not consult them. **The fatty-acid level** sums each chain over the resolved species that
-carry it (sphingoid bases excepted) and links chains by the thirty steps of BioPAN's table and no
-others — the elongations 16:0 → 18:0 → 20:0 … 30:0, 16:1 → 18:1 → 20:1 → 24:1, 18:2 → 20:2,
-18:3 → 20:3, 20:4 → 22:4 → 24:4, 18:4 → 20:4, 20:5 → 22:5 → 24:5, 24:6 → 26:6, and the
-desaturations 16:0 → 16:1, 18:0 → 18:1, 16:1 → 16:2, 18:1 → 18:2, 18:2 → 18:3, 20:2 → 20:3,
-20:3 → 20:4, 18:3 → 18:4, 20:4 → 20:5, 24:4 → 24:5, 24:5 → 24:6 — with the genes BioPAN gives
-each (ELOVL1–7, FADS1, FADS2, and the stearoyl-CoA desaturases — BioPAN's mouse Scd1 and Scd3,
-given as the human SCD and SCD5).
+Resolved chains are not consulted, as BioPAN does not consult them. **The fatty-acid level** is
+the free fatty acids measured — the `FA` class, as BioPAN's `fa_processed_gr` — linked by the
+thirty steps of its table.
 
 **The scoring** follows BioPAN's R code (`lib_pathway_analysis.r`): the weights are the ratios
 themselves, an injection without the reactant is dropped and one without the product weighs zero;
@@ -98,7 +93,6 @@ the driving channel and the smoke test like the rest.
 
 ## Where it departs from BioPAN
 
-- The fatty-acid level sums the chains of the resolved species; BioPAN's fatty-acid graph is built from the free fatty acids measured. A run that confirms its free fatty acids gets both readings: the free acids as nodes of the species level, the chains at the fatty-acid level.
 - The **Beyond BioPAN** extensions, off by default and marked in the table.
 - A reaction is only testable when both its classes have a confirmed analyte other than the standard, since the standard divides itself out of the ratios. The **Not measured** table says what confirming one more class would open up, which BioPAN's predicted mode does not.
 - The mammalian network only. Two conditions at a time; three or more classes go pairwise through the comparison's two classes. The paired t-test BioPAN offers is not offered here.

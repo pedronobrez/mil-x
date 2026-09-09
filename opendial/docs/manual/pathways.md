@@ -46,7 +46,7 @@ near zero. A pathway is active or suppressed at the same threshold.
 
 | Control | What it does |
 | --- | --- |
-| **Level** | **Lipid classes** — every confirmed PC summed against every confirmed PE; **Molecular species** — PE 34:1 against PC 34:1, and, by BioPAN's rule, PC 34:1 against LPC 16:0 when the FA 18:1 it releases is measured, LPC 16:0 against PC 34:1 when the acyl-CoA 18:1 it takes is; **Fatty acids** — each chain summed over the species that carry it, and BioPAN's thirty elongation and desaturation steps between chains |
+| **Level** | **Lipid classes** — every confirmed PC summed against every confirmed PE; **Molecular species** — PE 34:1 against PC 34:1, and, by BioPAN's rule, PC 34:1 against LPC 16:0 when the FA 18:1 it releases is measured, LPC 16:0 against PC 34:1 when the acyl-CoA 18:1 it takes is; **Fatty acids** — the free fatty acids confirmed in the dataset (the `FA` class), linked by BioPAN's thirty elongation and desaturation steps |
 | **\|Z\| ≥** | BioPAN's thresholds, one-sided: 1.282 (p 0.10), **1.645 (p 0.05, the default)**, 2.054 (p 0.02), 2.326 (p 0.01) |
 | **chains up to** | how many reactions a pathway may chain (3 by default; 1 to 6) |
 | **Show unchanged** | draw the reactions that did not pass the threshold too, in grey |
@@ -102,8 +102,9 @@ LPC 16:0 is drawn only when the fatty acid it releases, FA 18:1, is itself confi
 dataset, and LPC 16:0 → PC 34:1 only when the acyl-CoA it takes, 18:1-CoA, is — so on a run
 without free fatty acids the species level shows the composition-preserving reactions (PE 34:1 →
 PC 34:1) and nothing else, which is what BioPAN shows on the same data. The **Fatty acids** level
-uses the chains of the resolved species (`PC 16:0_18:1`), so it needs MS-DIAL's molecular-species
-names.
+is built from the free fatty acids confirmed, as BioPAN builds it — not from the chains of the
+other lipids — so a run that did not measure its free fatty acids has no fatty-acid graph, and the
+page says so.
 
 ## What it is not
 

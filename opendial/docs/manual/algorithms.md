@@ -142,9 +142,8 @@ values are permuted, and the total Gini decrease attributable to the feature.
 BioPAN's network and method on the normalised linear values. Every feature is placed in the
 network by its class — the ontology folded to BioPAN's names, the ethers split by the `O-`/`P-`
 mark in the name, the sphinganine forms by subclass or a saturated composition — and, at the
-species level, by its sum composition, with its chains kept where the name resolved them. A node's abundance in an injection
-is the sum of its features; at the fatty-acid level each resolved chain contributes its species'
-abundance to the chain's node, once per occurrence. The edges are the reaction table's at the class
+species level, by its sum composition. A node's abundance in an injection is the sum of its features; at the fatty-acid
+level the nodes are the free fatty acids measured, by composition. The edges are the reaction table's at the class
 level; at the species level a preserving reaction joins equal compositions, a chain-removing one
 joins two species whose compositions differ by a free fatty acid measured in the dataset, and a
 chain-adding one two whose compositions differ by an acyl-CoA measured in the dataset (BioPAN's

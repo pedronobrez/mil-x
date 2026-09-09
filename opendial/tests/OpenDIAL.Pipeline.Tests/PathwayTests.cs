@@ -163,18 +163,22 @@ public class PathwayTests
     }
 
     [Fact]
-    public void Fatty_acid_level_sums_the_chains_and_links_them_by_elongation_and_desaturation()
+    public void Fatty_acid_level_is_the_free_fatty_acids_measured()
     {
         var result = LipidPathways.Compute(Table(), "treated", "control", PathwayLevel.FattyAcid);
 
-        var fa160 = result.Nodes.First(n => n.Name == "FA 16:0");
-        var fa181 = result.Nodes.First(n => n.Name == "FA 18:1");
-        // 16:0 sits in PE 34:1, PC 34:1, LPC 16:0, DG 34:1 and FA 16:0; 18:1 in all seven glycerolipids, twice in the 36:2s, and FA 18:1
-        Assert.Equal(5, fa160.Members);
-        Assert.Equal(9, fa181.Members);
+        // BioPAN's fatty-acid graph is the free fatty acids measured: FA 16:0 and FA 18:1, not the chains of the phospholipids
+        Assert.Equal(2, result.Nodes.Count);
+        Assert.Equal(1, result.Nodes.First(n => n.Name == "FA 16:0").Members);
+        Assert.Equal(1, result.Nodes.First(n => n.Name == "FA 18:1").Members);
         // BioPAN's table has 16:0 → 18:0 and 16:0 → 16:1, but neither 18:0 nor 16:1 is measured; 18:1 → 18:2, 18:1 → 20:1 likewise
         Assert.Empty(result.Reactions);
         Assert.Contains("No reaction", result.Message);
+
+        // and without any free fatty acid the page says so rather than showing an empty graph
+        var none = LipidPathways.Compute(Table().Select(Enumerable.Range(0, 7).ToList()), "treated", "control", PathwayLevel.FattyAcid);
+        Assert.Empty(none.Nodes);
+        Assert.Contains("No free fatty acid", none.Message);
     }
 
     [Fact]

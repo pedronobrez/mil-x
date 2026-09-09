@@ -9,7 +9,7 @@ public enum PathwayLevel
     Class,
     /// <summary>Molecular species: PE 34:1 → PC 34:1; PC 34:1 → LPC 16:0 when FA 18:1 is measured, LPC 16:0 → PC 34:1 when the acyl-CoA 18:1 is.</summary>
     Species,
-    /// <summary>Fatty acids, summed over the species that carry them: 16:0 → 18:0 (elongation), 18:0 → 18:1 (desaturation).</summary>
+    /// <summary>The free fatty acids measured, linked by BioPAN's elongation and desaturation steps: FA 16:0 → FA 18:0, FA 18:0 → FA 18:1.</summary>
     FattyAcid,
 }
 
@@ -99,18 +99,15 @@ public static class LipidPathways
         }
 
         // every feature placed in the network: its class, its species key, its chains
-        var placed = new List<(int Column, string Class, string Species, IReadOnlyList<string> Chains, bool Resolved)>();
+        var placed = new List<(int Column, string Class, string Species)>();
         for (var j = 0; j < table.FeatureCount; j++)
         {
             var f = table.Features[j];
             var identity = LipidNames.Parse(f.Name, f.Ontology);
             var cls = ReactionDatabase.NetworkClass(f.Ontology, f.Name, identity) ?? ReactionDatabase.NetworkClass(null, f.Name);
             if (cls is null) continue;
-            var chains = LipidNames.Chains(f.Name);
-            var expected = LipidNames.ChainCount(cls);
-            var resolved = chains.Count == expected && expected > 0;
             var species = identity.Carbons > 0 ? $"{cls} {identity.SumComposition}" : cls;
-            placed.Add((j, cls, species, chains, resolved));
+            placed.Add((j, cls, species));
         }
         if (placed.Count == 0)
         {
@@ -147,12 +144,8 @@ public static class LipidPathways
                 foreach (var p in placed) Add(p.Species, p.Class, p.Column);
                 break;
             case PathwayLevel.FattyAcid:
-                // a fatty acid is as abundant as the species that carry it, counted once per chain;
-                // sphingoid bases are not fatty acids and stay out
-                foreach (var p in placed.Where(p => p.Resolved && !IsSphingolipid(p.Class)))
-                {
-                    foreach (var chain in p.Chains) Add("FA " + chain, "FA", p.Column);
-                }
+                // BioPAN's fatty-acid graph is built from the free fatty acids measured, and nothing else
+                foreach (var p in placed.Where(p => p.Class == "FA" && p.Species != "FA")) Add(p.Species, "FA", p.Column);
                 break;
         }
 
@@ -301,7 +294,9 @@ public static class LipidPathways
         var active = scores.Count(s => s.Status == "active");
         var suppressed = scores.Count(s => s.Status == "suppressed");
         var message = tested.Count == 0
-            ? $"No reaction of the network has both ends measured at the {levelName} level in both classes; {abundance.Count} node(s) placed, {edges.Count} edge(s) drawn."
+            ? (level == PathwayLevel.FattyAcid && abundance.Count == 0
+                ? "No free fatty acid is confirmed: BioPAN's fatty-acid graph is built from the FA class measured, not from the chains of the other lipids."
+                : $"No reaction of the network has both ends measured at the {levelName} level in both classes; {abundance.Count} node(s) placed, {edges.Count} edge(s) drawn.")
             : $"{tested.Count} reaction(s) tested at the {levelName} level, {classA} against {classB} · {active} active, {suppressed} suppressed at |Z| ≥ {threshold:0.###} · "
               + $"{ranked.Count(p => p.Status != "unchanged")} of {ranked.Count} pathway(s) past the threshold"
               + (scores.Count > tested.Count ? $" · {scores.Count - tested.Count} reaction(s) with too few injections to test" : string.Empty);
@@ -326,9 +321,6 @@ public static class LipidPathways
     private static bool IsAcylCoA(string name, string? ontology) =>
         (ontology is not null && (ontology.Equals("FACoA", StringComparison.OrdinalIgnoreCase) || ontology.Equals("ACoA", StringComparison.OrdinalIgnoreCase)))
         || name.StartsWith("FACoA", StringComparison.OrdinalIgnoreCase) || name.StartsWith("acyl-CoA", StringComparison.OrdinalIgnoreCase) || name.StartsWith("CoA ", StringComparison.OrdinalIgnoreCase);
-
-    private static bool IsSphingolipid(string cls) =>
-        cls is "Cer" or "dhCer" or "SM" or "dhSM" or "HexCer" or "LacCer" or "SHexCer" or "Cer1P" or "SPB" or "SPBP" or "dhSPB" or "dhSPBP" or "LysoSM";
 
     private static (int Carbons, int DoubleBonds) ParseChain(string chain)
     {
