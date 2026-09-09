@@ -68,12 +68,12 @@ any saturated composition into `dhCer` (`dhSM` likewise), `Sph` into `SPB`, `DHS
 `EtherPC` into `O-PC` or `P-PC` by the name. A test holds the table to the parser: every reaction
 names classes the lipid-name reader knows, and the counts are the database's.
 
-**The species level** follows from the class reaction and the composition, so it is a rule, not
-a second table: a preserving reaction links species of the same sum composition; a chain-removing
-one links a resolved species to the species left by dropping each of its chains in turn (`PC
-16:0_18:1` → `LPC 16:0` and `LPC 18:1`; `TG 16:0_18:1_18:1` → `DG 34:1` and `DG 36:2`); a
-chain-adding one is the same read backwards. A sum composition alone takes part only in the
-preserving reactions. **The fatty-acid level** sums each chain over the resolved species that
+**The species level** follows BioPAN's rule (`is_valid_reaction` in `lib_parse_data.r`): a
+preserving reaction links species of the same sum composition; a chain-removing one links a
+reactant species to a product species when the difference of their compositions is a free fatty
+acid measured in the dataset (`PC 34:1` → `LPC 16:0` needs `FA 18:1`); a chain-adding one when the
+difference is an acyl-CoA measured in the dataset (`LPC 16:0` → `PC 34:1` needs `FACoA 18:1`).
+Resolved chains are not consulted, as BioPAN does not consult them. **The fatty-acid level** sums each chain over the resolved species that
 carry it (sphingoid bases excepted) and links chains by the thirty steps of BioPAN's table and no
 others — the elongations 16:0 → 18:0 → 20:0 … 30:0, 16:1 → 18:1 → 20:1 → 24:1, 18:2 → 20:2,
 18:3 → 20:3, 20:4 → 22:4 → 24:4, 18:4 → 20:4, 20:5 → 22:5 → 24:5, 24:6 → 26:6, and the
@@ -98,7 +98,7 @@ the driving channel and the smoke test like the rest.
 
 ## Where it departs from BioPAN
 
-- The species level links chain reactions through the chains MS-DIAL resolved: `PC 16:0_18:1` → `LPC 16:0` and `LPC 18:1`. BioPAN links them through the fatty acid the step consumes or releases, and only when that fatty acid is itself in the dataset — a rule that gives nothing on a lipidomics run without free fatty acids. Composition-preserving reactions are linked the same way in both.
+- The fatty-acid level sums the chains of the resolved species; BioPAN's fatty-acid graph is built from the free fatty acids measured. A run that confirms its free fatty acids gets both readings: the free acids as nodes of the species level, the chains at the fatty-acid level.
 - The **Beyond BioPAN** extensions, off by default and marked in the table.
 - A reaction is only testable when both its classes have a confirmed analyte other than the standard, since the standard divides itself out of the ratios. The **Not measured** table says what confirming one more class would open up, which BioPAN's predicted mode does not.
 - The mammalian network only. Two conditions at a time; three or more classes go pairwise through the comparison's two classes. The paired t-test BioPAN offers is not offered here.

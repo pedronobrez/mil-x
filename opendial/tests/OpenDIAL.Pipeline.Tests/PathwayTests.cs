@@ -86,6 +86,10 @@ public class PathwayTests
             (Name: "LPC 16:0", Ontology: "LPC", Base: 300.0, Fold: 1.0),
             (Name: "LPC 18:1", Ontology: "LPC", Base: 250.0, Fold: 1.0),
             (Name: "DG 34:1|DG 16:0_18:1", Ontology: "DG", Base: 600.0, Fold: 1.0),
+            // the free fatty acids and the acyl-CoA BioPAN's species rule looks for
+            (Name: "FA 16:0", Ontology: "FA", Base: 100.0, Fold: 1.0),
+            (Name: "FA 18:1", Ontology: "FA", Base: 120.0, Fold: 1.0),
+            (Name: "FACoA 18:1", Ontology: "FACoA", Base: 10.0, Fold: 1.0),
         };
         var rng = new Random(5);
         var list = new List<AlignmentSpotRow>();
@@ -104,7 +108,7 @@ public class PathwayTests
     {
         var result = LipidPathways.Compute(Table(), "treated", "control", PathwayLevel.Class, threshold: 1.645, maxPathLength: 3);
 
-        Assert.Equal(4, result.Nodes.Count);   // PE, PC, LPC, DG
+        Assert.Equal(5, result.Nodes.Count);   // PE, PC, LPC, DG, FA
         var pemt = Assert.Single(result.Reactions, r => r.Id == "PEMT");
         Assert.Equal("active", pemt.Status);
         Assert.InRange(pemt.Log2Change, 1.4, 1.75);          // log2 3 = 1.585, less the noise
@@ -143,12 +147,16 @@ public class PathwayTests
 
         Assert.Contains(result.Reactions, r => r.Reactant == "PE 34:1" && r.Product == "PC 34:1" && r.Status == "active");
         Assert.Contains(result.Reactions, r => r.Reactant == "PE 36:2" && r.Product == "PC 36:2" && r.Status == "active");
-        // PC 16:0_18:1 loses either chain; both lyso species are measured
+        // BioPAN's rule: PC 34:1 → LPC 16:0 releases 18:1 and PC 34:1 → LPC 18:1 releases 16:0, both measured as free acids
         Assert.Contains(result.Reactions, r => r.Reactant == "PC 34:1" && r.Product == "LPC 16:0" && r.Id == "PLA2-PC");
         Assert.Contains(result.Reactions, r => r.Reactant == "PC 34:1" && r.Product == "LPC 18:1");
-        // PC 18:1_18:1 loses an 18:1 only
+        // PC 36:2 → LPC 16:0 would release 20:2, which is not measured; → LPC 18:1 releases 18:1, which is
         Assert.DoesNotContain(result.Reactions, r => r.Reactant == "PC 36:2" && r.Product == "LPC 16:0");
+        Assert.Contains(result.Reactions, r => r.Reactant == "PC 36:2" && r.Product == "LPC 18:1");
+        // adding a chain needs the acyl-CoA: 18:1-CoA is measured, 16:0-CoA is not
         Assert.Contains(result.Reactions, r => r.Reactant == "LPC 18:1" && r.Product == "PC 36:2" && r.Id == "LPCAT");
+        Assert.Contains(result.Reactions, r => r.Reactant == "LPC 16:0" && r.Product == "PC 34:1");
+        Assert.DoesNotContain(result.Reactions, r => r.Reactant == "LPC 18:1" && r.Product == "PC 34:1");
         Assert.Contains(result.Reactions, r => r.Reactant == "DG 34:1" && r.Product == "PC 34:1");
         Assert.DoesNotContain(result.Reactions, r => r.Reactant == "DG 34:1" && r.Product == "PC 36:2");
         Assert.Empty(result.Predicted);
@@ -161,9 +169,9 @@ public class PathwayTests
 
         var fa160 = result.Nodes.First(n => n.Name == "FA 16:0");
         var fa181 = result.Nodes.First(n => n.Name == "FA 18:1");
-        // 16:0 sits in PE 34:1, PC 34:1, LPC 16:0 and DG 34:1; 18:1 in all seven species, twice in the 36:2s
-        Assert.Equal(4, fa160.Members);
-        Assert.Equal(8, fa181.Members);
+        // 16:0 sits in PE 34:1, PC 34:1, LPC 16:0, DG 34:1 and FA 16:0; 18:1 in all seven glycerolipids, twice in the 36:2s, and FA 18:1
+        Assert.Equal(5, fa160.Members);
+        Assert.Equal(9, fa181.Members);
         // BioPAN's table has 16:0 → 18:0 and 16:0 → 16:1, but neither 18:0 nor 16:1 is measured; 18:1 → 18:2, 18:1 → 20:1 likewise
         Assert.Empty(result.Reactions);
         Assert.Contains("No reaction", result.Message);

@@ -7,7 +7,7 @@ public enum PathwayLevel
 {
     /// <summary>Whole classes: the sum of every confirmed PC against the sum of every confirmed PE.</summary>
     Class,
-    /// <summary>Molecular species with their composition kept: PE 34:1 → PC 34:1, PC 16:0_18:1 → LPC 16:0.</summary>
+    /// <summary>Molecular species: PE 34:1 → PC 34:1; PC 34:1 → LPC 16:0 when FA 18:1 is measured, LPC 16:0 → PC 34:1 when the acyl-CoA 18:1 is.</summary>
     Species,
     /// <summary>Fatty acids, summed over the species that carry them: 16:0 → 18:0 (elongation), 18:0 → 18:1 (desaturation).</summary>
     FattyAcid,
@@ -170,35 +170,58 @@ public static class LipidPathways
                 foreach (var r in network.Where(r => r.Kind != ReactionKind.FattyAcid)) Edge(r.Id, r.Reactant, r.Product, r.Reactant, r.Product, r.Genes, r.Note);
                 break;
             case PathwayLevel.Species:
+            {
+                // BioPAN's rule: a preserving reaction joins equal compositions; a chain-adding one
+                // joins two species when the acyl it adds is measured as an acyl-CoA in the dataset;
+                // a chain-removing one when the acyl it releases is measured as a free fatty acid
+                var composition = placed.Select(p => p.Species).Distinct()
+                    .ToDictionary(sp => sp, sp => ParseChain(sp[(sp.LastIndexOf(' ') + 1)..]), StringComparer.Ordinal);
+                var freeAcids = placed.Where(p => p.Class == "FA").Select(p => composition[p.Species]).Where(c => c.Carbons > 0).ToHashSet();
+                var acylCoAs = new HashSet<(int Carbons, int DoubleBonds)>();
+                for (var j = 0; j < table.FeatureCount; j++)
+                {
+                    var f = table.Features[j];
+                    if (IsAcylCoA(f.Name, f.Ontology)) { var id = LipidNames.Parse(f.Name); if (id.Carbons > 0) acylCoAs.Add((id.Carbons, id.DoubleBonds)); }
+                }
+                bool Present(string sp) => abundance.TryGetValue(sp, out var row) && row.Any(v => v > 0);
                 foreach (var r in network.Where(r => r.Kind != ReactionKind.FattyAcid))
                 {
+                    var reactants = placed.Where(p => p.Class == r.Reactant).Select(p => p.Species).Distinct().Where(Present).ToList();
+                    var products = placed.Where(p => p.Class == r.Product).Select(p => p.Species).Distinct().Where(Present).ToList();
                     switch (r.Kind)
                     {
                         case ReactionKind.Preserving:
-                            foreach (var species in placed.Where(p => p.Class == r.Reactant).Select(p => p.Species).Distinct())
+                            foreach (var sp in reactants)
                             {
-                                var composition = species.Length > r.Reactant.Length ? species[(r.Reactant.Length + 1)..] : string.Empty;
-                                if (composition.Length == 0) continue;
-                                Edge(r.Id, species, $"{r.Product} {composition}", r.Reactant, r.Product, r.Genes, r.Note);
+                                var (c, d) = composition[sp];
+                                if (c == 0) continue;
+                                Edge(r.Id, sp, $"{r.Product} {c}:{d}", r.Reactant, r.Product, r.Genes, r.Note);
                             }
                             break;
                         case ReactionKind.RemovesChain:
-                            foreach (var p in placed.Where(p => p.Class == r.Reactant && p.Resolved))
+                            foreach (var sp in reactants)
+                            foreach (var pp in products)
                             {
-                                foreach (var remaining in WithoutOne(p.Chains))
-                                    Edge(r.Id, p.Species, $"{r.Product} {Sum(remaining)}", r.Reactant, r.Product, r.Genes, r.Note);
+                                var (rc, rd) = composition[sp];
+                                var (pc, pd) = composition[pp];
+                                if (rc == 0 || pc == 0 || rc <= pc || rd < pd) continue;
+                                if (freeAcids.Contains((rc - pc, rd - pd))) Edge(r.Id, sp, pp, r.Reactant, r.Product, r.Genes, r.Note);
                             }
                             break;
                         case ReactionKind.AddsChain:
-                            foreach (var p in placed.Where(p => p.Class == r.Product && p.Resolved))
+                            foreach (var sp in reactants)
+                            foreach (var pp in products)
                             {
-                                foreach (var remaining in WithoutOne(p.Chains))
-                                    Edge(r.Id, $"{r.Reactant} {Sum(remaining)}", p.Species, r.Reactant, r.Product, r.Genes, r.Note);
+                                var (rc, rd) = composition[sp];
+                                var (pc, pd) = composition[pp];
+                                if (rc == 0 || pc == 0 || pc <= rc || pd < rd) continue;
+                                if (acylCoAs.Contains((pc - rc, pd - rd))) Edge(r.Id, sp, pp, r.Reactant, r.Product, r.Genes, r.Note);
                             }
                             break;
                     }
                 }
                 break;
+            }
             case PathwayLevel.FattyAcid:
                 // BioPAN's thirty steps, and no others: a chain pair the table does not name is not an edge
                 foreach (var r in network.Where(r => r.Kind == ReactionKind.FattyAcid)) Edge(r.Id, r.Reactant, r.Product, "FA", "FA", r.Genes, r.Note);
@@ -299,30 +322,13 @@ public static class LipidPathways
         return values.Count == 0 ? double.NaN : values.Average();
     }
 
+    /// <summary>An acyl-CoA, which MS-DIAL names "FACoA 16:0" or "acyl-CoA 16:0" when a run carries any.</summary>
+    private static bool IsAcylCoA(string name, string? ontology) =>
+        (ontology is not null && (ontology.Equals("FACoA", StringComparison.OrdinalIgnoreCase) || ontology.Equals("ACoA", StringComparison.OrdinalIgnoreCase)))
+        || name.StartsWith("FACoA", StringComparison.OrdinalIgnoreCase) || name.StartsWith("acyl-CoA", StringComparison.OrdinalIgnoreCase) || name.StartsWith("CoA ", StringComparison.OrdinalIgnoreCase);
+
     private static bool IsSphingolipid(string cls) =>
         cls is "Cer" or "dhCer" or "SM" or "dhSM" or "HexCer" or "LacCer" or "SHexCer" or "Cer1P" or "SPB" or "SPBP" or "dhSPB" or "dhSPBP" or "LysoSM";
-
-    private static IEnumerable<IReadOnlyList<string>> WithoutOne(IReadOnlyList<string> chains)
-    {
-        for (var k = 0; k < chains.Count; k++)
-        {
-            var rest = chains.Where((_, i) => i != k).ToList();
-            if (rest.Count > 0) yield return rest;
-        }
-    }
-
-    private static string Sum(IReadOnlyList<string> chains)
-    {
-        var c = 0;
-        var d = 0;
-        foreach (var chain in chains)
-        {
-            var (cc, dd) = ParseChain(chain);
-            c += cc;
-            d += dd;
-        }
-        return $"{c}:{d}";
-    }
 
     private static (int Carbons, int DoubleBonds) ParseChain(string chain)
     {

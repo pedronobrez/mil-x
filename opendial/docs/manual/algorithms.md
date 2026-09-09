@@ -146,8 +146,9 @@ species level, by its sum composition, with its chains kept where the name resol
 is the sum of its features; at the fatty-acid level each resolved chain contributes its species'
 abundance to the chain's node, once per occurrence. The edges are the reaction table's at the class
 level; at the species level a preserving reaction joins equal compositions, a chain-removing one
-joins a resolved species to the species left by dropping each chain, and a chain-adding one the
-reverse; at the fatty-acid level the thirty chain steps of BioPAN's table and no others. For
+joins two species whose compositions differ by a free fatty acid measured in the dataset, and a
+chain-adding one two whose compositions differ by an acyl-CoA measured in the dataset (BioPAN's
+rule); at the fatty-acid level the thirty chain steps of BioPAN's table and no others. For
 every edge with both ends present, the weight per injection is product over reactant (no weight
 without the reactant, zero without the product); the weights of the two classes are compared by
 Welch's t-test where each has two or more; Z is the normal quantile of 1 − p/2 with the sign of
