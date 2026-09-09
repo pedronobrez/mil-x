@@ -228,6 +228,7 @@ public sealed class UiProbe
                 {
                     ["open"] = vm.Help.IsOpen,
                     ["page"] = vm.Help.Current?.Slug,
+                    ["language"] = vm.Help.Language,
                     ["title"] = vm.Help.Current?.Title,
                     ["query"] = vm.Help.Query,
                     ["results"] = vm.Help.Results.Count,

@@ -57,6 +57,7 @@
     <Border DockPanel.Dock="Top" Classes="band">
       <DockPanel>
         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+          <Button x:Name="LanguageButton" Classes="tool" Content="{Binding OtherLanguageName}" Command="{Binding ToggleLanguageCommand}" ToolTip.Tip="Read the manual in the other language: English or Português" />
           <TextBox x:Name="SearchBox" Text="{Binding Query, Mode=TwoWay}" Watermark="Search the manual…  (⌘F)" Width="300" />
           <Button Classes="icon" Content="✕" Command="{Binding ClearQueryCommand}" IsVisible="{Binding HasQuery}" ToolTip.Tip="Clear the search (Esc)" />
         </StackPanel>

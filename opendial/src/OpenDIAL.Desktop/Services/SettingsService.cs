@@ -20,6 +20,8 @@ public sealed class AppSettings
     public string LastMethodFile { get; set; } = string.Empty;
     /// <summary>"System", "Light" or "Dark".</summary>
     public string Theme { get; set; } = "System";
+    /// <summary>The language the manual opens in: "en" or "pt".</summary>
+    public string HelpLanguage { get; set; } = "en";
     public List<RecentProject> RecentProjects { get; set; } = new();
     public bool ShowLog { get; set; } = false;
     /// <summary>Ion table column headers in the order the reviewer arranged them.</summary>

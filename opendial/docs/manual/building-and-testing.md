@@ -52,7 +52,7 @@ bash opendial/scripts/test.sh
 | --- | --- |
 | `OpenDIAL.RawData.Tests` | the mzML reader: encodings, Numpress round trips, the semantics downstream code relies on, the vendor bridge |
 | `OpenDIAL.Pipeline.Tests` | the curation store, the peak editor, the library search, the caches, the statistics (with equivalence tests between the plain and the fast cross-validation), the synthetic end-to-end run, and real-data tests that run when `OPENDIAL_TEST_ALIGNMENT` points at a real result |
-| `OpenDIAL.Desktop.Tests` | the real views, headless: the review workspace, the statistics workspace, the gestures, the fonts, the probe, the manual, and the visual regression frames |
+| `OpenDIAL.Desktop.Tests` | the real views, headless: the review workspace, the statistics workspace, the gestures, the fonts, the probe, the manual in both languages, and the visual regression frames |
 | `OpenDIAL.Interop.OpenQuant.Tests` | the component CSV and the batch import |
 | `OpenDIAL.Plugins.SciexWiff.Tests` | the native reader, on a real `.wiff` when `OPENDIAL_TEST_WIFF` names one |
 
@@ -62,7 +62,7 @@ five tests that hard-code Windows path separators or CRLF line endings.
 
 ## The manual's tests
 
-`ManualTests` hold this manual to the application. Every wikilink has to name a page that exists;
+`ManualTests` hold this manual to the application, in the English edition and the Portuguese one. Every wikilink has to name a page that exists;
 every image has to be embedded; every page needs its front matter; the [[versions]] page has to
 name the build's version; and every button, tab, menu item and check box in the interface has to
 appear somewhere in the manual's text, so a control added without a sentence about it fails the
@@ -128,9 +128,10 @@ which names the page, the chart's index on it, the format, the scale and the pat
 
 ```bash
 python3 opendial/scripts/build-manual.py     # -> opendial/dist/OpenDIAL-manual-<version>.pdf and .html
+python3 opendial/scripts/build-manual.py --lang pt   # -> opendial/dist/OpenDIAL-manual-pt-<version>.pdf and .html
 ```
 
-The pages under `docs/manual` are embedded in the application at build time and compiled into one
+The pages under `docs/manual` (and `docs/manual/pt` for the Portuguese edition) are embedded in the application at build time and compiled into one
 document by the script, with the wikilinks turned into internal links; pandoc renders the HTML
 and Google Chrome prints the PDF. The manual is updated with every version; the [[versions]] page
 carries the notes.

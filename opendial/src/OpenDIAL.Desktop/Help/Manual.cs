@@ -19,11 +19,27 @@ public sealed class Manual
     private static readonly Regex Heading = new(@"^#{1,6}\s+(.+?)\s*$", RegexOptions.Multiline | RegexOptions.Compiled);
     private static readonly Regex Markup = new(@"[*_`>#|]|\!\[[^\]]*\]\([^)]*\)|\]\([^)]*\)|\[|\]", RegexOptions.Compiled);
 
-    /// <summary>The sections in the order the table of contents shows them.</summary>
+    /// <summary>The sections in the order the table of contents shows them; the keys every language's pages use.</summary>
     public static readonly IReadOnlyList<string> SectionOrder = new[]
     {
         "Start", "Workspaces", "Reviewing", "Data and files", "Reference", "Under the hood", "Help",
     };
+
+    /// <summary>The languages the manual exists in: the folder each lives in, and the name it goes by.</summary>
+    public static readonly IReadOnlyList<(string Code, string Name)> Languages = new[] { ("en", "English"), ("pt", "Português") };
+
+    private static readonly Dictionary<string, string> PortugueseSections = new(StringComparer.Ordinal)
+    {
+        ["Start"] = "Início", ["Workspaces"] = "Áreas de trabalho", ["Reviewing"] = "Revisão", ["Data and files"] = "Dados e arquivos",
+        ["Reference"] = "Referência", ["Under the hood"] = "Por dentro", ["Help"] = "Ajuda",
+    };
+
+    /// <summary>What a section is called in the manual's language.</summary>
+    public static string SectionLabel(string section, string language) =>
+        language == "pt" && PortugueseSections.TryGetValue(section, out var pt) ? pt : section;
+
+    /// <summary>The language this manual was loaded in.</summary>
+    public string Language { get; private set; } = "en";
 
     private readonly Dictionary<string, ManualPage> _bySlug;
     private readonly Dictionary<string, ManualPage> _byTitle;
@@ -40,39 +56,43 @@ public sealed class Manual
     /// <summary>Every page, in table-of-contents order.</summary>
     public IReadOnlyList<ManualPage> Pages { get; }
 
-    /// <summary>The manual embedded in this build.</summary>
-    public static Manual Load() => Load(typeof(Manual).Assembly);
+    /// <summary>The manual embedded in this build, in English or in the language asked for.</summary>
+    public static Manual Load(string language = "en") => Load(typeof(Manual).Assembly, language);
 
-    public static Manual Load(Assembly assembly)
+    public static Manual Load(Assembly assembly, string language = "en")
     {
+        // English pages sit at Manual/<slug>.md, a translation at Manual/<code>/<slug>.md
+        var prefix = language == "en" ? "Manual/" : $"Manual/{language}/";
         var pages = new List<ManualPage>();
-        foreach (var name in assembly.GetManifestResourceNames().Where(n => n.StartsWith("Manual/", StringComparison.Ordinal) && n.EndsWith(".md", StringComparison.Ordinal)))
+        foreach (var name in assembly.GetManifestResourceNames().Where(n => n.StartsWith(prefix, StringComparison.Ordinal) && n.EndsWith(".md", StringComparison.Ordinal)))
         {
+            var rest = name[prefix.Length..];
+            if (rest.Contains('/')) continue;   // another language's folder
             using var stream = assembly.GetManifestResourceStream(name)!;
             using var reader = new StreamReader(stream, Encoding.UTF8);
-            var slug = Path.GetFileNameWithoutExtension(name["Manual/".Length..]);
-            pages.Add(Parse(slug, reader.ReadToEnd()));
+            pages.Add(Parse(Path.GetFileNameWithoutExtension(rest), reader.ReadToEnd()));
         }
-        return FromPages(pages);
+        if (pages.Count == 0 && language != "en") return Load(assembly, "en");
+        return FromPages(pages, language);
     }
 
     /// <summary>A manual read straight from a folder of Markdown files; what the PDF build and the tests use.</summary>
-    public static Manual LoadFrom(string folder)
+    public static Manual LoadFrom(string folder, string language = "en")
     {
         var pages = Directory.EnumerateFiles(folder, "*.md")
             .Select(f => Parse(Path.GetFileNameWithoutExtension(f), File.ReadAllText(f)))
             .ToList();
-        return FromPages(pages);
+        return FromPages(pages, language);
     }
 
-    private static Manual FromPages(List<ManualPage> pages)
+    private static Manual FromPages(List<ManualPage> pages, string language)
     {
         var ordered = pages
             .OrderBy(p => { var i = SectionOrder.ToList().IndexOf(p.Section); return i < 0 ? SectionOrder.Count : i; })
             .ThenBy(p => p.Order)
             .ThenBy(p => p.Title, StringComparer.OrdinalIgnoreCase)
             .ToList();
-        return new Manual(ordered);
+        return new Manual(ordered) { Language = language };
     }
 
     public static ManualPage Parse(string slug, string text)

@@ -117,5 +117,5 @@ and molecular network, and the headless and visual tests.
 ## Updating this page
 
 Every version updates the manual with it: any new workspace, control, setting, file, script or
-known trap gets its sentence on the page it belongs to, this page gets its notes, and the PDF is
-rebuilt. The manual's tests hold the first part; the second is a habit.
+known trap gets its sentence on the page it belongs to, this page gets its notes, and the PDFs are
+rebuilt, in both languages. The manual's tests hold the first part; the second is a habit.

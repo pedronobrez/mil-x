@@ -626,7 +626,16 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     public Action? ShowHelpWindow { get; set; }
 
     /// <summary>The manual, loaded the first time it is asked for.</summary>
-    public Help.HelpViewModel EnsureHelp() => Help ??= new Help.HelpViewModel(Desktop.Help.Manual.Load());
+    public Help.HelpViewModel EnsureHelp()
+    {
+        if (Help is not null) return Help;
+        var language = string.IsNullOrWhiteSpace(Settings.Current.HelpLanguage) ? "en" : Settings.Current.HelpLanguage;
+        Help = new Help.HelpViewModel(Desktop.Help.Manual.Load(language))
+        {
+            LanguageChanged = code => { Settings.Current.HelpLanguage = code; _ = Settings.SaveAsync(); },
+        };
+        return Help;
+    }
 
     /// <summary>Opens the manual at the page for the workspace that is showing, which is what F1 means.</summary>
     [RelayCommand]

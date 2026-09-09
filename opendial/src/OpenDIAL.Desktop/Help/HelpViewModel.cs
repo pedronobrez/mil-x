@@ -19,18 +19,56 @@ public sealed partial class HelpViewModel : ObservableObject
     public HelpViewModel(Manual manual)
     {
         Manual = manual;
-        Sections = Manual.SectionOrder
-            .Select(s => new ManualSection(s, manual.Pages.Where(p => p.Section == s).ToList()))
-            .Where(s => s.Pages.Count > 0)
-            .Concat(manual.Pages.Where(p => !Manual.SectionOrder.Contains(p.Section)).GroupBy(p => p.Section).Select(g => new ManualSection(g.Key, g.ToList())))
-            .ToList();
+        Sections = SectionsOf(manual);
         Current = manual.Find("index") ?? manual.Pages.FirstOrDefault();
         if (Current is not null) { _history.Add(Current); _position = 0; }
     }
 
-    public Manual Manual { get; }
-    public IReadOnlyList<ManualSection> Sections { get; }
+    /// <summary>The manual in the language showing; the pages are the same set under every language.</summary>
+    public Manual Manual { get; private set; }
+    [ObservableProperty] private IReadOnlyList<ManualSection> _sections;
     public ObservableCollection<ManualHit> Results { get; } = new();
+
+    /// <summary>Told which language was chosen, so the choice can be kept.</summary>
+    public Action<string>? LanguageChanged { get; set; }
+
+    public string Language => Manual.Language;
+    public string LanguageName => Manual.Languages.First(l => l.Code == Language).Name;
+    /// <summary>The name of the other language — what the switch offers.</summary>
+    public string OtherLanguageName => Manual.Languages.First(l => l.Code != Language).Name;
+
+    private static IReadOnlyList<ManualSection> SectionsOf(Manual manual) => Manual.SectionOrder
+        .Select(s => new ManualSection(Manual.SectionLabel(s, manual.Language), manual.Pages.Where(p => p.Section == s).ToList()))
+        .Where(s => s.Pages.Count > 0)
+        .Concat(manual.Pages.Where(p => !Manual.SectionOrder.Contains(p.Section)).GroupBy(p => p.Section).Select(g => new ManualSection(g.Key, g.ToList())))
+        .ToList();
+
+    /// <summary>Shows the same page in the other language; the trail and the search carry over as slugs.</summary>
+    [RelayCommand]
+    private void ToggleLanguage() => SwitchLanguage(Manual.Languages.First(l => l.Code != Language).Code);
+
+    public void SwitchLanguage(string code)
+    {
+        if (code == Language) return;
+        var manual = Manual.Load(code);
+        if (manual.Language != code) return;   // not embedded in this build
+        var slug = Current?.Slug ?? "index";
+        Manual = manual;
+        Sections = SectionsOf(manual);
+        // the trail is kept as slugs, so Back still goes where it went
+        var trail = _history.Select(p => manual.Find(p.Slug)).Where(p => p is not null).Cast<ManualPage>().ToList();
+        _history.Clear();
+        _history.AddRange(trail);
+        _position = Math.Min(_position, _history.Count - 1);
+        var query = Query;
+        Current = manual.Find(slug) ?? manual.Pages.FirstOrDefault();
+        OnPropertyChanged(nameof(Manual));
+        OnPropertyChanged(nameof(Language));
+        OnPropertyChanged(nameof(LanguageName));
+        OnPropertyChanged(nameof(OtherLanguageName));
+        if (!string.IsNullOrWhiteSpace(query)) OnQueryChanged(query);
+        LanguageChanged?.Invoke(code);
+    }
 
     [ObservableProperty] private ManualPage? _current;
     [ObservableProperty] private string _query = string.Empty;
@@ -43,7 +81,7 @@ public sealed partial class HelpViewModel : ObservableObject
     public bool HasQuery => !string.IsNullOrWhiteSpace(Query);
     public bool CanGoBack => _position > 0;
     public bool CanGoForward => _position < _history.Count - 1;
-    public string Breadcrumb => Current is null ? string.Empty : $"{Current.Section}  ›  {Current.Title}";
+    public string Breadcrumb => Current is null ? string.Empty : $"{Manual.SectionLabel(Current.Section, Language)}  ›  {Current.Title}";
     public IReadOnlyList<ManualPage> Backlinks => Current is null ? Array.Empty<ManualPage>() : Current.Backlinks.Select(s => Manual.Find(s)).Where(p => p is not null).Cast<ManualPage>().ToList();
 
     partial void OnQueryChanged(string value)

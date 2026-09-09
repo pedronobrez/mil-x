@@ -19,6 +19,13 @@ file it reads and writes, every setting and environment variable, and what to do
 goes wrong. It is the same text in the application's **Help** window and in the PDF, built from
 one set of pages, and it is updated with every version — the [[versions]] page says what changed.
 
+## The two languages
+
+The manual exists in English and in Portuguese, page for page. The **English** / **Português**
+button at the top of the Help window switches from one to the other on the same page, and the
+choice is kept for next time. The names of the controls — buttons, tabs, menus — stay in English
+in both, because that is how they appear on screen. Each language has its own PDF.
+
 ## How to read it
 
 Pages link to one another in double brackets, the way an Obsidian vault does: [[concepts]] is a

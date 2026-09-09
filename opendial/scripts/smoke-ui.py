@@ -482,6 +482,15 @@ def main() -> int:
                 send_command(probe, {"action": "openHelp", "page": "index", "query": "drift correction"})
                 state = wait_for(probe, lambda s: (s.get("help") or {}).get("results", 0) > 0, "the search to find pages", 15)
                 check(state["help"]["results"] > 0, f"searching 'drift correction' finds {state['help']['results']} page(s)")
+                # the same page in Portuguese, and back: the switch keeps the page and the search
+                send_command(probe, {"action": "helpLanguage", "language": "pt"})
+                state = wait_for(probe, lambda s: (s.get("help") or {}).get("language") == "pt", "the manual in Portuguese", 15)
+                check(state["help"]["page"] == "index" and state["help"]["title"].startswith("Manual do OpenDIAL"),
+                      f"Português shows the same page, titled {state['help']['title']!r}")
+                check(state["help"]["results"] > 0, f"the search still finds {state['help']['results']} page(s) in Portuguese")
+                send_command(probe, {"action": "helpLanguage", "language": "en"})
+                state = wait_for(probe, lambda s: (s.get("help") or {}).get("language") == "en", "the manual back in English", 15)
+                check(state["help"]["title"] == "OpenDIAL manual", "English brings the English page back")
                 send_command(probe, {"action": "closeHelp"})
 
                 say("the filter is cleared again")
@@ -582,6 +591,22 @@ def main() -> int:
                     if ok and fmt == "svg":
                         ok = open(chart, encoding="utf-8").read().lstrip().startswith("<svg")
                     check(ok, f"the volcano plot was written as {fmt}: {(result or {}).get('message')}")
+
+            if args.project:
+                # the --process form opens the manual from the keyboard; here it is opened by command,
+                # so the language switch is exercised on a project that loads in seconds
+                say("the manual reads in both languages")
+                send_command(probe, {"action": "openHelp", "page": "statistics-workspace"})
+                state = wait_for(probe, lambda s: (s.get("help") or {}).get("page") == "statistics-workspace", "the manual to open", 15)
+                send_command(probe, {"action": "helpLanguage", "language": "pt"})
+                state = wait_for(probe, lambda s: (s.get("help") or {}).get("language") == "pt", "the manual in Portuguese", 15)
+                check(state["help"]["page"] == "statistics-workspace" and "Statistics" in state["help"]["title"],
+                      f"Português keeps the page: {state['help']['title']!r}")
+                shot("help-pt")
+                send_command(probe, {"action": "helpLanguage", "language": "en"})
+                state = wait_for(probe, lambda s: (s.get("help") or {}).get("language") == "en", "the manual back in English", 15)
+                check(state["help"]["title"] == "The Statistics workspace", "English brings the English page back")
+                send_command(probe, {"action": "closeHelp"})
 
         say("nothing fell over")
         alive = subprocess.run(["pgrep", "-f", "OpenDIAL.app/Contents/MacOS"], capture_output=True)

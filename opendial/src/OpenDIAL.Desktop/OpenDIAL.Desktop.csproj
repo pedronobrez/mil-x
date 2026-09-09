@@ -41,6 +41,7 @@
       of the build that is running rather than of whatever is on disk.
     -->
     <EmbeddedResource Include="..\..\docs\manual\*.md" LogicalName="Manual/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\..\docs\manual\pt\*.md" LogicalName="Manual/pt/%(Filename)%(Extension)" />
     <EmbeddedResource Include="..\..\docs\images\*.png" LogicalName="Manual/images/%(Filename)%(Extension)" />
   </ItemGroup>
 

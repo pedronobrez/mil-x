@@ -110,6 +110,9 @@ remembers the state.
 **The manual's search finds nothing.** Every word has to match; try fewer words. The search is
 over the pages' text and titles, not the interface's labels.
 
+**The manual opens in the other language.** The **Português** / **English** button at the top of
+the Help window switches it, and the choice is kept in `settings.json` for next time.
+
 ## Reviewing
 
 **Re-integration or Split isomer says the result cannot be edited.** The result was opened from an

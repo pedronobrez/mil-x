@@ -39,7 +39,7 @@ All under `opendial/scripts/`; see [[building-and-testing]] for the build ones.
 | --- | --- |
 | `smoke-ui.py` | drives the installed application and checks it works: `--project` opens a processed project and checks the shell; `--process FOLDER --library X.msp` builds a project from the raw files, processes it, re-integrates a peak, saves, exports, opens the manual |
 | `ui-drive.sh` | the same primitives one at a time — `front`, `click X Y`, `key CODE cmd`, `shot PATH`, `where` — for a screenshot or a look |
-| `build-manual.py` | builds the PDF and HTML of this manual from `docs/manual` |
+| `build-manual.py` | builds the PDF and HTML of this manual from `docs/manual`; `--lang pt` builds the Portuguese edition from `docs/manual/pt` |
 | `make-app-bundle.sh` | publishes and packages `dist/OpenDIAL.app` |
 | `build-gui.sh`, `build-cli.sh` | publish the application and the console |
 | `test.sh` | every test suite plus the synthetic end-to-end runs |

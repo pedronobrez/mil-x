@@ -205,6 +205,15 @@ public partial class MainWindow : Window
                 if (command.TryGetProperty("query", out var q) && _vm.Help is not null) _vm.Help.Query = q.GetString() ?? string.Empty;
                 return "help shown";
             }
+            case "helpLanguage":
+            {
+                // the manual in the other language, on the same page — what the language button does
+                if (_vm.Help is null) return "no help window";
+                var code = command.TryGetProperty("language", out var lg) ? lg.GetString() : null;
+                if (string.IsNullOrEmpty(code)) _vm.Help.ToggleLanguageCommand.Execute(null);
+                else _vm.Help.SwitchLanguage(code);
+                return "help in " + _vm.Help.Language;
+            }
             case "closeHelp":
                 _helpWindow?.Close();
                 return "help closed";

@@ -52,5 +52,6 @@ application learns from use:
 | `ShowLog` | whether the log panel was open |
 | `IonTableColumnOrder` | the order the reviewer arranged the ion table's columns in |
 | `IonTableDetached` | whether the ion table was torn off into its own window |
+| `HelpLanguage` | the language the manual was last read in, `en` or `pt` |
 
 A corrupt file is ignored and the defaults used. Deleting it resets everything above.

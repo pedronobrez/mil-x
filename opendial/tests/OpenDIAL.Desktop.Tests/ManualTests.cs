@@ -20,7 +20,12 @@ namespace OpenDIAL.Desktop.Tests;
 /// </summary>
 public class ManualTests
 {
-    private static readonly Manual Embedded = Manual.Load();
+    private static readonly Dictionary<string, Manual> Editions = Manual.Languages.ToDictionary(l => l.Code, l => Manual.Load(l.Code));
+
+    /// <summary>The embedded manual in one of its languages; every structural check runs on each.</summary>
+    private static Manual Edition(string language) => Editions[language];
+
+    public static IEnumerable<object[]> Languages => Manual.Languages.Select(l => new object[] { l.Code });
 
     /// <summary>The repository, found from the test binary, for the files the tests read from source.</summary>
     private static string RepositoryRoot
@@ -33,9 +38,10 @@ public class ManualTests
         }
     }
 
-    [Fact]
-    public void The_manual_is_embedded_and_has_its_sections()
+    [Theory, MemberData(nameof(Languages))]
+    public void The_manual_is_embedded_and_has_its_sections(string language)
     {
+        var Embedded = Edition(language);
         Assert.True(Embedded.Pages.Count >= 25, $"only {Embedded.Pages.Count} pages are embedded");
         foreach (var section in Manual.SectionOrder)
         {
@@ -44,9 +50,10 @@ public class ManualTests
         Assert.NotNull(Embedded.Find("index"));
     }
 
-    [Fact]
-    public void Every_page_has_front_matter()
+    [Theory, MemberData(nameof(Languages))]
+    public void Every_page_has_front_matter(string language)
     {
+        var Embedded = Edition(language);
         foreach (var page in Embedded.Pages)
         {
             Assert.False(string.IsNullOrWhiteSpace(page.Title) || page.Title == page.Slug, $"{page.Slug} has no title");
@@ -57,16 +64,18 @@ public class ManualTests
         }
     }
 
-    [Fact]
-    public void Every_wikilink_points_at_a_page_that_exists()
+    [Theory, MemberData(nameof(Languages))]
+    public void Every_wikilink_points_at_a_page_that_exists(string language)
     {
+        var Embedded = Edition(language);
         var broken = Embedded.BrokenLinks();
         Assert.True(broken.Count == 0, "broken links: " + string.Join(", ", broken.Select(b => $"{b.Page.Slug} -> [[{b.Link}]]")));
     }
 
-    [Fact]
-    public void Every_anchor_names_a_heading_on_its_page()
+    [Theory, MemberData(nameof(Languages))]
+    public void Every_anchor_names_a_heading_on_its_page(string language)
     {
+        var Embedded = Edition(language);
         var anchors = new Regex(@"\[\[([^\]\|#]+)#([^\]\|]+)(\|[^\]]*)?\]\]");
         var missing = new List<string>();
         foreach (var page in Embedded.Pages)
@@ -85,9 +94,10 @@ public class ManualTests
         Assert.True(missing.Count == 0, "anchors with no heading: " + string.Join(", ", missing));
     }
 
-    [Fact]
-    public void Every_page_is_reachable_from_the_index()
+    [Theory, MemberData(nameof(Languages))]
+    public void Every_page_is_reachable_from_the_index(string language)
     {
+        var Embedded = Edition(language);
         var index = Embedded.Find("index")!;
         var reachable = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { index.Slug };
         var queue = new Queue<ManualPage>();
@@ -103,9 +113,10 @@ public class ManualTests
         Assert.True(orphans.Count == 0, "pages no link reaches: " + string.Join(", ", orphans));
     }
 
-    [Fact]
-    public void Every_image_the_manual_shows_is_embedded()
+    [Theory, MemberData(nameof(Languages))]
+    public void Every_image_the_manual_shows_is_embedded(string language)
     {
+        var Embedded = Edition(language);
         var images = new Regex(@"!\[[^\]]*\]\(([^)]+)\)");
         var names = typeof(Manual).Assembly.GetManifestResourceNames().ToHashSet(StringComparer.Ordinal);
         var missing = new List<string>();
@@ -119,31 +130,34 @@ public class ManualTests
         Assert.True(missing.Count == 0, "images not embedded: " + string.Join(", ", missing));
     }
 
-    [Fact]
-    public void The_versions_page_names_this_build()
+    [Theory, MemberData(nameof(Languages))]
+    public void The_versions_page_names_this_build(string language)
     {
+        var Embedded = Edition(language);
         var versions = Embedded.Find("versions");
         Assert.NotNull(versions);
         Assert.Contains("## " + AppInfo.Version, versions!.Body);
         Assert.Contains(AppInfo.UpstreamVersion, versions.Body);
     }
 
-    [Fact]
-    public void The_search_puts_the_page_named_after_the_word_first()
+    [Theory, MemberData(nameof(Languages))]
+    public void The_search_puts_the_page_named_after_the_word_first(string language)
     {
+        var Embedded = Edition(language);
         var hits = Embedded.Search("drift correction");
         Assert.NotEmpty(hits);
         Assert.Equal("statistics-workspace", hits[0].Page.Slug);
         Assert.Contains("drift", hits[0].Snippet, StringComparison.OrdinalIgnoreCase);
 
-        Assert.Equal("keyboard-shortcuts", Embedded.Search("shortcuts")[0].Page.Slug);
+        Assert.Equal("keyboard-shortcuts", Embedded.Search(language == "pt" ? "atalhos" : "shortcuts")[0].Page.Slug);
         Assert.Empty(Embedded.Search("zebra crossing"));
         Assert.Empty(Embedded.Search("   "));
     }
 
-    [Fact]
-    public void Backlinks_are_the_reverse_of_links()
+    [Theory, MemberData(nameof(Languages))]
+    public void Backlinks_are_the_reverse_of_links(string language)
     {
+        var Embedded = Edition(language);
         var reviewTags = Embedded.Find("review-tags")!;
         Assert.Contains("analytics-workspace", reviewTags.Backlinks);
         foreach (var page in Embedded.Pages)
@@ -160,9 +174,10 @@ public class ManualTests
     /// button has to appear in the manual. This is what keeps a control from being added without a
     /// word about it: the build goes red until the sentence is written.
     /// </summary>
-    [Fact]
-    public void Every_control_the_interface_shows_is_described()
+    [Theory, MemberData(nameof(Languages))]
+    public void Every_control_the_interface_shows_is_described(string language)
     {
+        var Embedded = Edition(language);
         var views = Path.Combine(RepositoryRoot, "src", "OpenDIAL.Desktop", "Views");
         Assert.True(Directory.Exists(views), views);
         var labels = new Regex(@"<(?:Button|ToggleButton|MenuItem|TabItem|CheckBox|RadioButton)\b[^>]*?\b(?:Content|Header)=""([^""{]+)""", RegexOptions.Compiled);
@@ -190,9 +205,10 @@ public class ManualTests
         Assert.True(missing.Count == 0, "controls the manual does not mention: " + string.Join("; ", missing.Distinct()));
     }
 
-    [Fact]
-    public void Every_shortcut_is_in_the_shortcut_table()
+    [Theory, MemberData(nameof(Languages))]
+    public void Every_shortcut_is_in_the_shortcut_table(string language)
     {
+        var Embedded = Edition(language);
         var page = Embedded.Find("keyboard-shortcuts")!.Body;
         var window = Path.Combine(RepositoryRoot, "src", "OpenDIAL.Desktop", "Views", "MainWindow.axaml");
         var analytics = Path.Combine(RepositoryRoot, "src", "OpenDIAL.Desktop", "Views", "AnalyticsView.axaml");
@@ -211,6 +227,72 @@ public class ManualTests
             }
         }
         Assert.True(missing.Count == 0, "shortcuts not on the page: " + string.Join(", ", missing));
+    }
+
+    /// <summary>
+    /// The Portuguese edition is the English one page for page: the same slugs, in the same sections and
+    /// order, showing the same figures. A page added to one without the other fails here.
+    /// </summary>
+    [Fact]
+    public void The_editions_have_the_same_pages()
+    {
+        var english = Edition("en");
+        var images = new Regex(@"!\[[^\]]*\]\(([^)]+)\)");
+        foreach (var (code, _) in Manual.Languages.Where(l => l.Code != "en"))
+        {
+            var other = Edition(code);
+            Assert.Equal(code, other.Language);
+            Assert.Equal(english.Pages.Select(p => p.Slug), other.Pages.Select(p => p.Slug));
+            foreach (var page in english.Pages)
+            {
+                var twin = other.Find(page.Slug)!;
+                Assert.Equal(page.Section, twin.Section);
+                Assert.Equal(page.Order, twin.Order);
+                Assert.Equal(images.Matches(page.Body).Select(m => m.Groups[1].Value), images.Matches(twin.Body).Select(m => m.Groups[1].Value));
+            }
+        }
+    }
+
+    /// <summary>The switch is a control like any other: each edition names both languages.</summary>
+    [Theory, MemberData(nameof(Languages))]
+    public void Each_edition_names_the_language_switch(string language)
+    {
+        var text = string.Join("\n", Edition(language).Pages.Select(p => p.Body));
+        foreach (var (_, name) in Manual.Languages) Assert.Contains(name, text);
+    }
+
+    [AvaloniaFact]
+    public void The_help_window_switches_language_on_the_same_page()
+    {
+        var vm = new HelpViewModel(Edition("en"));
+        var window = new HelpWindow { DataContext = vm, Width = 1100, Height = 760 };
+        window.Show();
+        Assert.True(vm.Open("review-tags"));
+        Assert.Equal("Português", vm.OtherLanguageName);
+        string? chosen = null;
+        vm.LanguageChanged = code => chosen = code;
+
+        vm.ToggleLanguageCommand.Execute(null);
+        Assert.Equal("pt", vm.Language);
+        Assert.Equal("pt", chosen);
+        Assert.Equal("English", vm.OtherLanguageName);
+        Assert.Equal("review-tags", vm.Current?.Slug);
+        Assert.Equal("review-tags", window.ShownPage?.Slug);
+        Assert.StartsWith("Revisão", vm.Breadcrumb);
+        Assert.Contains(vm.Sections, s => s.Name == "Áreas de trabalho");
+        var headings = window.GetVisualDescendants().OfType<LinkTextBlock>().Where(t => t.Classes.Contains("heading")).ToList();
+        Assert.Equal("Marcações e vereditos", headings[0].Tag);
+
+        // the trail carried over as slugs, so Back still goes where it went, in the new language
+        Assert.True(vm.CanGoBack);
+        vm.BackCommand.Execute(null);
+        Assert.Equal("index", vm.Current?.Slug);
+        Assert.Equal("pt", vm.Current?.Slug is null ? null : vm.Language);
+
+        vm.SwitchLanguage("en");
+        Assert.Equal("en", vm.Language);
+        Assert.Equal("index", vm.Current?.Slug);
+        window.Close();
     }
 
     [Fact]
@@ -264,7 +346,7 @@ public class ManualTests
     [AvaloniaFact]
     public void The_help_window_renders_a_page_and_follows_a_link()
     {
-        var vm = new HelpViewModel(Embedded);
+        var vm = new HelpViewModel(Edition("en"));
         var window = new HelpWindow { DataContext = vm, Width = 1100, Height = 760 };
         window.Show();
         Assert.Equal("index", window.ShownPage?.Slug);

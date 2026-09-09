@@ -28,6 +28,15 @@ MANUAL = os.path.join(ROOT, "docs", "manual")
 IMAGES = os.path.join(ROOT, "docs", "images")
 
 SECTION_ORDER = ["Start", "Workspaces", "Reviewing", "Data and files", "Reference", "Under the hood", "Help"]
+# what the sections and the fixed strings are called in each language the manual exists in
+LANGUAGES = {
+    "en": {"folder": MANUAL, "sections": {s: s for s in SECTION_ORDER}, "subtitle": "The manual", "tracks": "tracks MS-DIAL 5.5.260817",
+           "referenced": "Referenced by", "title": "OpenDIAL manual"},
+    "pt": {"folder": os.path.join(MANUAL, "pt"),
+           "sections": {"Start": "Início", "Workspaces": "Áreas de trabalho", "Reviewing": "Revisão", "Data and files": "Dados e arquivos",
+                        "Reference": "Referência", "Under the hood": "Por dentro", "Help": "Ajuda"},
+           "subtitle": "O manual", "tracks": "acompanha o MS-DIAL 5.5.260817", "referenced": "Referenciado por", "title": "Manual do OpenDIAL"},
+}
 
 FRONT = re.compile(r"\A---\s*\n(.*?)\n---\s*\n", re.S)
 WIKI = re.compile(r"\[\[([^\]\|#]+)(?:#([^\]\|]*))?(?:\|([^\]]*))?\]\]")
@@ -86,13 +95,13 @@ def slugify(text: str) -> str:
     return re.sub(r"[\s_]+", "-", text).strip("-")
 
 
-def read_pages() -> list[dict]:
+def read_pages(folder: str = MANUAL) -> list[dict]:
     pages = []
-    for name in sorted(os.listdir(MANUAL)):
+    for name in sorted(os.listdir(folder)):
         if not name.endswith(".md"):
             continue
         slug = name[:-3]
-        text = open(os.path.join(MANUAL, name), encoding="utf-8").read().replace("\r\n", "\n")
+        text = open(os.path.join(folder, name), encoding="utf-8").read().replace("\r\n", "\n")
         meta = {"title": slug, "section": "Reference", "order": 999, "summary": ""}
         match = FRONT.match(text)
         body = text
@@ -109,7 +118,8 @@ def read_pages() -> list[dict]:
     return pages
 
 
-def compile_markdown(pages: list[dict], images_dir: str) -> str:
+def compile_markdown(pages: list[dict], images_dir: str, lang: str = "en") -> str:
+    words = LANGUAGES[lang]
     by_slug = {p["slug"]: p for p in pages}
     by_title = {p["title"].lower(): p for p in pages}
     links_to: dict[str, list[str]] = {p["slug"]: [] for p in pages}
@@ -124,8 +134,8 @@ def compile_markdown(pages: list[dict], images_dir: str) -> str:
             if target and target["slug"] != page["slug"] and page["slug"] not in links_to[target["slug"]]:
                 links_to[target["slug"]].append(page["slug"])
 
-    out = [f'<div class="cover"><div class="wordmark">OpenDIAL</div><div class="sub">The manual</div>'
-           f'<div class="version">version {version()} · tracks MS-DIAL 5.5.260817</div></div>\n']
+    out = [f'<div class="cover"><div class="wordmark">OpenDIAL</div><div class="sub">{words["subtitle"]}</div>'
+           f'<div class="version">{"versão" if lang == "pt" else "version"} {version()} · {words["tracks"]}</div></div>\n']
     for page in pages:
         body = page["body"]
 
@@ -150,7 +160,7 @@ def compile_markdown(pages: list[dict], images_dir: str) -> str:
                 text = m.group(2)
                 if first and level == 1:
                     first = False
-                    lines.append(f'<p class="section">{html.escape(page["section"])}</p>')
+                    lines.append(f'<p class="section">{html.escape(words["sections"].get(page["section"], page["section"]))}</p>')
                     lines.append(f'# {text} {{#{page["slug"]}}}')
                     if page["summary"]:
                         lines.append("")
@@ -164,7 +174,7 @@ def compile_markdown(pages: list[dict], images_dir: str) -> str:
         body = body.replace("](images/", f"]({images_dir}/")
         if links_to[page["slug"]]:
             refs = ", ".join(f'[{by_slug[s]["title"]}](#{s})' for s in links_to[page["slug"]])
-            body += f'\n\n<p class="referenced">Referenced by: {refs}</p>\n'
+            body += f'\n\n<p class="referenced">{words["referenced"]}: {refs}</p>\n'
         out.append(body)
         out.append("\n")
     return "\n".join(out)
@@ -174,19 +184,20 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--out", default=os.path.join(ROOT, "dist"), help="output folder (default: dist)")
     parser.add_argument("--no-pdf", action="store_true", help="only the HTML")
+    parser.add_argument("--lang", default="en", choices=sorted(LANGUAGES), help="which manual: en (default) or pt")
     args = parser.parse_args()
 
     if shutil.which("pandoc") is None:
         print("pandoc is needed: brew install pandoc", file=sys.stderr)
         return 2
     os.makedirs(args.out, exist_ok=True)
-    pages = read_pages()
-    stem = f"OpenDIAL-manual-{version()}"
+    pages = read_pages(LANGUAGES[args.lang]["folder"])
+    stem = f"OpenDIAL-manual-{version()}" if args.lang == "en" else f"OpenDIAL-manual-{args.lang}-{version()}"
     html_path = os.path.join(args.out, stem + ".html")
     pdf_path = os.path.join(args.out, stem + ".pdf")
 
     with tempfile.TemporaryDirectory() as work:
-        markdown = compile_markdown(pages, IMAGES)
+        markdown = compile_markdown(pages, IMAGES, args.lang)
         md_path = os.path.join(work, "manual.md")
         css_path = os.path.join(work, "manual.css")
         open(md_path, "w", encoding="utf-8").write(markdown)
@@ -194,7 +205,7 @@ def main() -> int:
         subprocess.run([
             "pandoc", md_path, "-f", "markdown+pipe_tables+fenced_code_blocks+raw_html+header_attributes+implicit_figures",
             "-t", "html5", "--standalone", "--toc", "--toc-depth=2", "--embed-resources",
-            "--metadata", f"title=OpenDIAL manual {version()}", "--metadata", "lang=en",
+            "--metadata", f"title={LANGUAGES[args.lang]['title']} {version()}", "--metadata", f"lang={args.lang}",
             "-c", css_path, "-o", html_path,
         ], check=True)
         # pandoc's own title block duplicates the cover; drop it
