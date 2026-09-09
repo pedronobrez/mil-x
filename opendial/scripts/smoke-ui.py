@@ -497,6 +497,7 @@ def main() -> int:
         SHORTCUT_WAIT = 30
         say("every workspace shortcut goes where it says")
         for number, code in KEY_CODES.items():
+            front()   # whatever took the front since the last step gives it back before the key goes down
             press(code)
             state = wait_for(probe, lambda s, n=number: s.get("workspace") == n - 1,
                              f"Cmd+{number} to select {WORKSPACES[number - 1]}", SHORTCUT_WAIT)
@@ -504,6 +505,7 @@ def main() -> int:
                   f"Cmd+{number} selects {WORKSPACES[number - 1]}")
 
         say("and so does the control key, for a keyboard without a command key")
+        front()
         press(KEY_CODES[2], modifier="control")
         wait_for(probe, lambda s: s.get("workspace") == 1, "Ctrl+2 to select Analytics", SHORTCUT_WAIT)
         check(True, "Ctrl+2 selects Analytics")
