@@ -53,6 +53,9 @@ file named for the table:
 | `pattern-search.tsv` | `Feature id`, `Feature`, `Class`, `Correlation`, `p` |
 | `random-forest.tsv` | `Feature id`, `Feature`, `Class`, `Mean decrease accuracy`, `Mean decrease Gini` |
 | `enrichment.tsv` | `Set`, `Kind`, `Size`, `Hits`, `Expected`, `Enrichment ratio`, `p`, the adjusted p, and `Members` — the significant features in the set, semicolon-separated |
+| `reactions.tsv` | `Reaction` (the table's id), `Reactant`, `Product`, the log2 change of the weight (first class over second), `p`, `Z`, `Status`, `Genes`, `Enzyme` — from the [[pathways]] page |
+| `pathways.tsv` | `Pathway` (the chain), `Reactions` (its length), `Z`, `Status`, `Genes` |
+| `predicted-reactions.tsv` | `Reaction`, `Measured`, `Not measured`, `Genes` — the reactions one more confirmed class would open up |
 
 `Feature id` is MS-DIAL's alignment ID, the same number as in the reviewed table and the ion
 table, so the tables join. The internal standards themselves are not in the ratio tables.

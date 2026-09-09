@@ -357,4 +357,63 @@ public class OneFactorTests
         Assert.DoesNotContain("<image", text);
         window.Close();
     }
+
+    [AvaloniaFact]
+    public void The_pathways_score_the_reactions_between_the_two_classes()
+    {
+        var (vm, _, _) = Reviewed();
+        var a = vm.Analysis;
+        a.ClassA = "treated";
+        a.ClassB = "control";
+        var p = vm.Pathways;
+        Assert.Equal("Not computed yet.", p.Message);
+
+        p.ComputeCommand.Execute(null);
+        Assert.NotNull(p.Result);
+        // PC and PE are confirmed, so PE → PC is testable at the class level; PS, LPC and the rest are not measured
+        var pemt = Assert.Single(p.Reactions, r => r.Id == "PEMT");
+        Assert.True(pemt.Tested);
+        Assert.Contains(p.Predicted, r => r.Missing == "PS");
+        Assert.Contains(p.Predicted, r => r.Missing == "LPC");
+        Assert.NotEmpty(p.Pathways);
+        Assert.Contains("class level", p.Message);
+        Assert.Same(pemt, p.SelectedReaction);
+        Assert.Equal(2, p.ReactionBoxes.Count);
+        Assert.Contains("PEMT", p.ReactionDetail);
+
+        // the species level follows the compositions: PE 36:2 and PC 36:2 are both in the fixture
+        p.Level = PathwaysViewModel.Levels[1];
+        p.ComputeCommand.Execute(null);
+        Assert.Contains(p.Reactions, r => r.Reactant == "PE 36:2" && r.Product == "PC 36:2");
+        Assert.Contains("species level", p.Message);
+
+        // choosing a pathway lights its chain and selects its first reaction
+        var chain = p.Pathways.First();
+        p.SelectedPathway = chain;
+        Assert.Equal(chain.Nodes, p.HighlightedChain);
+        Assert.Same(chain.Reactions[0], p.SelectedReaction);
+
+        // a new dataset clears the result, so it never describes numbers the pages no longer show
+        a.SourceMode = OneFactorViewModel.SourceModes[2];
+        Assert.Null(p.Result);
+        Assert.Equal("Not computed yet.", p.Message);
+    }
+
+    [AvaloniaFact]
+    public void The_pathway_graph_draws_and_exports()
+    {
+        var (vm, _, _) = Reviewed();
+        vm.Analysis.ClassA = "treated";
+        vm.Analysis.ClassB = "control";
+        vm.Pathways.ComputeCommand.Execute(null);
+        var graph = new PathwayGraph { Result = vm.Pathways.Result, Width = 700, Height = 500 };
+        var window = new Window { Content = graph, Width = 720, Height = 520 };
+        window.Show();
+        window.UpdateLayout();
+        var svg = ChartExport.ToSvg(graph);
+        Assert.Contains("<line", svg);
+        Assert.Contains("PC", svg);
+        Assert.Contains("faster in treated", svg);
+        window.Close();
+    }
 }

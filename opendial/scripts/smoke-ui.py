@@ -551,6 +551,16 @@ def main() -> int:
                     check(bool(stats.get("enrichment")), f"the enrichment answered: {stats.get('enrichment')} ({stats.get('enrichmentSets')} set(s))")
                     shot("statistics-enrichment-computed")
 
+                    send_command(probe, {"action": "selectStatisticsPage", "page": "Pathways"})
+                    state = wait_for(probe, lambda s: (s.get("statistics") or {}).get("page") == "Pathways", "the Pathways page", 15)
+                    before = state["statistics"].get("pathways")
+                    click_control(state, "control.PathwaysCompute", "the pathways' Compute button")
+                    state = wait_for(probe, lambda s: (s.get("statistics") or {}).get("pathways") not in (before, "", None),
+                                     "the pathways to be scored", 60)
+                    stats = state["statistics"]
+                    check(bool(stats.get("pathways")), f"the pathway analysis answered: {stats.get('pathways')} ({stats.get('reactions')} reaction(s) tested)")
+                    shot("statistics-pathways")
+
                 for fmt in ("svg", "png"):
                     chart = os.path.join(work, f"volcano.{fmt}")
                     result = send_command(probe, {"action": "exportChart", "page": "Volcano plot", "index": 0, "format": fmt, "scale": 2, "path": chart})["lastCommand"]

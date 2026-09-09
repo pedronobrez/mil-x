@@ -23,6 +23,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- the lipid reaction network the pathway analysis reads -->
+    <EmbeddedResource Include="Statistics\Pathways\reactions.tsv" LogicalName="OpenDIAL.Pipeline.Statistics.Pathways.reactions.tsv" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- so a test can hold the fast cross-validation to the plain one -->
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
       <_Parameter1>OpenDIAL.Pipeline.Tests</_Parameter1>

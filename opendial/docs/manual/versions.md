@@ -10,9 +10,23 @@ summary: What each version of OpenDIAL brought; the notes are updated with every
 The version shown in **Help ▸ About OpenDIAL** and in the window's probe is the one stamped in
 `opendial/Directory.Build.props`. This page names it, and a test fails the build when it does not.
 
-## 0.3.0 — September 2026
+## 0.4.0 — September 2026
 
 The current version. It tracks MS-DIAL 5.5.260817.
+
+**New**
+
+- The **Pathways** page of the Statistics workspace: LIPID MAPS' BioPAN on the reviewed analytes — the mammalian lipid reaction network (sixty-odd reactions over some thirty classes, with their genes) weighted by product over reactant in every injection, compared between the two classes of the comparison, scored as a Z, and chained into pathways; at the class, molecular-species and fatty-acid levels; drawn as a network with the reactions' injections beside it, exported as tables and as SVG or PNG. See [[pathways]] and [[biopan-plan]].
+- The smoke test builds the heatmap, computes the enrichment and scores the pathways by clicking their buttons, and the probe reports what each answered.
+
+**Fixed**
+
+- The probe did not rewrite its state when the one-factor analysis changed, so a heatmap could be on screen while the probe said it was not built.
+- The smoke test filtered the ion table by a feature's id, which for feature 0 matched half the table; it filters by the m/z as printed.
+
+## 0.3.0 — September 2026
+
+It tracks MS-DIAL 5.5.260817.
 
 **New**
 

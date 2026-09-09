@@ -5,8 +5,8 @@
     "Versions" page to name it, so a release without its notes does not build green.
   -->
   <PropertyGroup>
-    <Version>0.3.0</Version>
-    <InformationalVersion>0.3.0</InformationalVersion>
+    <Version>0.4.0</Version>
+    <InformationalVersion>0.4.0</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
 </Project>

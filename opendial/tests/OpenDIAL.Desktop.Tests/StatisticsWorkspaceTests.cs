@@ -110,7 +110,7 @@ public class StatisticsWorkspaceTests
         var tabs = view.GetVisualDescendants().OfType<TabControl>().FirstOrDefault(t => t.Name == "StatsTabs");
         Assert.NotNull(tabs);
         // eighteen pages under six headings, and the workspace opens on a page, not a heading
-        Assert.Equal(18, tabs!.Items.OfType<TabItem>().Count(t => !t.Classes.Contains("section")));
+        Assert.Equal(19, tabs!.Items.OfType<TabItem>().Count(t => !t.Classes.Contains("section")));
         Assert.Equal(6, tabs.Items.OfType<TabItem>().Count(t => t.Classes.Contains("section")));
         Assert.Equal("Data processing", (tabs.SelectedItem as TabItem)?.Header);
 

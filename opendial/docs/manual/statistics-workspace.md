@@ -2,7 +2,7 @@
 title: The Statistics workspace
 section: Workspaces
 order: 16
-summary: The dataset seen whole — eighteen pages down the left, from the data and its preprocessing through the tests, the volcano, the models, the clustering and the enrichment, every one reading the same dataset.
+summary: The dataset seen whole — nineteen pages down the left, from the data and its preprocessing through the tests, the volcano, the models, the clustering and the enrichment, every one reading the same dataset.
 ---
 
 # The Statistics workspace
@@ -59,11 +59,13 @@ They are listed down the left, in the order the analysis is usually read:
 | | **Heatmap** | the top features against every injection, both clustered |
 | | **K-means** | the injections partitioned into *k* groups without their labels |
 | Enrichment | **Lipid enrichment** | whether the features that changed fall into a lipid class, a chain length or an unsaturation more often than chance |
+| | **Pathways** | which reactions of the lipid network ran faster or slower between the two classes, and which chains of them — BioPAN, on the reviewed analytes |
 | Quality | **Drift correction** | the instrument's drift traced on the controls and divided out |
 | | **Molecular network** | which features fragment alike |
 
-The pages under *One feature at a time*, *Clustering* (apart from the dendrogram), *Enrichment*
-and the random forest are described in [[one-factor-analysis]]. The rest are below.
+The pages under *One feature at a time*, *Clustering* (apart from the dendrogram), the lipid
+enrichment and the random forest are described in [[one-factor-analysis]]; the pathways in
+[[pathways]]. The rest are below.
 
 ## Principal components
 
@@ -225,5 +227,4 @@ the source does not change, apart from **Annotated only**.
 
 Multi-block and multi-level designs — paired samples beyond the two-class **Paired** test,
 repeated measures, several kinds of measurement on the same subjects, and two-factor designs with
-an interaction. Everything above assumes one factor and independent injections. Pathway analysis
-over reactions rather than sets — LIPID MAPS' BioPAN — is planned and described in [[biopan-plan]].
+an interaction. Everything above assumes one factor and independent injections.

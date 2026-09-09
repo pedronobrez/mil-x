@@ -27,6 +27,8 @@ summary: Short definitions of the terms used in the application and this manual.
 
 **Batch** — the list of injections a project processes together; also the number that groups injections run in one sequence, for the drift correction.
 
+**BioPAN** — LIPID MAPS' pathway analysis for lipidomics: reactions of the lipid network weighted by product over reactant and compared between two conditions. Built into the [[pathways]] page.
+
 **Candidate** — one library match kept for a feature; the best is the annotation.
 
 **Centroid** — a spectrum reduced to one m/z and intensity per peak, as opposed to profile.
@@ -89,6 +91,8 @@ summary: Short definitions of the terms used in the application and this manual.
 
 **QC** — a pooled quality-control injection, the same material every time; the type the drift correction reads.
 
+**Reaction weight** — a reaction's product abundance divided by its reactant abundance in one injection; what the pathway analysis compares between classes.
+
 **Relative abundance** — see *area ratio*.
 
 **Representative** — the injection whose peak scored best for a feature; its spectrum and name are the feature's.
@@ -100,6 +104,8 @@ summary: Short definitions of the terms used in the application and this manual.
 **Scores** — where each injection lands on a model's components.
 
 **S-plot** — covariance against correlation of every feature with the predictive component of an OPLS-DA model.
+
+**Stouffer's method** — combining Z-scores by summing them and dividing by the square root of their number; how a pathway's Z is made from its reactions'.
 
 **Survey scan** — an MS1 scan.
 
@@ -117,3 +123,4 @@ summary: Short definitions of the terms used in the application and this manual.
 
 
 **Z-score** — a value minus its mean, divided by its standard deviation; what a standardised heatmap row shows.
+

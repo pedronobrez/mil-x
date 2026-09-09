@@ -632,6 +632,93 @@
           </Border>
         </TabItem>
 
+        <TabItem Header="Pathways">
+          <Border Classes="panel">
+            <DockPanel Margin="6">
+              <Border DockPanel.Dock="Top" Classes="hairline-bottom strip">
+                <StackPanel Classes="options" VerticalAlignment="Center">
+                  <TextBlock Classes="label" Text="Level" Margin="0" />
+                  <ComboBox Classes="compact" ItemsSource="{x:Static vm:PathwaysViewModel.Levels}" SelectedItem="{Binding Pathways.Level}" Width="150"
+                            ToolTip.Tip="Whole classes, molecular species with their chains, or the fatty acids summed over the species that carry them" />
+                  <TextBlock Classes="label" Text="|Z| ≥" />
+                  <ComboBox Classes="compact" ItemsSource="{x:Static vm:PathwaysViewModel.Thresholds}" SelectedItem="{Binding Pathways.Threshold}" Width="130" />
+                  <TextBlock Classes="label" Text="chains up to" />
+                  <TextBox Text="{Binding Pathways.MaxPathLengthText}" Width="40" ToolTip.Tip="How many reactions a pathway may chain (1 to 6)" />
+                  <CheckBox Classes="compact" Content="Show unchanged" IsChecked="{Binding Pathways.ShowUnchanged}" ToolTip.Tip="Draw the reactions that did not pass the threshold too" />
+                  <Button x:Name="PathwaysCompute" Classes="tool strong" Content="Compute" Command="{Binding Pathways.ComputeCommand}"
+                          ToolTip.Tip="Score every reaction between the two classes of the comparison" />
+                  <Button Classes="tool" Content="Export reactions…" Command="{Binding Pathways.ExportTableCommand}" CommandParameter="reactions" />
+                  <Button Classes="tool" Content="Export pathways…" Command="{Binding Pathways.ExportTableCommand}" CommandParameter="pathways" />
+                  <TextBlock Classes="hint" Text="{Binding Pathways.Message}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+              </Border>
+              <Grid ColumnDefinitions="*,6,440">
+                <Grid Grid.Column="0" RowDefinitions="*,6,190">
+                  <DockPanel Grid.Row="0">
+                    <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,6,4,0" TextWrapping="Wrap"
+                               Text="After BioPAN (LIPID MAPS): each reaction is weighted by its product over its reactant in every injection, the weights are compared between the two classes, and the p becomes a signed Z. Green runs faster in the first class, purple slower; the node colour is the class's own change. Click an arrow for its injections; pick a pathway in the table to light its chain." />
+                    <c:ChartFrame HeadingText="REACTION NETWORK · CLICK AN ARROW"><c:PathwayGraph Result="{Binding Pathways.Result}" SelectedReaction="{Binding Pathways.SelectedReaction, Mode=TwoWay}" HighlightedChain="{Binding Pathways.HighlightedChain}" ShowUnchanged="{Binding Pathways.ShowUnchanged}" /></c:ChartFrame>
+                  </DockPanel>
+                  <GridSplitter Grid.Row="1" Classes="horizontal" ResizeDirection="Rows" />
+                  <DockPanel Grid.Row="2">
+                    <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,4,4,0" Text="{Binding Pathways.ReactionDetail}" TextWrapping="Wrap" />
+                    <c:ChartFrame HeadingText="THE SELECTED REACTION · LOG2 OF PRODUCT OVER REACTANT, PER INJECTION"><c:BoxPlotChart Groups="{Binding Pathways.ReactionBoxes}" YLabel="log2 weight" /></c:ChartFrame>
+                  </DockPanel>
+                </Grid>
+                <GridSplitter Grid.Column="1" Classes="vertical" ResizeDirection="Columns" />
+                <TabControl Grid.Column="2" Classes="panel-tabs">
+                  <TabItem Header="Reactions">
+                    <DataGrid ItemsSource="{Binding Pathways.Reactions}" SelectedItem="{Binding Pathways.SelectedReaction, Mode=TwoWay}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" CanUserSortColumns="True">
+                      <DataGrid.Columns>
+                        <DataGridTextColumn Header="Reaction" Binding="{Binding Label}" Width="*" />
+                        <DataGridTextColumn Header="log2" Binding="{Binding Log2Change, StringFormat={}{0:0.00}}" Width="56" />
+                        <DataGridTextColumn Header="Z" Binding="{Binding Z, StringFormat={}{0:0.00}}" Width="52" />
+                        <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="82" />
+                        <DataGridTextColumn Header="Genes" Binding="{Binding GeneText}" Width="120" />
+                      </DataGrid.Columns>
+                    </DataGrid>
+                  </TabItem>
+                  <TabItem Header="Pathways">
+                    <DataGrid ItemsSource="{Binding Pathways.Pathways}" SelectedItem="{Binding Pathways.SelectedPathway, Mode=TwoWay}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" CanUserSortColumns="True">
+                      <DataGrid.Columns>
+                        <DataGridTextColumn Header="Pathway" Binding="{Binding Chain}" Width="*" />
+                        <DataGridTextColumn Header="k" Binding="{Binding Length}" Width="34" />
+                        <DataGridTextColumn Header="Z" Binding="{Binding Z, StringFormat={}{0:0.00}}" Width="52" />
+                        <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="82" />
+                      </DataGrid.Columns>
+                    </DataGrid>
+                  </TabItem>
+                  <TabItem Header="Not measured">
+                    <DockPanel>
+                      <StackPanel DockPanel.Dock="Bottom" Classes="options" Margin="4,6,4,0">
+                        <Button Classes="tool" Content="Export list…" Command="{Binding Pathways.ExportTableCommand}" CommandParameter="predicted" />
+                        <TextBlock Classes="hint" Text="Reactions with one end confirmed and the other not: confirm the missing class in the review and they become testable." TextWrapping="Wrap" VerticalAlignment="Center" />
+                      </StackPanel>
+                      <DataGrid ItemsSource="{Binding Pathways.Predicted}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" CanUserSortColumns="True">
+                        <DataGrid.Columns>
+                          <DataGridTextColumn Header="Reaction" Binding="{Binding Reaction}" Width="*" />
+                          <DataGridTextColumn Header="Measured" Binding="{Binding Present}" Width="80" />
+                          <DataGridTextColumn Header="Missing" Binding="{Binding Missing}" Width="80" />
+                          <DataGridTextColumn Header="Genes" Binding="{Binding GeneText}" Width="120" />
+                        </DataGrid.Columns>
+                      </DataGrid>
+                    </DockPanel>
+                  </TabItem>
+                  <TabItem Header="Nodes">
+                    <DataGrid ItemsSource="{Binding Pathways.Nodes}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" CanUserSortColumns="True">
+                      <DataGrid.Columns>
+                        <DataGridTextColumn Header="Node" Binding="{Binding Name}" Width="*" />
+                        <DataGridTextColumn Header="Analytes" Binding="{Binding Members}" Width="70" />
+                        <DataGridTextColumn Header="log2 change" Binding="{Binding Log2Change, StringFormat={}{0:0.00}}" Width="90" />
+                      </DataGrid.Columns>
+                    </DataGrid>
+                  </TabItem>
+                </TabControl>
+              </Grid>
+            </DockPanel>
+          </Border>
+        </TabItem>
+
         <!-- ================================================================ QUALITY -->
         <TabItem Header="Quality" Classes="section" />
         <TabItem Header="Drift correction">

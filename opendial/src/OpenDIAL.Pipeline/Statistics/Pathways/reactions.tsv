@@ -1,0 +1,73 @@
+# The mammalian lipid reaction network, after BioPAN (LIPID MAPS; Gaud et al., F1000Research 2021),
+# restricted to the subclasses MS-DIAL annotates in an LC-MS lipidomics run.
+#
+# kind says how a reaction maps molecular species onto one another:
+#   preserving  the chains are kept; PE 34:1 -> PC 34:1
+#   removes     one chain is lost; PC 16:0_18:1 -> LPC 16:0 or LPC 18:1 (needs the chains resolved)
+#   adds        one chain is gained; LPC 16:0 -> PC 16:0_18:1 (needs the product's chains resolved)
+#   class       only the whole classes relate; Chol -> CE
+#
+# id	reactant	product	kind	genes	note
+PAP	PA	DG	preserving	LPIN1;LPIN2;LPIN3	phosphatidate phosphatase
+DGK	DG	PA	preserving	DGKA;DGKD;DGKE;DGKQ;DGKZ	diacylglycerol kinase
+DGAT	DG	TG	adds	DGAT1;DGAT2	diacylglycerol acyltransferase
+ATGL	TG	DG	removes	PNPLA2;PNPLA3;LIPE	adipose triglyceride lipase
+HSL	DG	MG	removes	LIPE;DAGLA;DAGLB	hormone-sensitive and diacylglycerol lipases
+MGAT	MG	DG	adds	MOGAT1;MOGAT2;MOGAT3	monoacylglycerol acyltransferase
+MGL	MG	FA	preserving	MGLL	monoacylglycerol lipase
+AGPAT	LPA	PA	adds	AGPAT1;AGPAT2;AGPAT3;AGPAT4;AGPAT5	lysophosphatidate acyltransferase
+PLA2-PA	PA	LPA	removes	PLA2G4A;PLA2G6	phospholipase A2 on PA
+LPP	LPA	MG	preserving	PLPP1;PLPP2;PLPP3	lipid phosphate phosphatase
+AGK	MG	LPA	preserving	AGK	acylglycerol kinase
+CPT	DG	PC	preserving	CHPT1;CEPT1	choline phosphotransferase
+EPT	DG	PE	preserving	SELENOI;CEPT1	ethanolamine phosphotransferase
+PLC-PC	PC	DG	preserving	PLCB1;PLCB3;PLCG1;PLCG2;PLCD1;SGMS1;SGMS2	phospholipase C, and the sphingomyelin synthase that takes the headgroup
+PEMT	PE	PC	preserving	PEMT	phosphatidylethanolamine N-methyltransferase
+PSS1	PC	PS	preserving	PTDSS1	phosphatidylserine synthase 1
+PSS2	PE	PS	preserving	PTDSS2	phosphatidylserine synthase 2
+PSD	PS	PE	preserving	PISD	phosphatidylserine decarboxylase
+PLD-PC	PC	PA	preserving	PLD1;PLD2	phospholipase D on PC
+PLD-PE	PE	PA	preserving	PLD1;PLD2	phospholipase D on PE
+CDS	PA	CDP-DG	preserving	CDS1;CDS2	CDP-diacylglycerol synthase
+PIS	CDP-DG	PI	preserving	CDIPT	phosphatidylinositol synthase
+PGS	CDP-DG	PG	preserving	PGS1;PTPMT1	phosphatidylglycerol synthesis via PGP
+CLS	PG	CL	class	CRLS1	cardiolipin synthase
+PI4K	PI	PIP	preserving	PI4KA;PI4KB;PI4K2A;PI4K2B	phosphatidylinositol 4-kinase
+PIP5K	PIP	PIP2	preserving	PIP5K1A;PIP5K1B;PIP5K1C	PIP 5-kinase
+PI3K	PIP2	PIP3	preserving	PIK3CA;PIK3CB;PIK3CD;PIK3CG	PI 3-kinase
+PTEN	PIP3	PIP2	preserving	PTEN	PIP3 3-phosphatase
+INPP5	PIP2	PIP	preserving	INPP5D;INPPL1;SYNJ1;SYNJ2	inositol polyphosphate 5-phosphatases
+SAC1	PIP	PI	preserving	SACM1L	PI4P phosphatase
+PLC-PIP2	PIP2	DG	preserving	PLCB1;PLCG1;PLCD1	phospholipase C on PIP2
+PLA2-PC	PC	LPC	removes	PLA2G4A;PLA2G6;PLA2G2A;PLA2G2E;PLA2G7;PLA2G15	phospholipase A2 on PC
+LPCAT	LPC	PC	adds	LPCAT1;LPCAT2;LPCAT3;LPCAT4	lysophosphatidylcholine acyltransferase
+PLA2-PE	PE	LPE	removes	PLA2G4A;PLA2G6;PLA2G2E	phospholipase A2 on PE
+LPEAT	LPE	PE	adds	MBOAT1;MBOAT2;LPCAT3	lysophosphatidylethanolamine acyltransferase
+PLA2-PS	PS	LPS	removes	PLA2G4A;PLA2G2E;PLA2G6	phospholipase A2 on PS
+LPSAT	LPS	PS	adds	LPCAT3;MBOAT2	lysophosphatidylserine acyltransferase
+PLA2-PI	PI	LPI	removes	PLA2G4A;PLA2G6;PLA2G2A	phospholipase A2 on PI
+LPIAT	LPI	PI	adds	MBOAT7	lysophosphatidylinositol acyltransferase
+PLA2-PG	PG	LPG	removes	PLA2G4A;PLA2G6	phospholipase A2 on PG
+LPGAT	LPG	PG	adds	LPGAT1	lysophosphatidylglycerol acyltransferase
+ATX	LPC	LPA	preserving	ENPP2	autotaxin
+PLA2-PCO	PC O-	LPC O-	removes	PLA2G4A;PLA2G6;PLA2G7	phospholipase A2 on ether PC
+LPCAT-O	LPC O-	PC O-	adds	LPCAT1;LPCAT2	ether LPC acyltransferase
+PLA2-PEO	PE O-	LPE O-	removes	PLA2G4A;PLA2G6	phospholipase A2 on ether PE
+LPEAT-O	LPE O-	PE O-	adds	MBOAT2;LPCAT3	ether LPE acyltransferase
+CERS	Sph	Cer	adds	CERS1;CERS2;CERS3;CERS4;CERS5;CERS6	ceramide synthase
+CDase	Cer	Sph	removes	ASAH1;ASAH2;ACER1;ACER2;ACER3	ceramidase
+SPHK	Sph	S1P	preserving	SPHK1;SPHK2	sphingosine kinase
+SGPP	S1P	Sph	preserving	SGPP1;SGPP2	sphingosine-1-phosphate phosphatase
+SMS	Cer	SM	preserving	SGMS1;SGMS2	sphingomyelin synthase
+SMase	SM	Cer	preserving	SMPD1;SMPD2;SMPD3;SMPD4	sphingomyelinase
+CERK	Cer	Cer1P	preserving	CERK	ceramide kinase
+UGCG	Cer	HexCer	preserving	UGCG;UGT8	glucosyl- and galactosylceramide synthases
+GBA	HexCer	Cer	preserving	GBA;GBA2;GALC	glucosyl- and galactosylceramidases
+LacCerS	HexCer	LacCer	preserving	B4GALT5;B4GALT6	lactosylceramide synthase
+GLB1	LacCer	HexCer	preserving	GLB1	beta-galactosidase
+CST	HexCer	SHexCer	preserving	GAL3ST1	cerebroside sulfotransferase
+ARSA	SHexCer	HexCer	preserving	ARSA	arylsulfatase A
+SOAT	Chol	CE	class	SOAT1;SOAT2	sterol O-acyltransferase
+CEH	CE	Chol	class	LIPE;NCEH1;LIPA	cholesteryl ester hydrolases
+CPT1	FA	CAR	preserving	CPT1A;CPT1B;CPT1C	carnitine palmitoyltransferase 1 (via acyl-CoA)
+CPT2	CAR	FA	preserving	CPT2;CRAT	carnitine palmitoyltransferase 2 (via acyl-CoA)

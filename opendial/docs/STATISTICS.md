@@ -39,7 +39,9 @@ S-plot), the **Random forest** (out-of-bag error, permutation importance, confus
 **Dendrogram** (four distances, four linkages), the clustered **Heatmap**, **K-means**; the
 **Lipid enrichment** — hypergeometric over-representation over lipid classes, chain lengths,
 unsaturation and species, the per-class mean fold change, and the chain map (carbons × double
-bonds). A BioPAN-style pathway module is planned; the plan is in the manual.
+bonds); **Pathways** — BioPAN's method on the same ratios: the mammalian reaction network weighted
+by product over reactant, compared between the two classes, Z-scored and chained, at the class,
+species and fatty-acid levels (`docs/manual/pathways.md`, `docs/manual/biopan-plan.md`).
 
 ## Charts
 

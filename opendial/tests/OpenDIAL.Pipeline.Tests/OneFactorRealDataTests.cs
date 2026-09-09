@@ -93,5 +93,26 @@ public class OneFactorRealDataTests
         _output.WriteLine($"PCA explained: {string.Join(", ", pca.ExplainedVariance.Select(v => v.ToString("F1")))}");
         var pls = PartialLeastSquares.Compute(data.Scaled, 2, 100);
         _output.WriteLine($"PLS-DA: R2Y {pls.R2Y:F2} Q2 {pls.Q2:F2} p {pls.PermutationP:F3}");
+
+        // the pathway analysis on the ratios: liver against blank, at every level
+        foreach (var level in new[] { Statistics.Pathways.PathwayLevel.Class, Statistics.Pathways.PathwayLevel.Species, Statistics.Pathways.PathwayLevel.FattyAcid })
+        {
+            var pathways = Statistics.Pathways.LipidPathways.Compute(data.Normalized, "liver", "blank", level);
+            _output.WriteLine($"pathways ({level}): {pathways.Message}");
+            _output.WriteLine("  nodes: " + string.Join(", ", pathways.Nodes.Take(12).Select(n => $"{n.Name} ({n.Members})")));
+            foreach (var r in pathways.Reactions.Where(r => r.Tested).OrderByDescending(r => r.AbsZ).Take(8))
+                _output.WriteLine($"  {r.Label,-34} log2 {r.Log2Change,6:F2}  p {r.P:E2}  Z {r.Z,6:F2}  {r.Status,-10} {r.GeneText}");
+            foreach (var p in pathways.Pathways.Take(5))
+                _output.WriteLine($"  path {p.Chain,-40} Z {p.Z,6:F2} {p.Status}");
+            if (level == Statistics.Pathways.PathwayLevel.Class)
+            {
+                // PC, PE, LPC, SM and CAR go through as ratios; Cer and LPE had only their standard confirmed, which divides itself out
+                Assert.True(pathways.Tested.Count >= 3, "PE → PC, PC → LPC and LPC → PC are testable");
+                Assert.Contains(pathways.Reactions, r => r.Id == "PEMT" && r.Tested);
+                Assert.Contains(pathways.Reactions, r => r.Id == "PLA2-PC" && r.Tested);
+                Assert.Contains(pathways.Predicted, p => p.Missing == "PS");
+                Assert.Contains(pathways.Predicted, p => p.Reaction == "Cer → SM" && p.Missing == "Cer");
+            }
+        }
     }
 }

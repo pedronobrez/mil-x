@@ -219,6 +219,8 @@ public sealed class UiProbe
                     ["heatmap"] = vm.Statistics.Analysis.HeatmapMessage,
                     ["enrichmentSets"] = vm.Statistics.Analysis.EnrichmentRows.Count,
                     ["enrichment"] = vm.Statistics.Analysis.EnrichmentMessage,
+                    ["reactions"] = vm.Statistics.Pathways.Reactions.Count(r => r.Tested),
+                    ["pathways"] = vm.Statistics.Pathways.Message,
                     ["summary"] = vm.Statistics.Summary,
                 },
                 ["help"] = vm.Help is null ? null : new Dictionary<string, object?>

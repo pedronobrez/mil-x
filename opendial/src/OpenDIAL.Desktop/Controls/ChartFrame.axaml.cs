@@ -27,11 +27,11 @@ public partial class ChartFrame : UserControl
         Heading.Text = HeadingText;
         Host.Content = ChartContent;
         OptionsButton.Click += (_, _) => LoadOptions();
-        TitleBox.TextChanged += (_, _) => Apply(c => c.Title = TitleBox.Text, h => h.Title = TitleBox.Text, r => r.Title = TitleBox.Text);
+        TitleBox.TextChanged += (_, _) => Apply(c => c.Title = TitleBox.Text, h => h.Title = TitleBox.Text, r => r.Title = TitleBox.Text, g => g.Title = TitleBox.Text);
         XLabelBox.TextChanged += (_, _) => Apply(c => c.XLabel = XLabelBox.Text, null, r => r.XLabel = XLabelBox.Text);
         YLabelBox.TextChanged += (_, _) => Apply(c => c.YLabel = YLabelBox.Text, null, null);
         PointSizeSlider.PropertyChanged += (_, e) => { if (e.Property == RangeBase.ValueProperty) Apply(c => c.PointSize = PointSizeSlider.Value, null, null); };
-        FontScaleSlider.PropertyChanged += (_, e) => { if (e.Property == RangeBase.ValueProperty) Apply(c => c.FontScale = FontScaleSlider.Value, h => h.FontScale = FontScaleSlider.Value, r => r.FontScale = FontScaleSlider.Value); };
+        FontScaleSlider.PropertyChanged += (_, e) => { if (e.Property == RangeBase.ValueProperty) Apply(c => c.FontScale = FontScaleSlider.Value, h => h.FontScale = FontScaleSlider.Value, r => r.FontScale = FontScaleSlider.Value, g => g.FontScale = FontScaleSlider.Value); };
         PaletteBox.SelectionChanged += (_, _) => Apply(c => c.Palette = (PaletteBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Tableau", null, null);
         ColorScaleBox.SelectionChanged += (_, _) => Apply(null, h => h.ColorScale = (ColorScaleBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Blue–white–red", null);
         GridBox.IsCheckedChanged += (_, _) => Apply(c => c.ShowGrid = GridBox.IsChecked == true, null, null);
@@ -66,7 +66,7 @@ public partial class ChartFrame : UserControl
 
     /// <summary>The chart inside the frame: the first of the chart controls found in the content.</summary>
     public Control? Chart =>
-        Host.GetVisualDescendants().OfType<Control>().FirstOrDefault(c => c is ChartBase or HeatmapChart or RankChart or Dendrogram or NetworkGraph);
+        Host.GetVisualDescendants().OfType<Control>().FirstOrDefault(c => c is ChartBase or HeatmapChart or RankChart or Dendrogram or NetworkGraph or PathwayGraph);
 
     private void LoadOptions()
     {
@@ -77,7 +77,7 @@ public partial class ChartFrame : UserControl
             var isBase = chart is ChartBase;
             var isHeat = chart is HeatmapChart;
             var isRank = chart is RankChart;
-            TitleBox.Text = chart switch { ChartBase b => b.Title, HeatmapChart h => h.Title, RankChart r => r.Title, _ => string.Empty };
+            TitleBox.Text = chart switch { ChartBase b => b.Title, HeatmapChart h => h.Title, RankChart r => r.Title, PathwayGraph g => g.Title, _ => string.Empty };
             XLabelBox.Text = chart switch { ChartBase b => b.XLabel, RankChart r => r.XLabel, _ => string.Empty };
             YLabelBox.Text = chart is ChartBase yb ? yb.YLabel : string.Empty;
             XLabelBox.IsEnabled = isBase || isRank;
@@ -114,6 +114,10 @@ public partial class ChartFrame : UserControl
             {
                 FontScaleSlider.Value = r2.FontScale;
             }
+            else if (chart is PathwayGraph g2)
+            {
+                FontScaleSlider.Value = g2.FontScale;
+            }
         }
         finally
         {
@@ -121,7 +125,7 @@ public partial class ChartFrame : UserControl
         }
     }
 
-    private void Apply(Action<ChartBase>? onBase, Action<HeatmapChart>? onHeat, Action<RankChart>? onRank)
+    private void Apply(Action<ChartBase>? onBase, Action<HeatmapChart>? onHeat, Action<RankChart>? onRank, Action<PathwayGraph>? onGraph = null)
     {
         if (_syncing) return;
         switch (Chart)
@@ -129,6 +133,7 @@ public partial class ChartFrame : UserControl
             case ChartBase b: onBase?.Invoke(b); break;
             case HeatmapChart h: onHeat?.Invoke(h); break;
             case RankChart r: onRank?.Invoke(r); break;
+            case PathwayGraph g: onGraph?.Invoke(g); break;
         }
     }
 

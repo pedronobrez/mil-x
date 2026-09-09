@@ -308,6 +308,17 @@ public class VisualRegressionTests
     }
 
     [AvaloniaFact]
+    public void The_pathways_page_looks_like_its_reference()
+    {
+        var (window, tabs) = OneFactorWindow();
+        var vm = (StatisticsViewModel)((StatisticsView)window.Content!).DataContext!;
+        vm.Pathways.ComputeCommand.Execute(null);
+        StatisticsWorkspaceTests.SelectPage(tabs, "Pathways");
+        AssertLooksLike(window, "statistics-pathways");
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public void The_standards_dialog_looks_like_its_reference()
     {
         var (_, _, spots) = OneFactorTests.Reviewed();

@@ -221,7 +221,8 @@ place to see that the longer, more unsaturated species rose while the short satu
 which a list of p-values does not show. **Chain map of** picks the class, or all of them together.
 
 The sets are read from the names MS-DIAL gave the features, so an unknown belongs to no set and
-counts only in the total tested; the parsing is in [[algorithms#Lipid names]].
+counts only in the total tested; the parsing is in [[algorithms#Lipid names]]. The [[pathways]]
+page asks the next question — which reactions moved the classes that moved.
 
 ## What the pages do not do
 

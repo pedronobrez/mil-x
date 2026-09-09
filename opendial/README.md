@@ -74,7 +74,7 @@ Documentation: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (reverse-engineering
 [docs/REVIEW-WORKFLOW.md](docs/REVIEW-WORKFLOW.md) (the ion table, the tags and the review panels),
 [docs/STATISTICS.md](docs/STATISTICS.md) (the one-factor analysis after MetaboAnalyst — area
 ratios to internal standards, preprocessing, the tests, volcano, ANOVA, PCA, PLS-DA, OPLS-DA,
-random forest, heatmap, k-means, lipid enrichment — plus drift correction and the molecular network,
+random forest, heatmap, k-means, lipid enrichment, BioPAN-style pathways — plus drift correction and the molecular network,
 every chart exportable as SVG and PNG),
 [docs/VISUAL-TESTS.md](docs/VISUAL-TESTS.md) (how the stored frames are kept machine-independent),
 [docs/PORTING.md](docs/PORTING.md) (status, vendor formats, limitations),

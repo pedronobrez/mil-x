@@ -50,11 +50,15 @@ public sealed partial class StatisticsViewModel : ViewModelBase
     {
         _dialogs = dialogs;
         Analysis = new OneFactorViewModel(dialogs);
+        Pathways = new PathwaysViewModel(Analysis, dialogs);
         Analysis.DataChanged += (_, _) => Compute();
     }
 
     /// <summary>The one-factor analysis: the source of the dataset every model here reads.</summary>
     public OneFactorViewModel Analysis { get; }
+
+    /// <summary>The pathway analysis after BioPAN, on the same dataset and the same two classes.</summary>
+    public PathwaysViewModel Pathways { get; }
 
     public static string[] ClusterDistances { get; } = OneFactorViewModel.Distances;
     public static string[] ClusterLinkages { get; } = OneFactorViewModel.Linkages;
@@ -148,6 +152,7 @@ public sealed partial class StatisticsViewModel : ViewModelBase
         _network = null;
         _pca = null;
         Analysis.Clear();
+        Pathways.Clear();
         HasResults = false;
         Scores = Array.Empty<ScatterPoint>();
         Loadings = Array.Empty<ScatterPoint>();

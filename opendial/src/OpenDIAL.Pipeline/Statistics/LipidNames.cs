@@ -73,6 +73,35 @@ public static class LipidNames
         return 0;
     }
 
+    /// <summary>
+    /// The chains a name resolves, as "16:0"-style tokens, taken from the molecular-species part
+    /// ("TG 16:0_18:1_18:1" after the bar in "TG 52:2|TG 16:0_18:1_18:1"); a sum composition alone
+    /// ("PC 34:1") gives one token, which is only a chain for a one-chain class. Sphingolipid bases
+    /// count as chains ("Cer 18:1;O2/16:0" gives 18:1 and 16:0).
+    /// </summary>
+    public static IReadOnlyList<string> Chains(string name)
+    {
+        name = Prefix.Replace(name ?? string.Empty, string.Empty).Trim();
+        var pipe = name.IndexOf('|');
+        var species = pipe > 0 ? name[(pipe + 1)..].Trim() : name;
+        var space = species.IndexOf(' ');
+        if (space < 0) return Array.Empty<string>();
+        var chains = species[(space + 1)..];
+        chains = Regex.Replace(chains, @"\bd(?=\d{1,2}:)", string.Empty);
+        chains = Regex.Replace(chains, @"\(O-(\d{1,2}):(\d{1,2})\)", " $1:$2 ");
+        chains = Regex.Replace(chains, @"\b[OP]-(?=\d)", string.Empty);   // "PC O-16:0_18:1": the ether mark, not a chain
+        return Chain.Matches(chains).Select(m => $"{int.Parse(m.Groups[1].Value)}:{int.Parse(m.Groups[2].Value)}").ToList();
+    }
+
+    /// <summary>How many chains a class carries, for telling a resolved species from a sum composition.</summary>
+    public static int ChainCount(string cls) => cls.ToUpperInvariant() switch
+    {
+        "TG" => 3,
+        "CL" => 4,
+        "LPC" or "LPE" or "LPS" or "LPG" or "LPI" or "LPA" or "MG" or "CE" or "FA" or "CAR" or "SPH" or "S1P" or "LPC O-" or "LPE O-" => 1,
+        _ => 2,
+    };
+
     private static bool HasOddChain(string name) =>
         Chain.Matches(name).Any(m => int.Parse(m.Groups[1].Value) % 2 == 1);
 }
