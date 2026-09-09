@@ -2,7 +2,7 @@
 title: The Statistics workspace
 section: Workspaces
 order: 16
-summary: The dataset seen whole — nineteen pages down the left, from the data and its preprocessing through the tests, the volcano, the models, the clustering and the enrichment, every one reading the same dataset.
+summary: The dataset seen whole — twenty pages down the left, from the data and its preprocessing through the tests, the volcano, the models, the clustering and the enrichment, every one reading the same dataset.
 ---
 
 # The Statistics workspace
@@ -55,6 +55,7 @@ They are listed down the left, in the order the analysis is usually read:
 | | **Discriminant** | which features separate the classes you declared, and whether that separation survives cross-validation |
 | | **Orthogonal** | the same separation on one axis, with the S-plot |
 | | **Random forest** | a non-linear ranking of the features, with its own out-of-bag error |
+| | **Two factors** | a design with two factors — treatment and time, class and batch: the two-way ANOVA per feature, with the interaction, and ASCA over the matrix |
 | Clustering | **Dendrogram** | which injections join, and at what height |
 | | **Heatmap** | the top features against every injection, both clustered |
 | | **K-means** | the injections partitioned into *k* groups without their labels |
@@ -65,7 +66,7 @@ They are listed down the left, in the order the analysis is usually read:
 
 The pages under *One feature at a time*, *Clustering* (apart from the dendrogram), the lipid
 enrichment and the random forest are described in [[one-factor-analysis]]; the pathways in
-[[pathways]]. The rest are below.
+[[pathways]]; the two-factor design in [[two-factor-analysis]]. The rest are below.
 
 ## Principal components
 
@@ -225,6 +226,7 @@ the source does not change, apart from **Annotated only**.
 
 ## What is not here
 
-Multi-block and multi-level designs — paired samples beyond the two-class **Paired** test,
-repeated measures, several kinds of measurement on the same subjects, and two-factor designs with
-an interaction. Everything above assumes one factor and independent injections.
+Multi-block and multi-level designs — repeated measures beyond the two-class **Paired** test,
+several kinds of measurement on the same subjects, time series with more than two points, and
+three or more factors. Everything above assumes one factor and independent injections, apart from
+the **Two factors** page, which takes two.

@@ -30,7 +30,7 @@ public class OneFactorTests
         var names = new[] { "treated", "control", "vehicle" };
         var per = 12 / classes;
         for (var i = 0; i < 12; i++)
-            samples.Add(new SampleInfo(i, names[i / per][0].ToString().ToUpperInvariant() + (i % per + 1), names[i / per], "Sample", InjectionOrder: i + 1));
+            samples.Add(new SampleInfo(i, names[i / per][0].ToString().ToUpperInvariant() + (i % per + 1), names[i / per], "Sample", InjectionOrder: i + 1) { Factor = i % 2 == 0 ? "day0" : "day7" });
 
         var folder = Path.Combine(Path.GetTempPath(), "opendial-onefactor-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(folder);
@@ -421,5 +421,34 @@ public class OneFactorTests
         Assert.Contains("PC", svg);
         Assert.Contains("faster in treated", svg);
         window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task The_two_factor_page_tests_class_against_the_second_factor()
+    {
+        var (vm, _, _) = Reviewed();
+        var t = vm.TwoFactor;
+        Assert.Equal("Not computed yet.", t.Message);
+        t.PermutationsText = "99";
+        await t.ComputeCommand.ExecuteAsync(null);
+        Assert.Equal(14, t.Rows.Count);
+        Assert.Contains("2 × 2 design", t.Message);
+        // the five PCs that differ between the classes are found by the class factor, not by the day
+        var byClass = t.Rows.Where(r => r.AdjustedPA <= 0.05).Select(r => r.FeatureId).OrderBy(x => x).ToList();
+        Assert.Equal(new[] { 1, 2, 3, 4, 5 }, byClass);
+        Assert.DoesNotContain(t.Rows, r => r.AdjustedPB <= 0.05);
+        Assert.NotNull(t.SelectedRow);
+        Assert.Equal(4, t.CellBoxes.Count);
+        Assert.Contains("Class p", t.CellTitle);
+        Assert.Equal(4, t.EffectBars.Count);   // A, B, A×B, residual
+        Assert.Equal(3, t.EffectNames.Count);
+        Assert.Equal(12, t.EffectScores.Count);
+        Assert.Contains("permutations", t.AscaMessage);
+
+        // a second factor nobody typed is said, not computed
+        t.FactorA = TwoFactorViewModel.FactorSources[2];
+        t.FactorB = TwoFactorViewModel.FactorSources[2];
+        await t.ComputeCommand.ExecuteAsync(null);
+        Assert.Contains("two different factors", t.Message);
     }
 }

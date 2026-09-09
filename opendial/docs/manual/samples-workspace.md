@@ -41,6 +41,7 @@ unsupported, a `.wiff` that could not be opened.
 | **Acquisition** | DDA, SWATH or AIF — how the MS/MS was acquired; see [[processing#Acquisition types]] |
 | **Order** | the injection order, editable, for the drift correction |
 | **Batch** | the sequence the injection was run in, for the drift correction |
+| **Factor** | the second factor of a two-factor design — the time point, the diet, the genotype — free text, the same spelling on every injection of a level; read by the Statistics workspace's **Two factors** page. Leave it empty for a one-factor design |
 | **Dilution** | a factor kept for the record and exported |
 | **Comment** | free text |
 | **Format** | how the file will be read: `mzML`, `wiff · native`, `raw · msconvert`, `d · msconvert`, `ABF`, …; amber when msconvert is needed |

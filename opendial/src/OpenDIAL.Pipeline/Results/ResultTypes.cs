@@ -102,6 +102,8 @@ public sealed record SampleInfo(int FileId, string FileName, string Class, strin
 {
     public bool IsQualityControl => SampleType.Equals("QC", StringComparison.OrdinalIgnoreCase);
     public bool IsBlank => SampleType.Equals("Blank", StringComparison.OrdinalIgnoreCase);
+    /// <summary>The second factor of a two-factor design — time point, diet, genotype — free text from the Samples workspace; empty when there is none.</summary>
+    public string Factor { get; init; } = string.Empty;
 }
 
 public readonly record struct SampleValue(int FileId, string FileName, string Class, double Height);

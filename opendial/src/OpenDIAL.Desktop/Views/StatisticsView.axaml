@@ -522,6 +522,71 @@
           </Border>
         </TabItem>
 
+        <TabItem Header="Two factors">
+          <Border Classes="panel">
+            <DockPanel Margin="6">
+              <Border DockPanel.Dock="Top" Classes="hairline-bottom strip">
+                <StackPanel Classes="options" VerticalAlignment="Center">
+                  <TextBlock Classes="label" Text="Factor A" Margin="0" />
+                  <ComboBox Classes="compact" ItemsSource="{x:Static vm:TwoFactorViewModel.FactorSources}" SelectedItem="{Binding TwoFactor.FactorA}" Width="200" />
+                  <TextBlock Classes="label" Text="Factor B" />
+                  <ComboBox Classes="compact" ItemsSource="{x:Static vm:TwoFactorViewModel.FactorSources}" SelectedItem="{Binding TwoFactor.FactorB}" Width="200"
+                            ToolTip.Tip="The second factor is typed per injection in the Factor column of the Samples workspace — the time point, the diet, the genotype" />
+                  <CheckBox Classes="compact" Content="Interaction" IsChecked="{Binding TwoFactor.Interaction}" ToolTip.Tip="Test whether the effect of one factor depends on the level of the other; needs a replicate in some cell" />
+                  <TextBlock Classes="label" Text="adjust" />
+                  <ComboBox Classes="compact" ItemsSource="{x:Static vm:OneFactorViewModel.Adjustments}" SelectedItem="{Binding TwoFactor.Adjustment}" Width="190" />
+                  <TextBlock Classes="label" Text="α" />
+                  <TextBox Text="{Binding TwoFactor.AlphaText}" Width="52" />
+                  <TextBlock Classes="label" Text="permutations" />
+                  <TextBox Text="{Binding TwoFactor.PermutationsText}" Width="60" ToolTip.Tip="For ASCA's test of each effect" />
+                  <Button x:Name="TwoFactorCompute" Classes="tool strong" Content="Compute" Command="{Binding TwoFactor.ComputeCommand}" IsEnabled="{Binding !TwoFactor.IsComputing}" />
+                  <ProgressBar IsIndeterminate="True" IsVisible="{Binding TwoFactor.IsComputing}" Width="70" Height="3" VerticalAlignment="Center" />
+                  <Button Classes="tool" Content="Export table…" Command="{Binding TwoFactor.ExportTableCommand}" />
+                </StackPanel>
+              </Border>
+              <TextBlock DockPanel.Dock="Top" Classes="hint" Text="{Binding TwoFactor.Message}" Margin="4,0,4,6" TextWrapping="Wrap" />
+              <Grid ColumnDefinitions="*,6,*">
+                <Grid Grid.Column="0" RowDefinitions="*,6,230">
+                  <DataGrid Grid.Row="0" ItemsSource="{Binding TwoFactor.Rows}" SelectedItem="{Binding TwoFactor.SelectedRow, Mode=TwoWay}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" CanUserSortColumns="True">
+                    <DataGrid.Columns>
+                      <DataGridTextColumn Header="Feature" Binding="{Binding Label}" Width="*" />
+                      <DataGridTextColumn Header="Class" Binding="{Binding Group}" Width="64" />
+                      <DataGridTextColumn Header="adj. p A" Binding="{Binding AdjustedPA, StringFormat={}{0:0.0E0}}" Width="74" />
+                      <DataGridTextColumn Header="adj. p B" Binding="{Binding AdjustedPB, StringFormat={}{0:0.0E0}}" Width="74" />
+                      <DataGridTextColumn Header="adj. p A×B" Binding="{Binding AdjustedPAB, StringFormat={}{0:0.0E0}}" Width="84" />
+                      <DataGridTextColumn Header="F A" Binding="{Binding FA, StringFormat={}{0:0.0}}" Width="56" />
+                      <DataGridTextColumn Header="F B" Binding="{Binding FB, StringFormat={}{0:0.0}}" Width="56" />
+                    </DataGrid.Columns>
+                  </DataGrid>
+                  <GridSplitter Grid.Row="1" Classes="horizontal" ResizeDirection="Rows" />
+                  <DockPanel Grid.Row="2">
+                    <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,4,4,0" Text="{Binding TwoFactor.CellTitle}" TextTrimming="CharacterEllipsis" />
+                    <c:ChartFrame HeadingText="THE SELECTED FEATURE · ONE BOX PER CELL OF THE DESIGN, COLOURED BY FACTOR B"><c:BoxPlotChart Groups="{Binding TwoFactor.CellBoxes}" YLabel="transformed value" /></c:ChartFrame>
+                  </DockPanel>
+                </Grid>
+                <GridSplitter Grid.Column="1" Classes="vertical" ResizeDirection="Columns" />
+                <Grid Grid.Column="2" RowDefinitions="200,6,*">
+                  <DockPanel Grid.Row="0">
+                    <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,4,4,0" Text="{Binding TwoFactor.AscaMessage}" TextWrapping="Wrap" />
+                    <c:ChartFrame HeadingText="ASCA · SHARE OF THE VARIATION EACH EFFECT HOLDS"><c:RankChart Items="{Binding TwoFactor.EffectBars}" XLabel="% of the variation" /></c:ChartFrame>
+                  </DockPanel>
+                  <GridSplitter Grid.Row="1" Classes="horizontal" ResizeDirection="Rows" />
+                  <DockPanel Grid.Row="2">
+                    <StackPanel DockPanel.Dock="Top" Classes="options" Margin="4,2,4,4">
+                      <TextBlock Classes="label" Text="Effect" Margin="0" />
+                      <ComboBox Classes="compact" ItemsSource="{Binding TwoFactor.EffectNames}" SelectedItem="{Binding TwoFactor.SelectedEffect}" Width="180" />
+                      <TextBlock Classes="hint" Text="{Binding TwoFactor.EffectLabel}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                    <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,6,4,0" TextWrapping="Wrap"
+                               Text="ASCA takes the matrix apart into what each factor explains and what is left, and looks at each part with its own components. The scores are the injections on the effect's components with their residual added back, so the spread of the replicates shows against the separation the factor makes; a permutation test says whether the effect holds more than shuffled labels would." />
+                    <c:ChartFrame HeadingText="ASCA SCORES · THE INJECTIONS ON THE EFFECT'S COMPONENTS"><c:ScatterChart Items="{Binding TwoFactor.EffectScores}" XLabel="PC1 of the effect" YLabel="{Binding TwoFactor.EffectYLabel}" YFromZero="False" ShowEllipses="True" /></c:ChartFrame>
+                  </DockPanel>
+                </Grid>
+              </Grid>
+            </DockPanel>
+          </Border>
+        </TabItem>
+
         <!-- ================================================================ CLUSTERING -->
         <TabItem Header="Clustering" Classes="section" />
         <TabItem Header="Dendrogram">

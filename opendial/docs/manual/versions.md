@@ -10,9 +10,18 @@ summary: What each version of OpenDIAL brought; the notes are updated with every
 The version shown in **Help ▸ About OpenDIAL** and in the window's probe is the one stamped in
 `opendial/Directory.Build.props`. This page names it, and a test fails the build when it does not.
 
-## 0.4.2 — September 2026
+## 0.5.0 — September 2026
 
 The current version. It tracks MS-DIAL 5.5.260817.
+
+**New**
+
+- The **Two factors** page of the Statistics workspace: the two-way analysis of variance per feature with the interaction (type-II sums of squares, so unbalanced designs and empty cells are handled), and ASCA over the whole matrix with a permutation test per effect and a scores plot per effect. The second factor is a **Factor** column in the Samples workspace, saved with the project. See [[two-factor-analysis]].
+- The manual in Portuguese, beside the English one: **Português** in the Help window, and a second PDF.
+
+## 0.4.2 — September 2026
+
+It tracks MS-DIAL 5.5.260817.
 
 **New**
 

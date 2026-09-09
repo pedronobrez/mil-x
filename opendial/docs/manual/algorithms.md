@@ -137,6 +137,22 @@ classified by it and the majority over trees is the prediction, whose error rate
 error. Importance is the mean over trees of the fall in out-of-bag accuracy when the feature's
 values are permuted, and the total Gini decrease attributable to the feature.
 
+### Two factors
+
+*The two-way ANOVA*, per feature on the transformed values, with type-II sums of squares by
+model comparison: least-squares fits of the models B, A, A+B and A+B+A×B (treatment coding, an
+intercept), each by the normal equations with pivoting so a dependent column costs rank rather
+than a crash; SS(A|B) = RSS(B) − RSS(A+B), SS(B|A) = RSS(A) − RSS(A+B), SS(A×B) = RSS(A+B) −
+RSS(full); the degrees of freedom of an effect are the rank it adds, the residual's are n minus
+the rank of the full model, and F and p follow. A design without a replicated cell has no
+interaction to test and says so. Each effect's p is adjusted across the features on its own.
+*ASCA*: the scaled matrix is centred, each factor's part is its level means, the interaction's
+the cell means less the main effects, the residual what remains; the share of an effect is its
+sum of squares over the matrix's; its permutation p shuffles the factor's labels over the matrix
+with the other effects removed (the interaction's over the cell labels with the main effects
+removed) and counts how often the shuffled sum of squares reaches the observed; each part gets a
+PCA by the Gram matrix, and the scores are the part plus the residual projected on its loadings.
+
 ### Pathways
 
 BioPAN's network and method on the normalised linear values. Every feature is placed in the

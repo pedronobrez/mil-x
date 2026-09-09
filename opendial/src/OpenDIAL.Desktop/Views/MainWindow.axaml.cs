@@ -162,6 +162,7 @@ public partial class MainWindow : Window
         vm.Statistics.PropertyChanged += Report;
         vm.Statistics.Analysis.PropertyChanged += Report;   // the heatmap, the enrichment and the rest of the one-factor pages
         vm.Statistics.Pathways.PropertyChanged += Report;
+        vm.Statistics.TwoFactor.PropertyChanged += Report;
         vm.Analytics.IonRows.CollectionChanged += (_, _) => _probe.Schedule(this, vm);
         vm.Run.PropertyChanged += Report;
         vm.Run.LogLines.CollectionChanged += (_, _) => _probe.Schedule(this, vm);

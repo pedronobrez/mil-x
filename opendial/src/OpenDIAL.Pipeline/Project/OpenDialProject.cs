@@ -14,6 +14,8 @@ public sealed class ProjectSample
     public AcquisitionMode Acquisition { get; set; } = AcquisitionMode.DDA;
     public int AnalyticalOrder { get; set; } = 1;
     public int Batch { get; set; } = 1;
+    /// <summary>The second factor of a two-factor design (time point, diet, genotype); empty when there is none.</summary>
+    public string Factor { get; set; } = string.Empty;
     public double Dilution { get; set; } = 1;
     public string Comment { get; set; } = string.Empty;
     public bool Included { get; set; } = true;
@@ -86,6 +88,7 @@ public sealed class OpenDialProject
                 Acquisition = s.Acquisition,
                 AnalyticalOrder = s.AnalyticalOrder,
                 Batch = s.Batch,
+                Factor = s.Factor,
                 Dilution = s.Dilution,
                 Comment = s.Comment,
                 Included = s.Included,

@@ -39,7 +39,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             RequestShowFeature = id => { SelectedWorkspace = 1; Analytics.SelectFeature(id); },
         };
         Analytics.CurationChanged += (_, _) => Statistics.Analysis.ReviewIsNewer = true;
-        Statistics.Analysis.ReloadRequested += (_, _) => { if (Results is not null) Statistics.Load(Results, Analytics.AllSpots, Analytics.Samples, Analytics.Curation); };
+        Statistics.Analysis.ReloadRequested += (_, _) => { if (Results is not null) Statistics.Load(Results, Analytics.AllSpots, WithFactors(Analytics.Samples), Analytics.Curation); };
         Run = new RunViewModel();
         Samples.Changed += (_, _) => { if (!_loading) IsDirty = true; };
         Method.Changed += (_, _) => { if (!_loading) IsDirty = true; Samples.DefaultAcquisition = Method.Parameters.AcquisitionType; };
@@ -53,6 +53,19 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     public SettingsService Settings { get; }
     public RawDataCache RawCache { get; }
     public SamplesViewModel Samples { get; }
+
+    /// <summary>The result's samples with the second factor the batch table gives them, matched by sample name, then by file name.</summary>
+    private IReadOnlyList<Pipeline.Results.SampleInfo> WithFactors(IReadOnlyList<Pipeline.Results.SampleInfo> samples)
+    {
+        var rows = Samples.Samples.ToList();
+        if (rows.Count == 0 || rows.All(r => string.IsNullOrWhiteSpace(r.Factor))) return samples;
+        return samples.Select(s =>
+        {
+            var row = rows.FirstOrDefault(r => string.Equals(r.Name, s.FileName, StringComparison.OrdinalIgnoreCase))
+                   ?? rows.FirstOrDefault(r => string.Equals(System.IO.Path.GetFileNameWithoutExtension(r.FileName), s.FileName, StringComparison.OrdinalIgnoreCase));
+            return row is null || string.IsNullOrWhiteSpace(row.Factor) ? s : s with { Factor = row.Factor.Trim() };
+        }).ToList();
+    }
     public MethodViewModel Method { get; }
     public ExplorerViewModel Explorer { get; }
     public AnalyticsViewModel Analytics { get; }
@@ -271,7 +284,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             {
                 Explorer.Load(Samples.Samples.ToList(), Results);
                 await Analytics.LoadAsync(Results);
-                Statistics.Load(Results, Analytics.AllSpots, Analytics.Samples, Analytics.Curation);
+                Statistics.Load(Results, Analytics.AllSpots, WithFactors(Analytics.Samples), Analytics.Curation);
                 SelectedWorkspace = 1;
                 Status = $"Opened {Results.AnalysisFiles.Count} file(s) from {Results.Folder}";
             }
@@ -574,7 +587,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         RawCache.Clear();
         Explorer.Load(Samples.Samples.ToList(), Results);
         await Analytics.LoadAsync(Results);
-        Statistics.Load(Results, Analytics.AllSpots, Analytics.Samples, Analytics.Curation);
+        Statistics.Load(Results, Analytics.AllSpots, WithFactors(Analytics.Samples), Analytics.Curation);
         Status = $"Run finished in {result.Elapsed:mm\\:ss} — {result.ExportedFiles.Count} files exported to {result.OutputFolder}";
         if (!string.IsNullOrEmpty(ProjectPath))
         {

@@ -64,6 +64,7 @@
           </DataGridTemplateColumn>
           <DataGridTextColumn Header="Order" Binding="{Binding AnalyticalOrder}" Width="70" />
           <DataGridTextColumn Header="Batch" Binding="{Binding Batch}" Width="70" />
+          <DataGridTextColumn Header="Factor" Binding="{Binding Factor}" Width="90" />
           <DataGridTextColumn Header="Dilution" Binding="{Binding Dilution}" Width="84" />
           <DataGridTextColumn Header="Comment" Binding="{Binding Comment}" Width="*" />
           <DataGridTemplateColumn Header="Format" Width="150" IsReadOnly="True">

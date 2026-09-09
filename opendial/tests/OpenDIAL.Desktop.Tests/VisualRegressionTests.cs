@@ -319,6 +319,18 @@ public class VisualRegressionTests
     }
 
     [AvaloniaFact]
+    public async Task The_two_factor_page_looks_like_its_reference()
+    {
+        var (window, tabs) = OneFactorWindow();
+        var vm = (StatisticsViewModel)((StatisticsView)window.Content!).DataContext!;
+        vm.TwoFactor.PermutationsText = "99";
+        await vm.TwoFactor.ComputeCommand.ExecuteAsync(null);
+        StatisticsWorkspaceTests.SelectPage(tabs, "Two factors");
+        AssertLooksLike(window, "statistics-two-factor");
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public void The_standards_dialog_looks_like_its_reference()
     {
         var (_, _, spots) = OneFactorTests.Reviewed();

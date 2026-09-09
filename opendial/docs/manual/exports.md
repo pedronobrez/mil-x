@@ -53,6 +53,7 @@ file named for the table:
 | `pattern-search.tsv` | `Feature id`, `Feature`, `Class`, `Correlation`, `p` |
 | `random-forest.tsv` | `Feature id`, `Feature`, `Class`, `Mean decrease accuracy`, `Mean decrease Gini` |
 | `enrichment.tsv` | `Set`, `Kind`, `Size`, `Hits`, `Expected`, `Enrichment ratio`, `p`, the adjusted p, and `Members` — the significant features in the set, semicolon-separated |
+| `two-way-anova.tsv` | `Feature id`, `Feature`, `Class`, then `F`, `p` and the adjusted p of factor A, of factor B and (when tested) of the interaction, and the mean of every cell of the design |
 | `reactions.tsv` | `Reaction` (the table's id), `Reactant`, `Product`, the log2 change of the weight (first class over second), `p`, `Z`, `Status`, `Genes`, `Enzyme` — from the [[pathways]] page |
 | `pathways.tsv` | `Pathway` (the chain), `Reactions` (its length), `Z`, `Status`, `Genes` |
 | `predicted-reactions.tsv` | `Reaction`, `Measured`, `Not measured`, `Genes` — the reactions one more confirmed class would open up |

@@ -221,6 +221,7 @@ public sealed class UiProbe
                     ["enrichment"] = vm.Statistics.Analysis.EnrichmentMessage,
                     ["reactions"] = vm.Statistics.Pathways.Reactions.Count(r => r.Tested),
                     ["pathways"] = vm.Statistics.Pathways.Message,
+                    ["twoFactor"] = vm.Statistics.TwoFactor.Message,
                     ["summary"] = vm.Statistics.Summary,
                 },
                 ["help"] = vm.Help is null ? null : new Dictionary<string, object?>

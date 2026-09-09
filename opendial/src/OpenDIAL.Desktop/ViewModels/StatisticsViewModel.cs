@@ -51,6 +51,7 @@ public sealed partial class StatisticsViewModel : ViewModelBase
         _dialogs = dialogs;
         Analysis = new OneFactorViewModel(dialogs);
         Pathways = new PathwaysViewModel(Analysis, dialogs);
+        TwoFactor = new TwoFactorViewModel(Analysis, dialogs);
         Analysis.DataChanged += (_, _) => Compute();
     }
 
@@ -59,6 +60,9 @@ public sealed partial class StatisticsViewModel : ViewModelBase
 
     /// <summary>The pathway analysis after BioPAN, on the same dataset and the same two classes.</summary>
     public PathwaysViewModel Pathways { get; }
+
+    /// <summary>Two factors at once: the two-way ANOVA per feature and ASCA over the matrix.</summary>
+    public TwoFactorViewModel TwoFactor { get; }
 
     public static string[] ClusterDistances { get; } = OneFactorViewModel.Distances;
     public static string[] ClusterLinkages { get; } = OneFactorViewModel.Linkages;
@@ -153,6 +157,7 @@ public sealed partial class StatisticsViewModel : ViewModelBase
         _pca = null;
         Analysis.Clear();
         Pathways.Clear();
+        TwoFactor.Clear();
         HasResults = false;
         Scores = Array.Empty<ScatterPoint>();
         Loadings = Array.Empty<ScatterPoint>();

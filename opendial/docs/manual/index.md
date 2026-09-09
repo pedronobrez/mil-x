@@ -35,7 +35,7 @@ Pressing **F1** in the application opens the manual at the page for the workspac
 - Coming from MS-DIAL on Windows: [[concepts#What is the same as MS-DIAL]], then [[review-tags]] and [[projects-and-files]] — your projects and your curation carry over.
 - Setting up a batch: [[new-project-wizard]], [[samples-workspace]], [[method-workspace]], [[processing]].
 - Reviewing a result: [[analytics-workspace]] is the overview; [[ion-table]], [[review-tags]], [[evidence-panels]], [[reintegration]] and [[annotation]] go one level down.
-- Looking at the dataset as a whole: [[statistics-workspace]], then [[one-factor-analysis]], [[internal-standards]] and [[pathways]]; the charts leave as SVG or PNG, see [[chart-export]].
+- Looking at the dataset as a whole: [[statistics-workspace]], then [[one-factor-analysis]], [[internal-standards]], [[pathways]] and, for a design with two factors, [[two-factor-analysis]]; the charts leave as SVG or PNG, see [[chart-export]].
 - Getting data out: [[exports]] and [[openquant]].
 - Something is wrong: [[troubleshooting]].
 
@@ -43,7 +43,7 @@ Pressing **F1** in the application opens the manual at the page for the workspac
 
 **Start** — [[getting-started]] · [[concepts]] · [[shell]]
 
-**Workspaces** — [[new-project-wizard]] · [[samples-workspace]] · [[method-workspace]] · [[processing]] · [[explorer-workspace]] · [[analytics-workspace]] · [[statistics-workspace]] · [[one-factor-analysis]] · [[internal-standards]] · [[pathways]]
+**Workspaces** — [[new-project-wizard]] · [[samples-workspace]] · [[method-workspace]] · [[processing]] · [[explorer-workspace]] · [[analytics-workspace]] · [[statistics-workspace]] · [[one-factor-analysis]] · [[internal-standards]] · [[pathways]] · [[two-factor-analysis]]
 
 **Reviewing** — [[ion-table]] · [[review-tags]] · [[evidence-panels]] · [[reintegration]] · [[annotation]] · [[exports]] · [[chart-export]]
 

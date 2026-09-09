@@ -23,6 +23,8 @@ summary: Short definitions of the terms used in the application and this manual.
 
 **Area ratio** — an analyte's peak area divided by the area of its class's internal standard in the same injection; the *relative abundance* a lipidomics result is reported in. See [[internal-standards]].
 
+**ASCA** — ANOVA-simultaneous component analysis: the matrix taken apart into what each factor of a design explains, each part looked at with its own components. See [[two-factor-analysis]].
+
 **Auto-scaling** — dividing every feature by its standard deviation after centring, so each weighs the same in a model; *unit variance* scaling.
 
 **Batch** — the list of injections a project processes together; also the number that groups injections run in one sequence, for the drift correction.
@@ -56,6 +58,8 @@ summary: Short definitions of the terms used in the application and this manual.
 **IDA** — SCIEX's name for DDA.
 
 **Imputation** — replacing a missing value with an estimate: a fraction of the feature's minimum, its mean, or the mean of the nearest features. See [[one-factor-analysis#Data processing]].
+
+**Interaction** — when the effect of one factor depends on the level of the other; the treatment that works at one time point and not at another.
 
 **Internal standard** — a compound of a lipid class, labelled or odd-chain, spiked into every sample at the same amount so that the class's analytes can be reported as ratios to it. See [[internal-standards]].
 
@@ -111,6 +115,8 @@ summary: Short definitions of the terms used in the application and this manual.
 
 **Tag** — one of MS-DIAL's five review flags. See [[review-tags]].
 
+**Two-way ANOVA** — the analysis of variance with two factors: the effect of each, and their interaction, tested on one feature. See [[two-factor-analysis]].
+
 **Type** — what an injection is physically: Sample, Blank, QC or Standard.
 
 **VIP** — variable importance in projection; how much of a model's separation rests on one feature.
@@ -123,4 +129,3 @@ summary: Short definitions of the terms used in the application and this manual.
 
 
 **Z-score** — a value minus its mean, divided by its standard deviation; what a standardised heatmap row shows.
-

@@ -566,6 +566,15 @@ def main() -> int:
                     check(bool(stats.get("pathways")), f"the pathway analysis answered: {stats.get('pathways')} ({stats.get('reactions')} reaction(s) tested)")
                     shot("statistics-pathways")
 
+                    send_command(probe, {"action": "selectStatisticsPage", "page": "Two factors"})
+                    state = wait_for(probe, lambda s: (s.get("statistics") or {}).get("page") == "Two factors", "the Two factors page", 15)
+                    before = state["statistics"].get("twoFactor")
+                    click_control(state, "control.TwoFactorCompute", "the two-factor Compute button")
+                    state = wait_for(probe, lambda s: (s.get("statistics") or {}).get("twoFactor") not in (before, "", None, "Fitting every feature, then partitioning the matrix…"),
+                                     "the two-factor analysis to answer", 120)
+                    check(bool(state["statistics"].get("twoFactor")), f"the two-factor page answered: {state['statistics'].get('twoFactor')}")
+                    shot("statistics-two-factor")
+
                 for fmt in ("svg", "png"):
                     chart = os.path.join(work, f"volcano.{fmt}")
                     result = send_command(probe, {"action": "exportChart", "page": "Volcano plot", "index": 0, "format": fmt, "scale": 2, "path": chart})["lastCommand"]
