@@ -36,7 +36,9 @@ bash opendial/scripts/make-app-bundle.sh # -> opendial/dist/OpenDIAL.app (double
 
 ## Installing the desktop application on macOS
 
-`scripts/make-app-bundle.sh` publishes the application, draws the icon (`tools/make_icon.py`) and
+`scripts/make-app-bundle.sh` publishes the application, draws the icon (`tools/make_icon.py`; the
+untargeted mark, a chromatogram behind the peak — `--variant targeted` is OpenQuant's two peaks, and
+`--export DIR` writes every size, `.icns`, `.ico` and SVG) and
 assembles `dist/OpenDIAL.app` — self-contained, with the SCIEX plugin, ad-hoc signed so Apple
 Silicon will run it. Install it with `ditto dist/OpenDIAL.app /Applications/OpenDIAL.app`, which
 keeps the signature intact. A locally built bundle carries no quarantine flag, so it launches
