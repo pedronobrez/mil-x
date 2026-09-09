@@ -88,7 +88,7 @@ public static class LipidPathways
     /// the injections of <paramref name="classA"/> and those of <paramref name="classB"/>.
     /// </summary>
     public static PathwayResult Compute(AnalysisTable table, string classA, string classB, PathwayLevel level = PathwayLevel.Class,
-        double threshold = 1.645, int maxPathLength = 3, int minimumReplicates = 2, bool includeExtensions = false)
+        double threshold = 1.645, int maxPathLength = 3, int minimumReplicates = 2, bool includeExtensions = false, bool paired = false)
     {
         var network = ReactionDatabase.Reactions.Where(r => includeExtensions || r.IsBioPan).ToList();
         var groups = Univariate.GroupIndices(table);
@@ -96,6 +96,12 @@ public static class LipidPathways
         {
             return new PathwayResult(level, classA, classB, threshold, Array.Empty<PathwayNode>(), Array.Empty<ReactionScore>(), Array.Empty<PathwayScore>(),
                 Array.Empty<PredictedReaction>(), $"Both classes need at least {minimumReplicates} injections; the reaction weights are compared between them.");
+        }
+        // paired, the injections of the two classes correspond one to one, in order, as BioPAN's paired option has them
+        if (paired && a.Count != b.Count)
+        {
+            return new PathwayResult(level, classA, classB, threshold, Array.Empty<PathwayNode>(), Array.Empty<ReactionScore>(), Array.Empty<PathwayScore>(),
+                Array.Empty<PredictedReaction>(), $"A paired comparison needs the same number of injections in each class; {classA} has {a.Count} and {classB} has {b.Count}.");
         }
 
         // every feature placed in the network: its class, its species key, its chains
@@ -230,8 +236,19 @@ public static class LipidPathways
             // an injection without the reactant has no weight; one without the product has weight zero
             var wa = a.Select(i => from[i] > 0 ? to[i] / from[i] : double.NaN).ToList();
             var wb = b.Select(i => from[i] > 0 ? to[i] / from[i] : double.NaN).ToList();
-            var ra = wa.Where(w => !double.IsNaN(w)).ToArray();
-            var rb = wb.Where(w => !double.IsNaN(w)).ToArray();
+            double[] ra, rb;
+            if (paired)
+            {
+                // a pair is kept only when both of its injections have a weight
+                var pairs = wa.Zip(wb).Where(pair => !double.IsNaN(pair.First) && !double.IsNaN(pair.Second)).ToList();
+                ra = pairs.Select(pair => pair.First).ToArray();
+                rb = pairs.Select(pair => pair.Second).ToArray();
+            }
+            else
+            {
+                ra = wa.Where(w => !double.IsNaN(w)).ToArray();
+                rb = wb.Where(w => !double.IsNaN(w)).ToArray();
+            }
             double p = double.NaN, z = double.NaN, change = double.NaN;
             var status = "untested";
             if (ra.Length >= minimumReplicates && rb.Length >= minimumReplicates)
@@ -239,7 +256,7 @@ public static class LipidPathways
                 var meanA = ra.Average();
                 var meanB = rb.Average();
                 change = meanA > 0 && meanB > 0 ? Math.Log2(meanA / meanB) : meanA > meanB ? double.PositiveInfinity : meanA < meanB ? double.NegativeInfinity : 0;
-                (_, p) = Univariate.TTest(ra, rb, equalVariance: false);
+                (_, p) = paired ? Univariate.PairedT(ra, rb) : Univariate.TTest(ra, rb, equalVariance: false);
                 z = SignedZ(p, meanA - meanB);
                 status = z >= threshold ? "active" : z <= -threshold ? "suppressed" : "unchanged";
             }
@@ -297,7 +314,7 @@ public static class LipidPathways
             ? (level == PathwayLevel.FattyAcid && abundance.Count == 0
                 ? "No free fatty acid is confirmed: BioPAN's fatty-acid graph is built from the FA class measured, not from the chains of the other lipids."
                 : $"No reaction of the network has both ends measured at the {levelName} level in both classes; {abundance.Count} node(s) placed, {edges.Count} edge(s) drawn.")
-            : $"{tested.Count} reaction(s) tested at the {levelName} level, {classA} against {classB} · {active} active, {suppressed} suppressed at |Z| ≥ {threshold:0.###} · "
+            : $"{tested.Count} reaction(s) tested at the {levelName} level, {classA} against {classB}{(paired ? ", paired" : string.Empty)} · {active} active, {suppressed} suppressed at |Z| ≥ {threshold:0.###} · "
               + $"{ranked.Count(p => p.Status != "unchanged")} of {ranked.Count} pathway(s) past the threshold"
               + (scores.Count > tested.Count ? $" · {scores.Count - tested.Count} reaction(s) with too few injections to test" : string.Empty);
         return new PathwayResult(level, classA, classB, threshold, nodes, scores, ranked, predicted, message);

@@ -79,7 +79,7 @@ thirty steps of its table.
 
 **The scoring** follows BioPAN's R code (`lib_pathway_analysis.r`): the weights are the ratios
 themselves, an injection without the reactant is dropped and one without the product weighs zero;
-the two classes are compared by `t.test` — Welch, unpaired — and Z is `qnorm(1 - p)` of the
+the two classes are compared by `t.test` — Welch, or paired when **Paired** is ticked — and Z is `qnorm(1 - p)` of the
 one-sided p in the direction of the change, which OpenDIAL computes as the two-sided p's quantile
 with the sign of the difference of means, the same number, capped at about 8 where p underflows.
 Pathways are every simple chain of tested reactions up to the chosen length, scored
@@ -95,7 +95,7 @@ the driving channel and the smoke test like the rest.
 
 - The **Beyond BioPAN** extensions, off by default and marked in the table.
 - A reaction is only testable when both its classes have a confirmed analyte other than the standard, since the standard divides itself out of the ratios. The **Not measured** table says what confirming one more class would open up, which BioPAN's predicted mode does not.
-- The mammalian network only. Two conditions at a time; three or more classes go pairwise through the comparison's two classes. The paired t-test BioPAN offers is not offered here.
+- The mammalian network only. Two conditions at a time; three or more classes go pairwise through the comparison's two classes.
 
 Sources: Gaud E. *et al.*, "BioPAN: a web-based tool to explore mammalian lipidome metabolic
 pathway on LIPID MAPS", *F1000Research* 2021; the BioPAN pages at lipidmaps.org/biopan; Nguyen A.

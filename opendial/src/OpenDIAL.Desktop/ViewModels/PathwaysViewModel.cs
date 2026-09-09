@@ -37,6 +37,8 @@ public sealed partial class PathwaysViewModel : ViewModelBase
     [ObservableProperty] private bool _showUnchanged = true;
     /// <summary>Also the steps OpenDIAL adds beyond BioPAN's network: glycosphingolipids, sterol esters, acylcarnitines.</summary>
     [ObservableProperty] private bool _beyondBioPan;
+    /// <summary>The injections of the two classes correspond one to one, in order: BioPAN's paired option.</summary>
+    [ObservableProperty] private bool _paired;
     [ObservableProperty] private string _message = "Not computed yet.";
     [ObservableProperty] private PathwayResult? _result;
     [ObservableProperty] private IReadOnlyList<ReactionScore> _reactions = Array.Empty<ReactionScore>();
@@ -85,7 +87,7 @@ public sealed partial class PathwaysViewModel : ViewModelBase
         try
         {
             // the normalised linear values: a ratio of two abundances wants abundances, not their logs
-            var result = LipidPathways.Compute(data.Normalized, _analysis.ClassA, _analysis.ClassB, level, ThresholdValue, length, includeExtensions: BeyondBioPan);
+            var result = LipidPathways.Compute(data.Normalized, _analysis.ClassA, _analysis.ClassB, level, ThresholdValue, length, includeExtensions: BeyondBioPan, paired: Paired);
             Result = result;
             Reactions = result.Reactions.OrderByDescending(r => r.AbsZ).ToList();
             Pathways = result.Pathways;

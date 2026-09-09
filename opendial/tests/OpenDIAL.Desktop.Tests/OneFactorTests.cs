@@ -393,6 +393,12 @@ public class OneFactorTests
         Assert.Equal(chain.Nodes, p.HighlightedChain);
         Assert.Same(chain.Reactions[0], p.SelectedReaction);
 
+        // the paired option goes through to the engine and is said in the message
+        p.Paired = true;
+        p.ComputeCommand.Execute(null);
+        Assert.Contains("paired", p.Message);
+        p.Paired = false;
+
         // a new dataset clears the result, so it never describes numbers the pages no longer show
         a.SourceMode = OneFactorViewModel.SourceModes[2];
         Assert.Null(p.Result);

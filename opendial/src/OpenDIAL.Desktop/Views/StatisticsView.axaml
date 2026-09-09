@@ -645,6 +645,7 @@
                   <TextBlock Classes="label" Text="chains up to" />
                   <TextBox Text="{Binding Pathways.MaxPathLengthText}" Width="40" ToolTip.Tip="How many reactions a pathway may chain (1 to 6)" />
                   <CheckBox Classes="compact" Content="Show unchanged" IsChecked="{Binding Pathways.ShowUnchanged}" ToolTip.Tip="Draw the reactions that did not pass the threshold too" />
+                  <CheckBox Classes="compact" Content="Paired" IsChecked="{Binding Pathways.Paired}" ToolTip.Tip="The injections of the two classes correspond one to one, in order — the same subject before and after; the paired t-test, as BioPAN offers it" />
                   <CheckBox Classes="compact" Content="Beyond BioPAN" IsChecked="{Binding Pathways.BeyondBioPan}" ToolTip.Tip="Also the steps OpenDIAL adds to BioPAN's network: the glycosphingolipids, the sterol esters, the acylcarnitines" />
                   <Button x:Name="PathwaysCompute" Classes="tool strong" Content="Compute" Command="{Binding Pathways.ComputeCommand}"
                           ToolTip.Tip="Score every reaction between the two classes of the comparison" />

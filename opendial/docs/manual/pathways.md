@@ -49,6 +49,7 @@ near zero. A pathway is active or suppressed at the same threshold.
 | **Level** | **Lipid classes** — every confirmed PC summed against every confirmed PE; **Molecular species** — PE 34:1 against PC 34:1, and, by BioPAN's rule, PC 34:1 against LPC 16:0 when the FA 18:1 it releases is measured, LPC 16:0 against PC 34:1 when the acyl-CoA 18:1 it takes is; **Fatty acids** — the free fatty acids confirmed in the dataset (the `FA` class), linked by BioPAN's thirty elongation and desaturation steps |
 | **\|Z\| ≥** | BioPAN's thresholds, one-sided: 1.282 (p 0.10), **1.645 (p 0.05, the default)**, 2.054 (p 0.02), 2.326 (p 0.01) |
 | **chains up to** | how many reactions a pathway may chain (3 by default; 1 to 6) |
+| **Paired** | the injections of the two classes correspond one to one, in order — the same subject before and after — and the weights are compared by the paired t-test, as BioPAN's paired option does; needs the same number of injections in each class |
 | **Show unchanged** | draw the reactions that did not pass the threshold too, in grey |
 | **Beyond BioPAN** | also the steps OpenDIAL adds to the network for classes a lipidomics run confirms and BioPAN does not cover — Cer ↔ HexCer ↔ LacCer, HexCer ↔ SHexCer, Chol ↔ CE, FA ↔ CAR, MG → FA, PE → PA — marked `extension` in the table; off by default, so the default result is BioPAN's network and nothing else |
 | **Compute** | score the network between the two classes chosen on the **Statistical test** page |

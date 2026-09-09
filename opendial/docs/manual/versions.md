@@ -19,6 +19,7 @@ The current version. It tracks MS-DIAL 5.5.260817.
 - The pathway table is now BioPAN's own, transcribed from the tool's archived database: 97 reactions (51 between classes, 13 over the ether lipids, 3 over the sphinganine bases, 30 between fatty acids) with its 249 reaction–gene links; the twelve steps OpenDIAL adds are marked and switched on by **Beyond BioPAN**, off by default. The ether classes split into `O-` and `P-`, the ceramides and sphingomyelins into their sphinganine forms, as BioPAN has them.
 - The reaction weights are compared as BioPAN compares them — the ratios themselves, not their logs — and the thresholds are BioPAN's, one-sided: 1.282, 1.645 (default), 2.054, 2.326.
 - Every gene in the table is the human symbol; BioPAN's mouse `Scd1` and `Scd3` are `SCD` and `SCD5`.
+- **Paired** on the Pathways page: BioPAN's paired comparison, the injections of the two classes taken one to one in order.
 - The species level follows BioPAN's rule for the chain reactions: a step that releases a chain is drawn only when that fatty acid is measured, one that adds a chain only when its acyl-CoA is. The fatty-acid level is the free fatty acids measured, as BioPAN's is, not the chains of the other lipids.
 - The design notes say where the two agree (the pathway score is the same number) and where they do not (the species-level chain rule, the extensions).
 

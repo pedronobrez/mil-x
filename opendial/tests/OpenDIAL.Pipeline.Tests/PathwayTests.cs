@@ -199,4 +199,23 @@ public class PathwayTests
         Assert.Equal(0, LipidPathways.SignedZ(1, +1), 6);
         Assert.True(LipidPathways.SignedZ(0, +1) < 8.1 && LipidPathways.SignedZ(0, +1) > 7);
     }
+
+    [Fact]
+    public void The_paired_comparison_pairs_the_injections_in_order()
+    {
+        var paired = LipidPathways.Compute(Table(), "treated", "control", paired: true);
+        var pemt = Assert.Single(paired.Reactions, r => r.Id == "PEMT");
+        Assert.Equal("active", pemt.Status);
+        Assert.Contains("paired", paired.Message);
+        // the p is the paired t-test's on the weights, pair by pair, and not Welch's
+        var (_, expected) = Univariate.PairedT(pemt.WeightsA.ToArray(), pemt.WeightsB.ToArray());
+        Assert.Equal(expected, pemt.P, 12);
+        var unpaired = LipidPathways.Compute(Table(), "treated", "control").Reactions.First(r => r.Id == "PEMT");
+        Assert.NotEqual(unpaired.P, pemt.P);
+
+        // pairing needs the same number of injections in each class
+        var uneven = LipidPathways.Compute(Table().SelectSamples(new[] { 0, 1, 2, 3, 4 }), "treated", "control", paired: true);
+        Assert.Empty(uneven.Reactions);
+        Assert.Contains("same number", uneven.Message);
+    }
 }
