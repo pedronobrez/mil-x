@@ -398,7 +398,12 @@ public abstract class ChartBase : Control, Charts.IChartRenderable
     }
 
     /// <summary>Legend box drawn top-right of the plot with a translucent surface.</summary>
-    protected void DrawLegend(Charts.ChartCanvas ctx, Rect plot, IReadOnlyList<(string Label, Color Color)> entries)
+    /// <summary>
+    /// The legend goes in the corner of the plot with the least underneath it: the top right by
+    /// habit, but a volcano plot's named points live exactly there, and a legend over the finding
+    /// is worse than a legend in an odd place. <paramref name="occupied"/> is what it must avoid.
+    /// </summary>
+    protected void DrawLegend(Charts.ChartCanvas ctx, Rect plot, IReadOnlyList<(string Label, Color Color)> entries, IReadOnlyList<Rect>? occupied = null)
     {
         if (entries.Count == 0) return;
         var texts = entries.Select(e => Text(e.Label.Length > 40 ? e.Label[..39] + "…" : e.Label, 10.5, TextBrush)).ToList();
@@ -407,6 +412,19 @@ public abstract class ChartBase : Control, Charts.IChartRenderable
         var h = lineH * texts.Count + 8;
         var x = plot.Right - w - 8;
         var y = plot.Y + 8;
+        if (occupied is { Count: > 0 })
+        {
+            var corners = new[]
+            {
+                new Rect(plot.Right - w - 8, plot.Y + 8, w, h),
+                new Rect(plot.X + 8, plot.Y + 8, w, h),
+                new Rect(plot.Right - w - 8, plot.Bottom - h - 8, w, h),
+                new Rect(plot.X + 8, plot.Bottom - h - 8, w, h),
+            };
+            var best = corners.Select(c => (Rect: c, Hits: occupied.Count(o => c.Inflate(6).Intersects(o)))).OrderBy(c => c.Hits).First();
+            x = best.Rect.X;
+            y = best.Rect.Y;
+        }
         ctx.DrawRectangle(new SolidColorBrush(Color.FromArgb(0xD8, SurfaceColor.R, SurfaceColor.G, SurfaceColor.B)), new Pen(GridBrush, 1), new Rect(x, y, w, h), 5, 5);
         for (var i = 0; i < texts.Count; i++)
         {

@@ -23,7 +23,7 @@ charts, the heatmaps, the dendrogram and the network.
 | **Palette** | the colours of the groups: **Tableau** (the default, ten colours), **Okabe-Ito** (eight, safe for every kind of colour blindness), **Grey** (for a black-and-white figure) or **Accent** | scatter, box, bar, rank |
 | **Colour scale** | the scale of a heatmap: **Blue–white–red** (diverging, for z-scores and fold changes, white at zero), **Viridis** (sequential, perceptually uniform), **Greys**, or **Green–black–red** (the microarray convention) | heatmap, chain map, correlations |
 | **Grid** | the grid lines behind the plot | scatter, box, bar |
-| **Legend** | the legend of the groups | scatter, line |
+| **Legend** | the legend of the groups; it sits in whichever corner of the plot has the least under it, so it never covers the named points of a volcano plot | scatter, line |
 | **Labels** | the names beside the points, or the row labels of a heatmap | scatter, heatmap |
 | **Ellipses** | the 95 % confidence ellipse of each class on a score plot | scatter |
 | **Trees** | the dendrograms beside a heatmap | heatmap |

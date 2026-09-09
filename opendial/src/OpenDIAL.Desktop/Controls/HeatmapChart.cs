@@ -100,7 +100,7 @@ public sealed class HeatmapChart : Control, Charts.IChartRenderable
         var rowTreeW = ShowTrees && data.RowTree is not null && rows > 1 ? 60 : 0;
         var colTreeH = ShowTrees && data.ColumnTree is not null && cols > 1 ? 50 : 0;
         var stripH = data.ColumnGroups is not null ? 8 : 0;
-        var scaleW = 54;
+        var scaleW = 72;
         var left = 8 + rowTreeW;
         var top = titleH + colTreeH + stripH + 4;
         var cellsW = Math.Max(10, w - left - rowLabelW - scaleW - 16);
@@ -215,20 +215,22 @@ public sealed class HeatmapChart : Control, Charts.IChartRenderable
         ctx.DrawText(Text(max.ToString("0.##", CultureInfo.InvariantCulture), 9 * FontScale, muted), new Point(scaleX + 13, scaleTop - 2));
         ctx.DrawText(Text(min.ToString("0.##", CultureInfo.InvariantCulture), 9 * FontScale, muted), new Point(scaleX + 13, scaleTop + scaleH - 10));
         if (diverging) ctx.DrawText(Text("0", 9 * FontScale, muted), new Point(scaleX + 13, scaleTop + scaleH / 2 - 5));
+        // what the colours mean, in words, under the bar: wrapped to the column, three lines at most
+        var legendY = scaleTop + scaleH + 8;
         if (!string.IsNullOrEmpty(data.ValueName))
         {
-            var t = Text(data.ValueName, 9 * FontScale, muted);
-            t.MaxTextWidth = scaleW + 20;
-            using (ctx.PushTransform(Matrix.CreateRotation(-Math.PI / 2) * Matrix.CreateTranslation(w - 4, scaleTop + scaleH)))
-            {
-                ctx.DrawText(t, new Point(0, -t.Height));
-            }
+            var t = Text(data.ValueName, 8.5 * FontScale, muted);
+            t.MaxTextWidth = scaleW - 6;
+            t.MaxLineCount = 3;
+            t.Trimming = TextTrimming.CharacterEllipsis;
+            ctx.DrawText(t, new Point(scaleX, legendY));
+            legendY += t.Height + 8;
         }
 
         // legend of the group colours
         if (groups.Count > 0)
         {
-            var y = scaleTop + scaleH + 14;
+            var y = legendY;
             foreach (var g in groups.Take(12))
             {
                 ctx.DrawRectangle(new SolidColorBrush(ChartPalette.ForIndex(Dark, groups.IndexOf(g))), null, new Rect(scaleX, y + 2, 8, 8));

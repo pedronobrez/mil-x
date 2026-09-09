@@ -118,6 +118,8 @@ public sealed class ScatterChart : ChartBase
     {
         var items = Items!;
         var colors = GroupColors();
+        // what the legend has to stay clear of: the reference lines' labels, every point, and every label drawn beside one
+        var occupied = new List<Rect>();
 
         foreach (var line in ReferenceLines ?? Array.Empty<ReferenceLine>())
         {
@@ -126,13 +128,23 @@ public sealed class ScatterChart : ChartBase
             {
                 var px = tx(line.Value);
                 ctx.DrawLine(pen, new Point(px, plot.Y), new Point(px, plot.Bottom));
-                if (line.Label is not null) ctx.DrawText(Text(line.Label, 9.5, MutedBrush), new Point(px + 3, plot.Y + 2));
+                if (line.Label is not null)
+                {
+                    var t = Text(line.Label, 9.5, MutedBrush);
+                    ctx.DrawText(t, new Point(px + 3, plot.Y + 2));
+                    occupied.Add(new Rect(px + 3, plot.Y + 2, t.Width, t.Height));
+                }
             }
             else
             {
                 var py = ty(line.Value);
                 ctx.DrawLine(pen, new Point(plot.X, py), new Point(plot.Right, py));
-                if (line.Label is not null) ctx.DrawText(Text(line.Label, 9.5, MutedBrush), new Point(plot.X + 4, py - 12 * FontScale));
+                if (line.Label is not null)
+                {
+                    var t = Text(line.Label, 9.5, MutedBrush);
+                    ctx.DrawText(t, new Point(plot.X + 4, py - 12 * FontScale));
+                    occupied.Add(new Rect(plot.X + 4, py - 12 * FontScale, t.Width, t.Height));
+                }
             }
         }
 
@@ -170,6 +182,7 @@ public sealed class ScatterChart : ChartBase
             var selected = ReferenceEquals(item, SelectedItem);
             var r = selected ? radius * 1.45 : radius;
             ctx.DrawEllipse(new SolidColorBrush(Color.FromArgb(selected ? (byte)255 : (byte)190, c.R, c.G, c.B)), selected ? new Pen(TextBrush, 1.5) : null, center, r, r);
+            occupied.Add(new Rect(center.X - r, center.Y - r, 2 * r, 2 * r));
         }
         if (ShowPointLabels || items.Any(i => i.Labelled))
         {
@@ -182,10 +195,11 @@ public sealed class ScatterChart : ChartBase
                 var box = new Rect(at, new Size(ft.Width, ft.Height));
                 if (placed.Any(p => p.Intersects(box))) continue;   // one label per patch of plot
                 placed.Add(box);
+                occupied.Add(box);
                 ctx.DrawText(ft, at);
             }
         }
-        if (ShowLegend) DrawLegend(ctx, plot, colors.Select(kv => (kv.Key, kv.Value)).ToList());
+        if (ShowLegend) DrawLegend(ctx, plot, colors.Select(kv => (kv.Key, kv.Value)).ToList(), occupied);
     }
 
     /// <summary>The 95 % confidence ellipse of a cloud of points: the covariance's axes, scaled by χ²(2) at 5 %.</summary>
