@@ -24,6 +24,9 @@ public class PathwayTests
         Assert.Contains(reactions, r => r.Reactant == "PA" && r.Product == "PS" && r.Genes.Contains("PTDSS1"));
         Assert.Contains(reactions, r => r.Reactant == "PC" && r.Product == "CL" && r.Genes.Contains("TAZ"));
         Assert.Contains(reactions, r => r.Reactant == "FA 22:5" && r.Product == "FA 24:5" && r.Genes.SequenceEqual(new[] { "ELOVL2" }));
+        // human symbols throughout: BioPAN's mouse Scd1 and Scd3 are SCD and SCD5 here
+        Assert.Equal(new[] { "SCD" }, reactions.First(r => r.Reactant == "FA 18:0" && r.Product == "FA 18:1").Genes);
+        Assert.DoesNotContain(reactions, r => r.Genes.Any(g => g != g.ToUpperInvariant() || g is "SCD1" or "SCD3"));
         Assert.Contains(reactions, r => r.Reactant == "O-PE" && r.Product == "P-PE" && r.Genes.Contains("PEDS1"));
         Assert.Contains(reactions, r => r.Reactant == "PC" && r.Product == "LPC" && r.Kind == ReactionKind.RemovesChain);
         Assert.Contains(reactions, r => r.Reactant == "Chol" && r.Product == "CE" && r.Kind == ReactionKind.ClassOnly && !r.IsBioPan);

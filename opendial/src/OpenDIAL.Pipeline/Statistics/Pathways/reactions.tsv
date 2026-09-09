@@ -2,9 +2,11 @@
 # transcribed from the tool's own database (biopan_reaction and biopan_reaction_gene in the archived
 # source, https://doi.org/10.17605/OSF.IO/PKD6B, GPL-3): 51 reactions between lipid classes, 13 over
 # the ether lipids, 3 over the dihydro sphingoid bases and 30 between fatty acids, with the genes
-# BioPAN names for each. The fatty-acid genes are BioPAN's, given as mouse symbols (Scd1, Scd3) in
-# its database. Below them, marked "extension", the steps OpenDIAL adds for classes a lipidomics run
-# confirms and BioPAN does not cover: the glycosphingolipids, the sterol esters, the acylcarnitines.
+# BioPAN names for each. Every gene is the human symbol: BioPAN's database gives the two
+# stearoyl-CoA desaturases as the mouse Scd1 and Scd3, which are SCD and SCD5 here (human has those
+# two; Scd3 has no one-to-one orthologue). Below them, marked "extension", the steps OpenDIAL adds
+# for classes a lipidomics run confirms and BioPAN does not cover: the glycosphingolipids, the
+# sterol esters, the acylcarnitines.
 #
 # kind says how a reaction maps molecular species onto one another:
 #   preserving  the chains are kept; PE 34:1 -> PC 34:1
@@ -65,13 +67,13 @@ PIP2P	PIP2	PIP	preserving	FIG4;OCRL;INPP5E;PTEN	PIP2 phosphatases	biopan
 PI3K	PIP2	PIP3	preserving	PIK3CA;PIK3CB;PIK3CD;PIK3CG	PI 3-kinase	biopan
 PIP3P	PIP3	PIP2	preserving	INPP5K;INPP5D;INPP5J;PTEN	PIP3 phosphatases	biopan
 ATX	LPC	LPA	preserving	ENPP2	autotaxin	biopan
-FA-16:0-16:1	FA 16:0	FA 16:1	fa	SCD3	desaturation	biopan
+FA-16:0-16:1	FA 16:0	FA 16:1	fa	SCD;SCD5	desaturation (BioPAN: Scd3)	biopan
 FA-16:1-18:1	FA 16:1	FA 18:1	fa	ELOVL5;ELOVL6	elongation	biopan
 FA-16:1-16:2	FA 16:1	FA 16:2	fa	FADS2	desaturation	biopan
 FA-18:2-18:3	FA 18:2	FA 18:3	fa	FADS2	desaturation	biopan
 FA-18:3-20:3	FA 18:3	FA 20:3	fa	ELOVL5;ELOVL7	elongation	biopan
 FA-16:0-18:0	FA 16:0	FA 18:0	fa	ELOVL6	elongation	biopan
-FA-18:0-18:1	FA 18:0	FA 18:1	fa	SCD1	desaturation	biopan
+FA-18:0-18:1	FA 18:0	FA 18:1	fa	SCD	desaturation (BioPAN: Scd1)	biopan
 FA-18:1-18:2	FA 18:1	FA 18:2	fa	FADS2	desaturation	biopan
 FA-18:2-20:2	FA 18:2	FA 20:2	fa	ELOVL5	elongation	biopan
 FA-20:2-20:3	FA 20:2	FA 20:3	fa	FADS1	desaturation	biopan

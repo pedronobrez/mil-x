@@ -111,5 +111,6 @@ can be dropped into. Two classes at a time, like BioPAN. The ether lipids are sp
 `PC P-34:1`), the ceramides and sphingomyelins into the sphingosine and the sphinganine (`dhCer`,
 `dhSM`) forms by the subclass (`Cer_NDS`) or by a composition with no double bond. Cardiolipin,
 the phosphoinositides and the sphingoid bases are in the network but rarely confirmed in a
-positive-mode run, so they usually appear only in **Not measured**. The fatty-acid genes are the
-mouse symbols BioPAN's database carries (`Scd1`, `Scd3`); the rest are human.
+positive-mode run, so they usually appear only in **Not measured**. Every gene is the human
+symbol; BioPAN's database names the two stearoyl-CoA desaturases as the mouse `Scd1` and `Scd3`,
+which are `SCD` and `SCD5` here.

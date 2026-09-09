@@ -57,8 +57,10 @@ per reaction with its id, reactant class, product class, how it maps species (*p
 name and its source. The BioPAN part is a transcription of the tool's own database — the
 `biopan_reaction` and `biopan_reaction_gene` tables of the archived source on OSF — checked line
 by line: 51 reactions between classes, 13 over the ether lipids, 3 over the sphinganine bases and
-30 between fatty acids, 97 in all, with BioPAN's 249 reaction–gene links as they stand (the one
-edit is FA 24:6 → FA 26:6, which BioPAN's table writes as FA(34:6), a slip). Below them, marked
+30 between fatty acids, 97 in all, with BioPAN's 249 reaction–gene links as they stand, two
+edits apart: FA 24:6 → FA 26:6, which BioPAN's table writes as FA(34:6), a slip; and the mouse
+Scd1 and Scd3 on the two desaturations given as the human SCD and SCD5, so the table is human
+symbols throughout. Below them, marked
 `extension`, the twelve steps OpenDIAL adds for classes a run confirms and BioPAN does not cover,
 switched on by **Beyond BioPAN** and off by default. MS-DIAL's ontologies fold onto BioPAN's
 nodes: `Cer_NS`, `Cer_AS` and the other sphingosine subclasses into `Cer`, the `DS` subclasses and
@@ -77,7 +79,8 @@ others — the elongations 16:0 → 18:0 → 20:0 … 30:0, 16:1 → 18:1 → 20
 18:3 → 20:3, 20:4 → 22:4 → 24:4, 18:4 → 20:4, 20:5 → 22:5 → 24:5, 24:6 → 26:6, and the
 desaturations 16:0 → 16:1, 18:0 → 18:1, 16:1 → 16:2, 18:1 → 18:2, 18:2 → 18:3, 20:2 → 20:3,
 20:3 → 20:4, 18:3 → 18:4, 20:4 → 20:5, 24:4 → 24:5, 24:5 → 24:6 — with the genes BioPAN gives
-each (ELOVL1–7, SCD1, SCD3, FADS1, FADS2).
+each (ELOVL1–7, FADS1, FADS2, and the stearoyl-CoA desaturases — BioPAN's mouse Scd1 and Scd3,
+given as the human SCD and SCD5).
 
 **The scoring** follows BioPAN's R code (`lib_pathway_analysis.r`): the weights are the ratios
 themselves, an injection without the reactant is dropped and one without the product weighs zero;
