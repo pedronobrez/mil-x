@@ -119,7 +119,7 @@ manual open at the review page, and searches it. `--limit N` processes only the 
 `--bundle` drives a different build, `--shots` keeps the screenshots, `--keep` leaves it running.
 
 It has teeth. Rebuild with `Gesture="Cmd+5"` put back and it passes the first four shortcuts and
-stops on the fifth: *timed out after 10 s waiting for Cmd+5 to select Statistics*, with the state
+stops on the fifth: *timed out after 30 s waiting for Cmd+5 to select Statistics*, with the state
 the window was still reporting printed underneath.
 
 ### How it can assert anything

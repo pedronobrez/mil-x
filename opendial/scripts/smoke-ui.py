@@ -492,30 +492,33 @@ def main() -> int:
                 state = wait_for(probe, lambda s: s.get("ionRows", 0) > 1, "the table to fill again", 15)
                 check(state["ionRows"] > 1, f"the table shows all {state['ionRows']} features again")
 
+        # a shortcut only lands when the window is frontmost, and something else on the desk can take
+        # the front for a moment; thirty seconds rides that out without hiding a shortcut that never fires
+        SHORTCUT_WAIT = 30
         say("every workspace shortcut goes where it says")
         for number, code in KEY_CODES.items():
             press(code)
             state = wait_for(probe, lambda s, n=number: s.get("workspace") == n - 1,
-                             f"Cmd+{number} to select {WORKSPACES[number - 1]}", 10)
+                             f"Cmd+{number} to select {WORKSPACES[number - 1]}", SHORTCUT_WAIT)
             check(state["workspaceName"] == WORKSPACES[number - 1],
                   f"Cmd+{number} selects {WORKSPACES[number - 1]}")
 
         say("and so does the control key, for a keyboard without a command key")
         press(KEY_CODES[2], modifier="control")
-        wait_for(probe, lambda s: s.get("workspace") == 1, "Ctrl+2 to select Analytics", 10)
+        wait_for(probe, lambda s: s.get("workspace") == 1, "Ctrl+2 to select Analytics", SHORTCUT_WAIT)
         check(True, "Ctrl+2 selects Analytics")
 
         if can_click:
             say("the workspace tabs answer a click, where the window says they are")
             press(KEY_CODES[1])
-            wait_for(probe, lambda s: s.get("workspace") == 0, "the Explorer", 10)
+            wait_for(probe, lambda s: s.get("workspace") == 0, "the Explorer", SHORTCUT_WAIT)
             state = read_probe(probe)
             spot = state["controls"].get("workspace.Statistics")
             check(spot is not None, "the window reports where the Statistics tab is")
             x, y = to_screen(state, spot)
             say(f"       the tab is at {x:.0f}, {y:.0f} on screen")
             click(x, y)
-            state = wait_for(probe, lambda s: s.get("workspace") == 4, "the click to select Statistics", 10)
+            state = wait_for(probe, lambda s: s.get("workspace") == 4, "the click to select Statistics", SHORTCUT_WAIT)
             check(state["workspaceName"] == "Statistics", "clicking the Statistics tab selects it")
             if args.project or args.process:
                 check(state["statistics"]["hasResults"], "the statistics workspace has the batch")
