@@ -139,18 +139,19 @@ values are permuted, and the total Gini decrease attributable to the feature.
 
 ### Pathways
 
-BioPAN's method on the normalised linear values. Every feature is placed in the network by its
-class (the ontology folded to the network's names) and, at the species level, by its sum
-composition, with its chains kept where the name resolved them. A node's abundance in an injection
+BioPAN's network and method on the normalised linear values. Every feature is placed in the
+network by its class — the ontology folded to BioPAN's names, the ethers split by the `O-`/`P-`
+mark in the name, the sphinganine forms by subclass or a saturated composition — and, at the
+species level, by its sum composition, with its chains kept where the name resolved them. A node's abundance in an injection
 is the sum of its features; at the fatty-acid level each resolved chain contributes its species'
 abundance to the chain's node, once per occurrence. The edges are the reaction table's at the class
 level; at the species level a preserving reaction joins equal compositions, a chain-removing one
 joins a resolved species to the species left by dropping each chain, and a chain-adding one the
-reverse; at the fatty-acid level elongation (+2 carbons), the mammalian desaturation steps and the
-shortening of 24:5 and 24:6. For every edge with both ends present, the weight per injection is
-product over reactant; the log2 weights of the two classes are compared by Welch's t-test where
-each has two or more finite weights; Z is the normal quantile of 1 − p/2 with the sign of the
-difference of means, p floored at 10⁻¹⁵. A pathway is a simple directed chain of tested edges up
+reverse; at the fatty-acid level the thirty chain steps of BioPAN's table and no others. For
+every edge with both ends present, the weight per injection is product over reactant (no weight
+without the reactant, zero without the product); the weights of the two classes are compared by
+Welch's t-test where each has two or more; Z is the normal quantile of 1 − p/2 with the sign of
+the difference of means — BioPAN's one-sided `qnorm(1 − p)` — with p floored at 10⁻¹⁵. A pathway is a simple directed chain of tested edges up
 to the chosen length, found by depth-first search from every node (bounded at twenty thousand
 chains), and its Z is Σ Z_i / √k; active and suppressed are |Z| at or past the threshold either
 way. The predicted list is the class-level reactions with exactly one end measured.

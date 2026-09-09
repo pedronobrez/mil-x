@@ -645,6 +645,7 @@
                   <TextBlock Classes="label" Text="chains up to" />
                   <TextBox Text="{Binding Pathways.MaxPathLengthText}" Width="40" ToolTip.Tip="How many reactions a pathway may chain (1 to 6)" />
                   <CheckBox Classes="compact" Content="Show unchanged" IsChecked="{Binding Pathways.ShowUnchanged}" ToolTip.Tip="Draw the reactions that did not pass the threshold too" />
+                  <CheckBox Classes="compact" Content="Beyond BioPAN" IsChecked="{Binding Pathways.BeyondBioPan}" ToolTip.Tip="Also the steps OpenDIAL adds to BioPAN's network: the glycosphingolipids, the sterol esters, the acylcarnitines" />
                   <Button x:Name="PathwaysCompute" Classes="tool strong" Content="Compute" Command="{Binding Pathways.ComputeCommand}"
                           ToolTip.Tip="Score every reaction between the two classes of the comparison" />
                   <Button Classes="tool" Content="Export reactions…" Command="{Binding Pathways.ExportTableCommand}" CommandParameter="reactions" />
@@ -656,13 +657,13 @@
                 <Grid Grid.Column="0" RowDefinitions="*,6,190">
                   <DockPanel Grid.Row="0">
                     <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,6,4,0" TextWrapping="Wrap"
-                               Text="After BioPAN (LIPID MAPS): each reaction is weighted by its product over its reactant in every injection, the weights are compared between the two classes, and the p becomes a signed Z. Green runs faster in the first class, purple slower; the node colour is the class's own change. Click an arrow for its injections; pick a pathway in the table to light its chain." />
+                               Text="BioPAN's network and method (LIPID MAPS): each reaction is weighted by its product over its reactant in every injection, the weights are compared between the two classes by a t-test, and the one-sided p becomes Z. Green runs faster in the first class, purple slower; the node colour is the class's own change. Click an arrow for its injections; pick a pathway in the table to light its chain." />
                     <c:ChartFrame HeadingText="REACTION NETWORK · CLICK AN ARROW"><c:PathwayGraph Result="{Binding Pathways.Result}" SelectedReaction="{Binding Pathways.SelectedReaction, Mode=TwoWay}" HighlightedChain="{Binding Pathways.HighlightedChain}" ShowUnchanged="{Binding Pathways.ShowUnchanged}" /></c:ChartFrame>
                   </DockPanel>
                   <GridSplitter Grid.Row="1" Classes="horizontal" ResizeDirection="Rows" />
                   <DockPanel Grid.Row="2">
                     <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,4,4,0" Text="{Binding Pathways.ReactionDetail}" TextWrapping="Wrap" />
-                    <c:ChartFrame HeadingText="THE SELECTED REACTION · LOG2 OF PRODUCT OVER REACTANT, PER INJECTION"><c:BoxPlotChart Groups="{Binding Pathways.ReactionBoxes}" YLabel="log2 weight" /></c:ChartFrame>
+                    <c:ChartFrame HeadingText="THE SELECTED REACTION · PRODUCT OVER REACTANT, PER INJECTION"><c:BoxPlotChart Groups="{Binding Pathways.ReactionBoxes}" YLabel="weight (product / reactant)" /></c:ChartFrame>
                   </DockPanel>
                 </Grid>
                 <GridSplitter Grid.Column="1" Classes="vertical" ResizeDirection="Columns" />

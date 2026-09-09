@@ -1,73 +1,125 @@
-# The mammalian lipid reaction network, after BioPAN (LIPID MAPS; Gaud et al., F1000Research 2021),
-# restricted to the subclasses MS-DIAL annotates in an LC-MS lipidomics run.
+# The mammalian lipid reaction network of BioPAN (LIPID MAPS; Gaud et al., F1000Research 2021),
+# transcribed from the tool's own database (biopan_reaction and biopan_reaction_gene in the archived
+# source, https://doi.org/10.17605/OSF.IO/PKD6B, GPL-3): 51 reactions between lipid classes, 13 over
+# the ether lipids, 3 over the dihydro sphingoid bases and 30 between fatty acids, with the genes
+# BioPAN names for each. The fatty-acid genes are BioPAN's, given as mouse symbols (Scd1, Scd3) in
+# its database. Below them, marked "extension", the steps OpenDIAL adds for classes a lipidomics run
+# confirms and BioPAN does not cover: the glycosphingolipids, the sterol esters, the acylcarnitines.
 #
 # kind says how a reaction maps molecular species onto one another:
 #   preserving  the chains are kept; PE 34:1 -> PC 34:1
 #   removes     one chain is lost; PC 16:0_18:1 -> LPC 16:0 or LPC 18:1 (needs the chains resolved)
 #   adds        one chain is gained; LPC 16:0 -> PC 16:0_18:1 (needs the product's chains resolved)
 #   class       only the whole classes relate; Chol -> CE
+#   fa          a fatty-acid step, between chains summed over the species that carry them
 #
-# id	reactant	product	kind	genes	note
-PAP	PA	DG	preserving	LPIN1;LPIN2;LPIN3	phosphatidate phosphatase
-DGK	DG	PA	preserving	DGKA;DGKD;DGKE;DGKQ;DGKZ	diacylglycerol kinase
-DGAT	DG	TG	adds	DGAT1;DGAT2	diacylglycerol acyltransferase
-ATGL	TG	DG	removes	PNPLA2;PNPLA3;LIPE	adipose triglyceride lipase
-HSL	DG	MG	removes	LIPE;DAGLA;DAGLB	hormone-sensitive and diacylglycerol lipases
-MGAT	MG	DG	adds	MOGAT1;MOGAT2;MOGAT3	monoacylglycerol acyltransferase
-MGL	MG	FA	preserving	MGLL	monoacylglycerol lipase
-AGPAT	LPA	PA	adds	AGPAT1;AGPAT2;AGPAT3;AGPAT4;AGPAT5	lysophosphatidate acyltransferase
-PLA2-PA	PA	LPA	removes	PLA2G4A;PLA2G6	phospholipase A2 on PA
-LPP	LPA	MG	preserving	PLPP1;PLPP2;PLPP3	lipid phosphate phosphatase
-AGK	MG	LPA	preserving	AGK	acylglycerol kinase
-CPT	DG	PC	preserving	CHPT1;CEPT1	choline phosphotransferase
-EPT	DG	PE	preserving	SELENOI;CEPT1	ethanolamine phosphotransferase
-PLC-PC	PC	DG	preserving	PLCB1;PLCB3;PLCG1;PLCG2;PLCD1;SGMS1;SGMS2	phospholipase C, and the sphingomyelin synthase that takes the headgroup
-PEMT	PE	PC	preserving	PEMT	phosphatidylethanolamine N-methyltransferase
-PSS1	PC	PS	preserving	PTDSS1	phosphatidylserine synthase 1
-PSS2	PE	PS	preserving	PTDSS2	phosphatidylserine synthase 2
-PSD	PS	PE	preserving	PISD	phosphatidylserine decarboxylase
-PLD-PC	PC	PA	preserving	PLD1;PLD2	phospholipase D on PC
-PLD-PE	PE	PA	preserving	PLD1;PLD2	phospholipase D on PE
-CDS	PA	CDP-DG	preserving	CDS1;CDS2	CDP-diacylglycerol synthase
-PIS	CDP-DG	PI	preserving	CDIPT	phosphatidylinositol synthase
-PGS	CDP-DG	PG	preserving	PGS1;PTPMT1	phosphatidylglycerol synthesis via PGP
-CLS	PG	CL	class	CRLS1	cardiolipin synthase
-PI4K	PI	PIP	preserving	PI4KA;PI4KB;PI4K2A;PI4K2B	phosphatidylinositol 4-kinase
-PIP5K	PIP	PIP2	preserving	PIP5K1A;PIP5K1B;PIP5K1C	PIP 5-kinase
-PI3K	PIP2	PIP3	preserving	PIK3CA;PIK3CB;PIK3CD;PIK3CG	PI 3-kinase
-PTEN	PIP3	PIP2	preserving	PTEN	PIP3 3-phosphatase
-INPP5	PIP2	PIP	preserving	INPP5D;INPPL1;SYNJ1;SYNJ2	inositol polyphosphate 5-phosphatases
-SAC1	PIP	PI	preserving	SACM1L	PI4P phosphatase
-PLC-PIP2	PIP2	DG	preserving	PLCB1;PLCG1;PLCD1	phospholipase C on PIP2
-PLA2-PC	PC	LPC	removes	PLA2G4A;PLA2G6;PLA2G2A;PLA2G2E;PLA2G7;PLA2G15	phospholipase A2 on PC
-LPCAT	LPC	PC	adds	LPCAT1;LPCAT2;LPCAT3;LPCAT4	lysophosphatidylcholine acyltransferase
-PLA2-PE	PE	LPE	removes	PLA2G4A;PLA2G6;PLA2G2E	phospholipase A2 on PE
-LPEAT	LPE	PE	adds	MBOAT1;MBOAT2;LPCAT3	lysophosphatidylethanolamine acyltransferase
-PLA2-PS	PS	LPS	removes	PLA2G4A;PLA2G2E;PLA2G6	phospholipase A2 on PS
-LPSAT	LPS	PS	adds	LPCAT3;MBOAT2	lysophosphatidylserine acyltransferase
-PLA2-PI	PI	LPI	removes	PLA2G4A;PLA2G6;PLA2G2A	phospholipase A2 on PI
-LPIAT	LPI	PI	adds	MBOAT7	lysophosphatidylinositol acyltransferase
-PLA2-PG	PG	LPG	removes	PLA2G4A;PLA2G6	phospholipase A2 on PG
-LPGAT	LPG	PG	adds	LPGAT1	lysophosphatidylglycerol acyltransferase
-ATX	LPC	LPA	preserving	ENPP2	autotaxin
-PLA2-PCO	PC O-	LPC O-	removes	PLA2G4A;PLA2G6;PLA2G7	phospholipase A2 on ether PC
-LPCAT-O	LPC O-	PC O-	adds	LPCAT1;LPCAT2	ether LPC acyltransferase
-PLA2-PEO	PE O-	LPE O-	removes	PLA2G4A;PLA2G6	phospholipase A2 on ether PE
-LPEAT-O	LPE O-	PE O-	adds	MBOAT2;LPCAT3	ether LPE acyltransferase
-CERS	Sph	Cer	adds	CERS1;CERS2;CERS3;CERS4;CERS5;CERS6	ceramide synthase
-CDase	Cer	Sph	removes	ASAH1;ASAH2;ACER1;ACER2;ACER3	ceramidase
-SPHK	Sph	S1P	preserving	SPHK1;SPHK2	sphingosine kinase
-SGPP	S1P	Sph	preserving	SGPP1;SGPP2	sphingosine-1-phosphate phosphatase
-SMS	Cer	SM	preserving	SGMS1;SGMS2	sphingomyelin synthase
-SMase	SM	Cer	preserving	SMPD1;SMPD2;SMPD3;SMPD4	sphingomyelinase
-CERK	Cer	Cer1P	preserving	CERK	ceramide kinase
-UGCG	Cer	HexCer	preserving	UGCG;UGT8	glucosyl- and galactosylceramide synthases
-GBA	HexCer	Cer	preserving	GBA;GBA2;GALC	glucosyl- and galactosylceramidases
-LacCerS	HexCer	LacCer	preserving	B4GALT5;B4GALT6	lactosylceramide synthase
-GLB1	LacCer	HexCer	preserving	GLB1	beta-galactosidase
-CST	HexCer	SHexCer	preserving	GAL3ST1	cerebroside sulfotransferase
-ARSA	SHexCer	HexCer	preserving	ARSA	arylsulfatase A
-SOAT	Chol	CE	class	SOAT1;SOAT2	sterol O-acyltransferase
-CEH	CE	Chol	class	LIPE;NCEH1;LIPA	cholesteryl ester hydrolases
-CPT1	FA	CAR	preserving	CPT1A;CPT1B;CPT1C	carnitine palmitoyltransferase 1 (via acyl-CoA)
-CPT2	CAR	FA	preserving	CPT2;CRAT	carnitine palmitoyltransferase 2 (via acyl-CoA)
+# id	reactant	product	kind	genes	note	source
+DGK	DG	PA	preserving	DGKA;DGKB;DGKD;DGKE;DGKG;DGKH;DGKI;DGKK;DGKQ;DGKZ	diacylglycerol kinase	biopan
+PAP	PA	DG	preserving	PLPP1;PLPP2;PLPP3	phosphatidate phosphatase	biopan
+PGS	PA	PG	preserving	CDS1;CDS2;PTPMT1	PG synthesis, via CDP-DG and PGP	biopan
+PIS	PA	PI	preserving	CDS1;CDS2;CDIPT	PI synthesis, via CDP-DG	biopan
+PSS-PA	PA	PS	preserving	CDS1;PTDSS1	PS synthesis from PA	biopan
+PSD	PS	PE	preserving	PISD	phosphatidylserine decarboxylase	biopan
+PSS2	PE	PS	preserving	PTDSS2	phosphatidylserine synthase 2	biopan
+PEMT	PE	PC	preserving	PEMT	phosphatidylethanolamine N-methyltransferase	biopan
+PSS1	PC	PS	preserving	PTDSS1	phosphatidylserine synthase 1	biopan
+TGL	TG	DG	removes	PNPLA4;PNPLA5	triacylglycerol lipases	biopan
+DGAT	DG	TG	adds	DGAT2	diacylglycerol acyltransferase	biopan
+CLS	PG	CL	class	CRLS1	cardiolipin synthase	biopan
+SGPP	SPBP	SPB	preserving	SGPP1;SGPP2	sphingosine-1-phosphate phosphatase	biopan
+SPHK	SPB	SPBP	preserving	SPHK1;SPHK2	sphingosine kinase	biopan
+CDase	Cer	SPB	removes	ACER1;ASAH1;ASAH2	ceramidase	biopan
+CERS	SPB	Cer	adds	CERS1;CERS2;CERS3;CERS4;CERS5;CERS6	ceramide synthase	biopan
+SMS	Cer	SM	preserving	SGMS1;SGMS2;CERT1	sphingomyelin synthase	biopan
+SMase	SM	Cer	preserving	SMPD1;SMPD2;SMPD3	sphingomyelinase	biopan
+dhSMS	dhCer	dhSM	preserving	SGMS1;SGMS2	dihydrosphingomyelin synthase	biopan
+dhSMase	dhSM	dhCer	preserving	SGMS1;SGMS2;SMPD1	dihydrosphingomyelinase	biopan
+DEGS	dhCer	Cer	preserving	DEGS1;DEGS2	dihydroceramide desaturase	biopan
+LPCAT	LPC	PC	adds	LPCAT1;LPCAT2;LPCAT3;LPCAT4	lysophosphatidylcholine acyltransferase	biopan
+PLA2-PC	PC	LPC	removes	PLA2G2E;PLA2G2A;PLA2G2D;PLA2G2F;PLA2G1B;PLA2G4A;PLA2G4B;PLA2G4C;PLA2G4D;PLA2G4E;PLA2G4F	phospholipase A2 on PC	biopan
+AGPAT	LPA	PA	adds	AGPAT1;AGPAT2;AGPAT3;AGPAT4;AGPAT5	lysophosphatidate acyltransferase	biopan
+PLA2-PA	PA	LPA	removes	PLA2G4A;PLA2G4D;PLA2G4E;PLA2G4F	phospholipase A2 on PA	biopan
+LPEAT	LPE	PE	adds	MBOAT1;MBOAT2;LPCAT3;LPCAT4	lysophosphatidylethanolamine acyltransferase	biopan
+PLA2-PE	PE	LPE	removes	PLA2G4C	phospholipase A2 on PE	biopan
+LPIAT	LPI	PI	adds	MBOAT7	lysophosphatidylinositol acyltransferase	biopan
+PLA2-PI	PI	LPI	removes	PLA2G4D;PLA2G4E	phospholipase A2 on PI	biopan
+LPSAT	LPS	PS	adds	MBOAT1;LPCAT3;LPCAT4	lysophosphatidylserine acyltransferase	biopan
+PLA2-PS	PS	LPS	removes	PLA2G2E;PLA2G2A;PLA2G2F	phospholipase A2 on PS	biopan
+LPGAT	LPG	PG	adds	LPGAT1;CRLS1	lysophosphatidylglycerol acyltransferase	biopan
+PLA2-PG	PG	LPG	removes	PLA2G4D;PLA2G4F;CRLS1	phospholipase A2 on PG	biopan
+PLD-PC	PC	PA	preserving	PLD1;PLD2	phospholipase D on PC	biopan
+PLC-PIP2	PIP2	DG	preserving	PLCB1;PLCB2;PLCB3;PLCB4;PLCD1;PLCD3;PLCD4;PLCE1;PLCG1;PLCG2	phospholipase C on PIP2	biopan
+PLC-PC	PC	DG	preserving	PLCB1;PLCG1;PLCD1;SGMS1;SGMS2	phospholipase C on PC, and the sphingomyelin synthase that takes the headgroup (BioPAN names no gene)	biopan
+CPT	DG	PC	preserving	CHPT1	choline phosphotransferase	biopan
+EPT	DG	PE	preserving	CEPT1	ethanolamine phosphotransferase	biopan
+MGAT	MG	DG	adds	MOGAT1;MOGAT2;MOGAT3	monoacylglycerol acyltransferase (BioPAN: MGAT)	biopan
+DGL	DG	MG	removes	PNPLA2;PNPLA3	diacylglycerol lipases	biopan
+CERK	Cer	Cer1P	preserving	CERK	ceramide kinase	biopan
+C1PP	Cer1P	Cer	preserving	PTPA	ceramide-1-phosphate phosphatase	biopan
+SMD	SM	LysoSM	removes	SMPD2	sphingomyelin deacylase	biopan
+TAZ	PC	CL	class	TAZ	cardiolipin remodelling, tafazzin	biopan
+PI4K	PI	PIP	preserving	PI4KA;PI4K2A;PI4K2B;PIP5K1A;PIP5K1B;SACM1L	phosphatidylinositol kinases	biopan
+PIPP	PIP	PI	preserving	SYNJ1;SYNJ2;SACM1L;MTMR1;MTMR2;MTMR3;MTMR4;MTMR6;MTMR7;MTMR8;MTMR9;MTMR14;PTEN	PIP phosphatases	biopan
+PIP5K	PIP	PIP2	preserving	PIKFYVE;PIP5K1A;PIP5K1B;PIP5K1C;PIP4K2A;PIP4K2B;PIP4K2C	PIP kinases	biopan
+PIP2P	PIP2	PIP	preserving	FIG4;OCRL;INPP5E;PTEN	PIP2 phosphatases	biopan
+PI3K	PIP2	PIP3	preserving	PIK3CA;PIK3CB;PIK3CD;PIK3CG	PI 3-kinase	biopan
+PIP3P	PIP3	PIP2	preserving	INPP5K;INPP5D;INPP5J;PTEN	PIP3 phosphatases	biopan
+ATX	LPC	LPA	preserving	ENPP2	autotaxin	biopan
+FA-16:0-16:1	FA 16:0	FA 16:1	fa	SCD3	desaturation	biopan
+FA-16:1-18:1	FA 16:1	FA 18:1	fa	ELOVL5;ELOVL6	elongation	biopan
+FA-16:1-16:2	FA 16:1	FA 16:2	fa	FADS2	desaturation	biopan
+FA-18:2-18:3	FA 18:2	FA 18:3	fa	FADS2	desaturation	biopan
+FA-18:3-20:3	FA 18:3	FA 20:3	fa	ELOVL5;ELOVL7	elongation	biopan
+FA-16:0-18:0	FA 16:0	FA 18:0	fa	ELOVL6	elongation	biopan
+FA-18:0-18:1	FA 18:0	FA 18:1	fa	SCD1	desaturation	biopan
+FA-18:1-18:2	FA 18:1	FA 18:2	fa	FADS2	desaturation	biopan
+FA-18:2-20:2	FA 18:2	FA 20:2	fa	ELOVL5	elongation	biopan
+FA-20:2-20:3	FA 20:2	FA 20:3	fa	FADS1	desaturation	biopan
+FA-18:1-20:1	FA 18:1	FA 20:1	fa	ELOVL3	elongation	biopan
+FA-20:1-22:1	FA 20:1	FA 22:1	fa	ELOVL3	elongation	biopan
+FA-22:1-24:1	FA 22:1	FA 24:1	fa	ELOVL3	elongation	biopan
+FA-18:0-20:0	FA 18:0	FA 20:0	fa	ELOVL1;ELOVL7;ELOVL3	elongation	biopan
+FA-20:0-22:0	FA 20:0	FA 22:0	fa	ELOVL1;ELOVL7;ELOVL3	elongation	biopan
+FA-22:0-24:0	FA 22:0	FA 24:0	fa	ELOVL1;ELOVL7;ELOVL3	elongation	biopan
+FA-24:0-26:0	FA 24:0	FA 26:0	fa	ELOVL1;ELOVL3	elongation	biopan
+FA-26:0-28:0	FA 26:0	FA 28:0	fa	ELOVL4	elongation	biopan
+FA-28:0-30:0	FA 28:0	FA 30:0	fa	ELOVL4	elongation	biopan
+FA-20:3-20:4	FA 20:3	FA 20:4	fa	FADS1	desaturation	biopan
+FA-20:4-22:4	FA 20:4	FA 22:4	fa	ELOVL5;ELOVL2	elongation	biopan
+FA-22:4-24:4	FA 22:4	FA 24:4	fa	ELOVL2	elongation	biopan
+FA-24:4-24:5	FA 24:4	FA 24:5	fa	FADS2	desaturation	biopan
+FA-18:3-18:4	FA 18:3	FA 18:4	fa	FADS2	desaturation	biopan
+FA-18:4-20:4	FA 18:4	FA 20:4	fa	ELOVL5	elongation	biopan
+FA-20:4-20:5	FA 20:4	FA 20:5	fa	FADS1	desaturation	biopan
+FA-20:5-22:5	FA 20:5	FA 22:5	fa	ELOVL5;ELOVL2	elongation	biopan
+FA-22:5-24:5	FA 22:5	FA 24:5	fa	ELOVL2	elongation	biopan
+FA-24:5-24:6	FA 24:5	FA 24:6	fa	FADS2	desaturation	biopan
+FA-24:6-26:6	FA 24:6	FA 26:6	fa	ELOVL2;ELOVL4	elongation (BioPAN's table writes the product as FA(34:6), a slip for 26:6)	biopan
+O-CPT	O-DG	O-PC	preserving	CHPT1	choline phosphotransferase on alkyl-DG	biopan
+O-EPT	O-DG	O-PE	preserving	CEPT1	ethanolamine phosphotransferase on alkyl-DG	biopan
+PEDS	O-PE	P-PE	preserving	PEDS1	plasmanylethanolamine desaturase	biopan
+P-PEPC	P-PE	P-PC	preserving	CEPT1;PLD1;PLPP1;PLPP2;CHPT1	plasmenyl-PC from plasmenyl-PE	biopan
+PLA2-OPC	O-PC	O-LPC	removes	PLA2G2E;PLA2G2A;PLA2G2D;PLA2G2F;PLA2G1B;PLA2G4A;PLA2G4B;PLA2G4C;PLA2G4D;PLA2G4E;PLA2G4F	phospholipase A2 on alkyl-PC	biopan
+PLA2-PPC	P-PC	P-LPC	removes	PLA2G2E;PLA2G2A;PLA2G2D;PLA2G2F;PLA2G1B;PLA2G4A;PLA2G4B;PLA2G4C;PLA2G4D;PLA2G4E;PLA2G4F	phospholipase A2 on plasmenyl-PC	biopan
+PLA2-OPE	O-PE	O-LPE	removes	PLA2G4C	phospholipase A2 on alkyl-PE	biopan
+PLA2-PPE	P-PE	P-LPE	removes	PLA2G4C	phospholipase A2 on plasmenyl-PE	biopan
+PLD-OLPC	O-LPC	O-LPA	preserving	PLD1;PLD2	phospholipase D on alkyl-LPC	biopan
+PLD-OLPE	O-LPE	O-LPA	preserving	PLD2	phospholipase D on alkyl-LPE	biopan
+PLD-PLPC	P-LPC	P-LPA	preserving	PLD1;PLD2	phospholipase D on plasmenyl-LPC	biopan
+PLD-PLPE	P-LPE	P-LPA	preserving	PLD2	phospholipase D on plasmenyl-LPE	biopan
+O-LPCAT	O-LPC	O-PC	adds	LPCAT1	alkyl-LPC acyltransferase	biopan
+dhCERS	dhSPB	dhCer	adds	CERS1;CERS2;CERS3;CERS4;CERS5;CERS6	ceramide synthase on sphinganine	biopan
+dhSPHK	dhSPB	dhSPBP	preserving	SPHK1;SPHK2	sphingosine kinase on sphinganine	biopan
+dhSGPP	dhSPBP	dhSPB	preserving	SGPP1;SGPP2	sphinganine-1-phosphate phosphatase	biopan
+UGCG	Cer	HexCer	preserving	UGCG;UGT8	glucosyl- and galactosylceramide synthases	extension
+GBA	HexCer	Cer	preserving	GBA;GBA2;GALC	glucosyl- and galactosylceramidases	extension
+LacCerS	HexCer	LacCer	preserving	B4GALT5;B4GALT6	lactosylceramide synthase	extension
+GLB1	LacCer	HexCer	preserving	GLB1	beta-galactosidase	extension
+CST	HexCer	SHexCer	preserving	GAL3ST1	cerebroside sulfotransferase	extension
+ARSA	SHexCer	HexCer	preserving	ARSA	arylsulfatase A	extension
+SOAT	Chol	CE	class	SOAT1;SOAT2	sterol O-acyltransferase	extension
+CEH	CE	Chol	class	LIPE;NCEH1;LIPA	cholesteryl ester hydrolases	extension
+CPT1	FA	CAR	preserving	CPT1A;CPT1B;CPT1C	carnitine palmitoyltransferase 1, via acyl-CoA	extension
+CPT2	CAR	FA	preserving	CPT2;CRAT	carnitine palmitoyltransferase 2, via acyl-CoA	extension
+MGL	MG	FA	preserving	MGLL	monoacylglycerol lipase	extension
+PLD-PE	PE	PA	preserving	PLD1;PLD2	phospholipase D on PE	extension

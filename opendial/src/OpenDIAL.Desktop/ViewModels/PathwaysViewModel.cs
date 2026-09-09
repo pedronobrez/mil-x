@@ -28,12 +28,15 @@ public sealed partial class PathwaysViewModel : ViewModelBase
     }
 
     public static string[] Levels { get; } = { "Lipid classes", "Molecular species", "Fatty acids" };
-    public static string[] Thresholds { get; } = { "1.282 (p 0.20)", "1.645 (p 0.10)", "1.960 (p 0.05)", "2.326 (p 0.02)", "2.576 (p 0.01)" };
+    /// <summary>BioPAN's thresholds: one-sided p, Z = Φ⁻¹(1 − p); 1.645 is its default.</summary>
+    public static string[] Thresholds { get; } = { "1.282 (p 0.10)", "1.645 (p 0.05)", "2.054 (p 0.02)", "2.326 (p 0.01)" };
 
     [ObservableProperty] private string _level = Levels[0];
     [ObservableProperty] private string _threshold = Thresholds[1];
     [ObservableProperty] private string _maxPathLengthText = "3";
     [ObservableProperty] private bool _showUnchanged = true;
+    /// <summary>Also the steps OpenDIAL adds beyond BioPAN's network: glycosphingolipids, sterol esters, acylcarnitines.</summary>
+    [ObservableProperty] private bool _beyondBioPan;
     [ObservableProperty] private string _message = "Not computed yet.";
     [ObservableProperty] private PathwayResult? _result;
     [ObservableProperty] private IReadOnlyList<ReactionScore> _reactions = Array.Empty<ReactionScore>();
@@ -82,7 +85,7 @@ public sealed partial class PathwaysViewModel : ViewModelBase
         try
         {
             // the normalised linear values: a ratio of two abundances wants abundances, not their logs
-            var result = LipidPathways.Compute(data.Normalized, _analysis.ClassA, _analysis.ClassB, level, ThresholdValue, length);
+            var result = LipidPathways.Compute(data.Normalized, _analysis.ClassA, _analysis.ClassB, level, ThresholdValue, length, includeExtensions: BeyondBioPan);
             Result = result;
             Reactions = result.Reactions.OrderByDescending(r => r.AbsZ).ToList();
             Pathways = result.Pathways;
@@ -109,15 +112,15 @@ public sealed partial class PathwaysViewModel : ViewModelBase
             return;
         }
         // the weight of the reaction in every injection of each class: what the test compared
-        static List<double> Log2(IReadOnlyList<double> weights) => weights.Where(w => !double.IsNaN(w) && w > 0).Select(Math.Log2).ToList();
+        static List<double> Finite(IReadOnlyList<double> weights) => weights.Where(w => !double.IsNaN(w)).ToList();
         ReactionBoxes = new[]
         {
-            new BoxGroup(Result.ClassA, Log2(value.WeightsA), Result.ClassA),
-            new BoxGroup(Result.ClassB, Log2(value.WeightsB), Result.ClassB),
+            new BoxGroup(Result.ClassA, Finite(value.WeightsA), Result.ClassA),
+            new BoxGroup(Result.ClassB, Finite(value.WeightsB), Result.ClassB),
         };
         ReactionTitle = $"{value.Label} · {value.Note}";
         ReactionDetail = value.Tested
-            ? $"log2({value.Product}/{value.Reactant}) is {value.Log2Change:+0.00;-0.00} higher in {Result.ClassA} than in {Result.ClassB} · p {value.P:0.0E0} · Z {value.Z:0.00} · {value.Status} · genes {value.GeneText}"
+            ? $"{value.Product}/{value.Reactant} is {Math.Pow(2, value.Log2Change):0.00}× ({value.Log2Change:+0.00;-0.00} log2) in {Result.ClassA} against {Result.ClassB} · p {value.P:0.0E0} · Z {value.Z:0.00} · {value.Status} · genes {value.GeneText}"
             : $"Not testable: fewer than two injections in a class have both {value.Reactant} and {value.Product} · genes {value.GeneText}";
     }
 

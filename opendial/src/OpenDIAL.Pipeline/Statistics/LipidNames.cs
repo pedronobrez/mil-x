@@ -98,7 +98,8 @@ public static class LipidNames
     {
         "TG" => 3,
         "CL" => 4,
-        "LPC" or "LPE" or "LPS" or "LPG" or "LPI" or "LPA" or "MG" or "CE" or "FA" or "CAR" or "SPH" or "S1P" or "LPC O-" or "LPE O-" => 1,
+        "LPC" or "LPE" or "LPS" or "LPG" or "LPI" or "LPA" or "MG" or "CE" or "FA" or "CAR" or "SPB" or "SPBP" or "DHSPB" or "DHSPBP" or "LYSOSM"
+            or "O-LPC" or "O-LPE" or "O-LPA" or "P-LPC" or "P-LPE" or "P-LPA" => 1,
         _ => 2,
     };
 

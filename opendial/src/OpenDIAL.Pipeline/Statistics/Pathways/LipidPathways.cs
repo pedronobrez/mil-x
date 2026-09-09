@@ -74,11 +74,12 @@ public sealed record PathwayResult(
 }
 
 /// <summary>
-/// BioPAN's pathway analysis on the reviewed lipids. Each reaction of the network is weighted per
-/// injection by the ratio of its product to its reactant, the weights of the two conditions are
-/// compared, and the p becomes a signed Z; pathways — chains of reactions — are scored by Stouffer's
-/// combination of their reactions' Z-scores. Nothing here is annotated anew: the classes and the
-/// chains come from the names MS-DIAL gave the confirmed features.
+/// BioPAN's pathway analysis on the reviewed lipids, as BioPAN's own code does it: each reaction of
+/// the network is weighted per injection by the ratio of its product to its reactant, the weights
+/// of the two conditions are compared by Welch's t-test, the one-sided p in the direction of the
+/// change becomes Z = Φ⁻¹(1 − p), and a pathway — a chain of reactions — scores Σ Z_i / √k over its
+/// k reactions (BioPAN writes it 1/√(n−1) · Σ Z_i over its n lipids, the same number). Nothing here
+/// is annotated anew: the classes and the chains come from the names MS-DIAL gave the features.
 /// </summary>
 public static class LipidPathways
 {
@@ -87,8 +88,9 @@ public static class LipidPathways
     /// the injections of <paramref name="classA"/> and those of <paramref name="classB"/>.
     /// </summary>
     public static PathwayResult Compute(AnalysisTable table, string classA, string classB, PathwayLevel level = PathwayLevel.Class,
-        double threshold = 1.645, int maxPathLength = 3, int minimumReplicates = 2)
+        double threshold = 1.645, int maxPathLength = 3, int minimumReplicates = 2, bool includeExtensions = false)
     {
+        var network = ReactionDatabase.Reactions.Where(r => includeExtensions || r.IsBioPan).ToList();
         var groups = Univariate.GroupIndices(table);
         if (!groups.TryGetValue(classA, out var a) || !groups.TryGetValue(classB, out var b) || a.Count < minimumReplicates || b.Count < minimumReplicates)
         {
@@ -102,7 +104,7 @@ public static class LipidPathways
         {
             var f = table.Features[j];
             var identity = LipidNames.Parse(f.Name, f.Ontology);
-            var cls = ReactionDatabase.NetworkClass(identity.Class) ?? ReactionDatabase.NetworkClass(LipidNames.Parse(f.Name).Class);
+            var cls = ReactionDatabase.NetworkClass(f.Ontology, f.Name, identity) ?? ReactionDatabase.NetworkClass(null, f.Name);
             if (cls is null) continue;
             var chains = LipidNames.Chains(f.Name);
             var expected = LipidNames.ChainCount(cls);
@@ -165,10 +167,10 @@ public static class LipidPathways
         switch (level)
         {
             case PathwayLevel.Class:
-                foreach (var r in ReactionDatabase.Reactions) Edge(r.Id, r.Reactant, r.Product, r.Reactant, r.Product, r.Genes, r.Note);
+                foreach (var r in network.Where(r => r.Kind != ReactionKind.FattyAcid)) Edge(r.Id, r.Reactant, r.Product, r.Reactant, r.Product, r.Genes, r.Note);
                 break;
             case PathwayLevel.Species:
-                foreach (var r in ReactionDatabase.Reactions)
+                foreach (var r in network.Where(r => r.Kind != ReactionKind.FattyAcid))
                 {
                     switch (r.Kind)
                     {
@@ -198,14 +200,8 @@ public static class LipidPathways
                 }
                 break;
             case PathwayLevel.FattyAcid:
-                foreach (var node in abundance.Keys.ToList())
-                {
-                    var (c, d) = ParseChain(node[3..]);
-                    if (c == 0) continue;
-                    Edge($"ELOVL {c}:{d}", node, $"FA {c + 2}:{d}", "FA", "FA", ElongationGenes(c, d), "elongation by two carbons");
-                    if (DesaturationGenes(c, d) is { } genes) Edge($"DES {c}:{d}", node, $"FA {c}:{d + 1}", "FA", "FA", genes, "desaturation");
-                    if ((c, d) is (24, 5) or (24, 6)) Edge($"BOX {c}:{d}", node, $"FA {c - 2}:{d}", "FA", "FA", new[] { "ACOX1", "HSD17B4" }, "peroxisomal chain shortening");
-                }
+                // BioPAN's thirty steps, and no others: a chain pair the table does not name is not an edge
+                foreach (var r in network.Where(r => r.Kind == ReactionKind.FattyAcid)) Edge(r.Id, r.Reactant, r.Product, "FA", "FA", r.Genes, r.Note);
                 break;
         }
 
@@ -215,17 +211,20 @@ public static class LipidPathways
         {
             var from = abundance[e.From];
             var to = abundance[e.To];
-            var wa = a.Select(i => from[i] > 0 && to[i] > 0 ? to[i] / from[i] : double.NaN).ToList();
-            var wb = b.Select(i => from[i] > 0 && to[i] > 0 ? to[i] / from[i] : double.NaN).ToList();
-            var la = wa.Where(w => !double.IsNaN(w)).Select(Math.Log2).ToArray();
-            var lb = wb.Where(w => !double.IsNaN(w)).Select(Math.Log2).ToArray();
+            // an injection without the reactant has no weight; one without the product has weight zero
+            var wa = a.Select(i => from[i] > 0 ? to[i] / from[i] : double.NaN).ToList();
+            var wb = b.Select(i => from[i] > 0 ? to[i] / from[i] : double.NaN).ToList();
+            var ra = wa.Where(w => !double.IsNaN(w)).ToArray();
+            var rb = wb.Where(w => !double.IsNaN(w)).ToArray();
             double p = double.NaN, z = double.NaN, change = double.NaN;
             var status = "untested";
-            if (la.Length >= minimumReplicates && lb.Length >= minimumReplicates)
+            if (ra.Length >= minimumReplicates && rb.Length >= minimumReplicates)
             {
-                change = la.Average() - lb.Average();
-                (_, p) = Univariate.TTest(la, lb, equalVariance: false);
-                z = SignedZ(p, change);
+                var meanA = ra.Average();
+                var meanB = rb.Average();
+                change = meanA > 0 && meanB > 0 ? Math.Log2(meanA / meanB) : meanA > meanB ? double.PositiveInfinity : meanA < meanB ? double.NegativeInfinity : 0;
+                (_, p) = Univariate.TTest(ra, rb, equalVariance: false);
+                z = SignedZ(p, meanA - meanB);
                 status = z >= threshold ? "active" : z <= -threshold ? "suppressed" : "unchanged";
             }
             scores.Add(new ReactionScore(e.Id, e.From, e.To, e.FromClass, e.ToClass, wa, wb, change, p, z, e.Genes, e.Note) { Status = status });
@@ -263,7 +262,7 @@ public static class LipidPathways
         var predicted = new List<PredictedReaction>();
         if (level == PathwayLevel.Class)
         {
-            foreach (var r in ReactionDatabase.Reactions)
+            foreach (var r in network.Where(r => r.Kind != ReactionKind.FattyAcid))
             {
                 var hasReactant = abundance.ContainsKey(r.Reactant);
                 var hasProduct = abundance.ContainsKey(r.Product);
@@ -300,7 +299,8 @@ public static class LipidPathways
         return values.Count == 0 ? double.NaN : values.Average();
     }
 
-    private static bool IsSphingolipid(string cls) => cls is "Cer" or "SM" or "HexCer" or "LacCer" or "SHexCer" or "Cer1P" or "Sph" or "S1P";
+    private static bool IsSphingolipid(string cls) =>
+        cls is "Cer" or "dhCer" or "SM" or "dhSM" or "HexCer" or "LacCer" or "SHexCer" or "Cer1P" or "SPB" or "SPBP" or "dhSPB" or "dhSPBP" or "LysoSM";
 
     private static IEnumerable<IReadOnlyList<string>> WithoutOne(IReadOnlyList<string> chains)
     {
@@ -330,20 +330,4 @@ public static class LipidPathways
         if (colon <= 0) return (0, 0);
         return int.TryParse(chain[..colon], out var c) && int.TryParse(chain[(colon + 1)..], out var d) ? (c, d) : (0, 0);
     }
-
-    /// <summary>The elongases by the chain they act on: ELOVL6 on palmitate, ELOVL5 and ELOVL2 on the polyunsaturates, ELOVL1/3/7 on the long saturates.</summary>
-    private static IReadOnlyList<string> ElongationGenes(int carbons, int doubleBonds) =>
-        doubleBonds >= 2
-            ? (carbons <= 20 ? new[] { "ELOVL5" } : new[] { "ELOVL2", "ELOVL5" })
-            : carbons <= 16 ? new[] { "ELOVL6" } : new[] { "ELOVL1", "ELOVL3", "ELOVL7" };
-
-    /// <summary>The desaturases: SCD (Δ9) on the saturates, FADS2 (Δ6) and FADS1 (Δ5) on the steps of the n-3 and n-6 series.</summary>
-    private static IReadOnlyList<string>? DesaturationGenes(int carbons, int doubleBonds) => (carbons, doubleBonds) switch
-    {
-        (16, 0) or (18, 0) => new[] { "SCD", "SCD5" },
-        (18, 2) or (18, 3) or (24, 4) or (24, 5) => new[] { "FADS2" },
-        (20, 3) or (20, 4) => new[] { "FADS1" },
-        (22, 4) or (22, 5) => new[] { "FADS2" },
-        _ => null,
-    };
 }

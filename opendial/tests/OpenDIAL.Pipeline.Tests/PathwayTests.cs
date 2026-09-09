@@ -12,24 +12,47 @@ public class PathwayTests
     public void The_reaction_table_reads_and_names_classes_the_parser_knows()
     {
         var reactions = ReactionDatabase.Reactions;
-        Assert.True(reactions.Count >= 60, reactions.Count.ToString());
-        Assert.Contains(reactions, r => r.Id == "PEMT" && r.Reactant == "PE" && r.Product == "PC" && r.Genes.Contains("PEMT"));
+        // BioPAN's database: 51 between classes, 13 over the ethers, 3 over the dihydro bases, 30 between fatty acids
+        Assert.Equal(97, reactions.Count(r => r.IsBioPan));
+        Assert.Equal(30, reactions.Count(r => r.IsBioPan && r.Kind == ReactionKind.FattyAcid));
+        Assert.True(reactions.Count(r => !r.IsBioPan) >= 10, "the extensions are marked as such");
+        Assert.Contains(reactions, r => r.Id == "PEMT" && r.Reactant == "PE" && r.Product == "PC" && r.Genes.SequenceEqual(new[] { "PEMT" }));
+        // the genes as BioPAN names them
+        Assert.Equal(new[] { "PLPP1", "PLPP2", "PLPP3" }, reactions.First(r => r.Reactant == "PA" && r.Product == "DG").Genes);
+        Assert.Equal(11, reactions.First(r => r.Reactant == "PC" && r.Product == "LPC").Genes.Count);
+        Assert.Equal(new[] { "PLA2G4C" }, reactions.First(r => r.Reactant == "PE" && r.Product == "LPE").Genes);
+        Assert.Contains(reactions, r => r.Reactant == "PA" && r.Product == "PS" && r.Genes.Contains("PTDSS1"));
+        Assert.Contains(reactions, r => r.Reactant == "PC" && r.Product == "CL" && r.Genes.Contains("TAZ"));
+        Assert.Contains(reactions, r => r.Reactant == "FA 22:5" && r.Product == "FA 24:5" && r.Genes.SequenceEqual(new[] { "ELOVL2" }));
+        Assert.Contains(reactions, r => r.Reactant == "O-PE" && r.Product == "P-PE" && r.Genes.Contains("PEDS1"));
         Assert.Contains(reactions, r => r.Reactant == "PC" && r.Product == "LPC" && r.Kind == ReactionKind.RemovesChain);
-        Assert.Contains(reactions, r => r.Reactant == "Chol" && r.Product == "CE" && r.Kind == ReactionKind.ClassOnly);
+        Assert.Contains(reactions, r => r.Reactant == "Chol" && r.Product == "CE" && r.Kind == ReactionKind.ClassOnly && !r.IsBioPan);
         Assert.Equal(reactions.Count, reactions.Select(r => r.Id).Distinct().Count());
         Assert.All(reactions, r => Assert.NotEmpty(r.Genes));
+        // every class a reaction names is one the chain-count rule knows to be one- or two-chained
+        Assert.All(ReactionDatabase.Classes, c => Assert.True(LipidNames.ChainCount(c) is 1 or 2 or 3 or 4, c));
     }
 
     [Theory]
-    [InlineData("Cer_NS", "Cer")]
-    [InlineData("HexCer_AP", "HexCer")]
-    [InlineData("EtherPC", "PC O-")]
-    [InlineData("SPB", "Sph")]
-    [InlineData("Hex2Cer", "LacCer")]
-    [InlineData("PC", "PC")]
-    [InlineData("Unknown", null)]
-    public void Ontologies_fold_into_the_network_classes(string ontology, string? expected) =>
-        Assert.Equal(expected, ReactionDatabase.NetworkClass(ontology));
+    [InlineData("Cer_NS", "Cer 18:1;O2/16:0", "Cer")]
+    [InlineData("Cer_NDS", "Cer 18:0;O2/16:0", "dhCer")]
+    [InlineData("Cer_AS", "Cer 18:1;O2/24:0;O", "Cer")]
+    [InlineData("SM", "SM 34:1;O2", "SM")]
+    [InlineData("SM", "SM 34:0;O2", "dhSM")]
+    [InlineData("Sph", "Sph 18:1;O2", "SPB")]
+    [InlineData("DHSph", "Sph 18:0;O2", "dhSPB")]
+    [InlineData("HexCer_AP", "HexCer 42:1;O3", "HexCer")]
+    [InlineData("EtherPC", "PC O-34:1", "O-PC")]
+    [InlineData("EtherPC", "PC P-34:1", "P-PC")]
+    [InlineData("EtherPE", "PE P-16:0_20:4", "P-PE")]
+    [InlineData("EtherLPE", "LPE O-16:0", "O-LPE")]
+    [InlineData("Hex2Cer", "Hex2Cer 34:1;O2", "LacCer")]
+    [InlineData("PC_d5", "PC 33:1 d5", "PC")]
+    [InlineData("CerP", "CerP 34:1;O2", "Cer1P")]
+    [InlineData("PC", "PC 34:1", "PC")]
+    [InlineData("Unknown", "Unknown", null)]
+    public void Ontologies_fold_into_the_network_classes(string ontology, string name, string? expected) =>
+        Assert.Equal(expected, ReactionDatabase.NetworkClass(ontology, name));
 
     [Theory]
     [InlineData("PC 34:1", new[] { "34:1" })]
@@ -92,6 +115,10 @@ public class PathwayTests
 
         Assert.Equal("active", Assert.Single(result.Reactions, r => r.Id == "LPCAT").Status);
         Assert.Equal("active", Assert.Single(result.Reactions, r => r.Id == "CPT").Status);
+        // the extensions stay out unless asked for, and come in marked when they are
+        Assert.DoesNotContain(result.Predicted, p => p.Reaction == "PE → PA");   // PLD on PE is OpenDIAL's addition
+        var extended = LipidPathways.Compute(Table(), "treated", "control", includeExtensions: true);
+        Assert.Contains(extended.Predicted, p => p.Reaction == "PE → PA" && p.Missing == "PA");
 
         // the chain PE → PC → LPC cancels; PE → PC alone stands
         var chain = result.Pathways.First(p => p.Chain == "PE → PC → LPC");
@@ -134,7 +161,7 @@ public class PathwayTests
         // 16:0 sits in PE 34:1, PC 34:1, LPC 16:0 and DG 34:1; 18:1 in all seven species, twice in the 36:2s
         Assert.Equal(4, fa160.Members);
         Assert.Equal(8, fa181.Members);
-        // 16:0 → 18:0 is not there (no 18:0 measured), 16:0 → 16:1 neither; 18:1 has nothing above it measured
+        // BioPAN's table has 16:0 → 18:0 and 16:0 → 16:1, but neither 18:0 nor 16:1 is measured; 18:1 → 18:2, 18:1 → 20:1 likewise
         Assert.Empty(result.Reactions);
         Assert.Contains("No reaction", result.Message);
     }

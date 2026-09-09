@@ -10,9 +10,19 @@ summary: What each version of OpenDIAL brought; the notes are updated with every
 The version shown in **Help ▸ About OpenDIAL** and in the window's probe is the one stamped in
 `opendial/Directory.Build.props`. This page names it, and a test fails the build when it does not.
 
-## 0.4.0 — September 2026
+## 0.4.1 — September 2026
 
 The current version. It tracks MS-DIAL 5.5.260817.
+
+**Changed**
+
+- The pathway table is now BioPAN's own, transcribed from the tool's archived database: 97 reactions (51 between classes, 13 over the ether lipids, 3 over the sphinganine bases, 30 between fatty acids) with its 249 reaction–gene links; the twelve steps OpenDIAL adds are marked and switched on by **Beyond BioPAN**, off by default. The ether classes split into `O-` and `P-`, the ceramides and sphingomyelins into their sphinganine forms, as BioPAN has them.
+- The reaction weights are compared as BioPAN compares them — the ratios themselves, not their logs — and the thresholds are BioPAN's, one-sided: 1.282, 1.645 (default), 2.054, 2.326.
+- The design notes say where the two agree (the pathway score is the same number) and where they do not (the species-level chain rule, the extensions).
+
+## 0.4.0 — September 2026
+
+It tracks MS-DIAL 5.5.260817.
 
 **New**
 

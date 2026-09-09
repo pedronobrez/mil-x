@@ -112,6 +112,7 @@ public class OneFactorRealDataTests
                 Assert.Contains(pathways.Reactions, r => r.Id == "PLA2-PC" && r.Tested);
                 Assert.Contains(pathways.Predicted, p => p.Missing == "PS");
                 Assert.Contains(pathways.Predicted, p => p.Reaction == "Cer → SM" && p.Missing == "Cer");
+                Assert.Contains(pathways.Nodes, n => n.Name == "O-PC");   // the EtherPC standards-free confirmed features
             }
         }
     }

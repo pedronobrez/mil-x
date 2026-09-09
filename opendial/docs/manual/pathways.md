@@ -17,35 +17,40 @@ shows, and nothing has to be exported and pasted into a web form. The design not
 
 ## What it computes
 
-The mammalian lipid network, as BioPAN publishes it, is a set of reactions between lipid classes:
-PE → PC by PEMT, PC → LPC by a phospholipase A2, LPC → PC by the LPCATs, DG → TG by DGAT, Cer → SM
-by the sphingomyelin synthases, PC → PS by PTDSS1, and so on — sixty-odd steps over some thirty
-classes in OpenDIAL's table, with the genes of the enzymes behind each. For every reaction whose
-reactant and product are both measured:
+The mammalian lipid network is BioPAN's own, transcribed from the tool's database: 51 reactions
+between lipid classes (PE → PC by PEMT, PC → LPC by the phospholipases A2, LPC → PC by the LPCATs,
+DG → TG by DGAT2, Cer → SM by the sphingomyelin synthases, PC → PS by PTDSS1, PA → PG, PA → PI,
+PA → PS, the phosphoinositide kinases and phosphatases, and so on), 13 over the ether lipids
+(alkyl `O-` and alkenyl `P-` forms of PC, PE, their lyso species and LPA), 3 over the sphinganine
+bases, and 30 between fatty acids — 97 in all, over 40 classes, with the genes BioPAN names for
+each. For every reaction whose reactant and product are both measured:
 
 1. **The weight**, per injection: the product's abundance divided by the reactant's. A reaction
-   running faster leaves more product per unit of reactant.
-2. **The comparison**: the weights of the first class against the weights of the second, on the
-   log scale, with Welch's t-test — the same test the **Statistical test** page uses.
-3. **The Z-score**: the p turned into a normal quantile, with the sign of the change. Z is
-   positive when the reaction's weight is higher in the first class, negative when lower.
+   running faster leaves more product per unit of reactant. An injection without the reactant has
+   no weight; one without the product has weight zero.
+2. **The comparison**: the weights of the first class against the weights of the second, with
+   Welch's t-test on the weights themselves, as BioPAN's code does it.
+3. **The Z-score**: the one-sided p in the direction of the change turned into a normal quantile,
+   Z = Φ⁻¹(1 − p), with the sign of the change — BioPAN's `qnorm(1 - p)`. Z is positive when the
+   reaction's weight is higher in the first class, negative when lower.
 4. **The status**: *active* when Z is past the threshold (faster in the first class), *suppressed*
    when past it the other way, *unchanged* between.
 
 Then the **pathways**: every chain of reactions that can be walked through the network, up to a
-chosen length, scored by combining its reactions' Z-scores (Stouffer's method: the sum divided by
-the square root of the number of steps), so that a chain of consistent steps scores higher than any
-one of them and a chain whose steps cancel scores near zero. A pathway is active or suppressed at
-the same threshold.
+chosen length, scored by combining its reactions' Z-scores — the sum divided by the square root of
+the number of steps, which is BioPAN's 1/√(n−1) · Σ Zᵢ over the n lipids of the chain — so that a
+chain of consistent steps scores higher than any one of them and a chain whose steps cancel scores
+near zero. A pathway is active or suppressed at the same threshold.
 
 ## The band
 
 | Control | What it does |
 | --- | --- |
 | **Level** | **Lipid classes** — every confirmed PC summed against every confirmed PE; **Molecular species** — PE 34:1 against PC 34:1, PC 16:0_18:1 against LPC 16:0 and LPC 18:1, and so on, following the compositions MS-DIAL resolved; **Fatty acids** — each chain summed over the species that carry it, and the elongation and desaturation steps between chains |
-| **\|Z\| ≥** | the threshold: 1.282 (p 0.20), **1.645 (p 0.10, BioPAN's default)**, 1.960 (p 0.05), 2.326 (p 0.02), 2.576 (p 0.01) — two-sided p |
+| **\|Z\| ≥** | BioPAN's thresholds, one-sided: 1.282 (p 0.10), **1.645 (p 0.05, the default)**, 2.054 (p 0.02), 2.326 (p 0.01) |
 | **chains up to** | how many reactions a pathway may chain (3 by default; 1 to 6) |
 | **Show unchanged** | draw the reactions that did not pass the threshold too, in grey |
+| **Beyond BioPAN** | also the steps OpenDIAL adds to the network for classes a lipidomics run confirms and BioPAN does not cover — Cer ↔ HexCer ↔ LacCer, HexCer ↔ SHexCer, Chol ↔ CE, FA ↔ CAR, MG → FA, PE → PA — marked `extension` in the table; off by default, so the default result is BioPAN's network and nothing else |
 | **Compute** | score the network between the two classes chosen on the **Statistical test** page |
 | **Export reactions…**, **Export pathways…**, **Export list…** | the tables as tab-separated text; see [[exports#The analysis tables]] |
 
@@ -64,9 +69,9 @@ because fewer than two injections in a class had both ends. The thicker the arro
 where it fell — so a green arrow into a green node is a reaction that ran faster *and* produced
 more, and a green arrow into a grey node is one whose product was consumed as fast as it was made.
 
-Click an arrow and its injections are drawn below, one box per class, log2 of product over
-reactant — the numbers the test compared — with the reaction's enzyme, its p, its Z and its genes
-in the line under. Pick a pathway in the table and its chain lights up in the network.
+Click an arrow and its injections are drawn below, one box per class, product over reactant —
+the numbers the test compared — with the reaction's enzyme, its p, its Z and its genes in the line
+under. Pick a pathway in the table and its chain lights up in the network.
 
 ## The tables
 
@@ -99,8 +104,12 @@ in the composition-preserving reactions (PE 34:1 → PC 34:1) but not in the cha
 ## What it is not
 
 The mammalian network only — a plant or yeast result gets the reactions that overlap and no more;
-the table is a text file (`reactions.tsv` in the engine) that another organism's network can be
-dropped into. Two classes at a time, like BioPAN. Ether lipids are scored as their own classes
-(`PC O-`, `PE O-`) but the plasmanyl/plasmenyl step is not in the table because MS-DIAL does not
-tell the two apart. Cardiolipin, the phosphoinositides and CDP-DG are in the network but rarely
-confirmed in a positive-mode run, so they usually appear only in **Not measured**.
+the table is a text file (`reactions.tsv` in the engine, one line per reaction with its id, the two
+classes, how it maps species, its genes, the enzyme and its source) that another organism's network
+can be dropped into. Two classes at a time, like BioPAN. The ether lipids are split into alkyl
+(`O-PC`, `O-PE`, …) and alkenyl (`P-PC`, `P-PE`, …) by the name MS-DIAL wrote (`PC O-34:1` against
+`PC P-34:1`), the ceramides and sphingomyelins into the sphingosine and the sphinganine (`dhCer`,
+`dhSM`) forms by the subclass (`Cer_NDS`) or by a composition with no double bond. Cardiolipin,
+the phosphoinositides and the sphingoid bases are in the network but rarely confirmed in a
+positive-mode run, so they usually appear only in **Not measured**. The fatty-acid genes are the
+mouse symbols BioPAN's database carries (`Scd1`, `Scd3`); the rest are human.
