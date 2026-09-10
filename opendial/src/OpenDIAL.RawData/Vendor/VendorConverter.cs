@@ -181,7 +181,7 @@ public sealed class VendorConverter
         }
         var help = new StringBuilder();
         help.Append("No msconvert found. Options: (1) install ProteoWizard and put msconvert on PATH or set OPENDIAL_MSCONVERT; ");
-        help.Append("(2) install Docker Desktop (with Rosetta/x86-64 emulation on Apple Silicon) and pull '");
+        help.Append("(2) run a Docker daemon (Docker Desktop, or colima with an x86-64 QEMU VM on Apple Silicon: Rosetta cannot run the image's Wine) and pull '");
         help.Append(_options.DockerImage).Append("'; (3) convert the files to mzML on a Windows machine with msconvert.");
         if (docker != null) help.Append(" Docker was found but the daemon is not running.");
         return new ConverterAvailability { Kind = ConverterKind.None, Message = help.ToString() };

@@ -22,6 +22,7 @@ A versão atual. Segue o MS-DIAL 5.5.260817.
 
 **Corrigido**
 
+- A ponte msconvert está verificada de ponta a ponta em Apple Silicon: o `small.RAW` do ProteoWizard converte pela máquina QEMU x86-64 do colima, pela linha de comando e pela aplicação instalada, em cerca de 30 segundos. A Rosetta não consegue correr o Wine da imagem, e o manual e a mensagem do conversor agora dizem isso e dão o caminho do colima.
 - Os trechos de código, as marcas da busca, os cabeçalhos de tabela e as réguas do manual tomavam as cores do tema claro fosse qual fosse o tema da janela, de modo que uma janela escura desenhava o código branco sobre branco. Todo pincel de uma página agora segue a janela em que está, e muda com o tema.
 
 ## 0.4.2 — setembro de 2026

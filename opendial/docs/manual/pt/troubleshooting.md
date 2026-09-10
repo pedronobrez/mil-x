@@ -46,6 +46,15 @@ Veja [[raw-data-formats#A ponte msconvert]].
 **A conversão demora minutos por arquivo.** Sob Docker em Apple Silicon a imagem corre sob emulação
 x86-64; esse é o custo. Acontece uma vez por arquivo.
 
+**O log diz `rosetta error: invalid gdt selector index` e o msconvert sai com código 1.** O
+contentor está correndo sob Rosetta, que não consegue correr o Wine da imagem. Dê ao Docker uma
+máquina virtual QEMU: com o colima, `colima delete` e `colima start --arch x86_64 --vm-type qemu`;
+no Docker Desktop, desligue "Use Rosetta for x86_64/amd64 emulation". Veja
+[[raw-data-formats#A ponte msconvert]].
+
+**O colima recusa arrancar com `guest agent binary could not be found for Linux-x86_64`.** A VM
+x86-64 precisa dos agentes extra do lima: `brew install lima-additional-guestagents`.
+
 **`Raw data file not found (was the project folder moved?)`.** O projeto grava os caminhos dos
 arquivos brutos; relativos quando estão perto, absolutos senão. Mova os arquivos brutos com o
 projeto, ou adicione-os de novo na área Samples.

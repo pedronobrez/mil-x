@@ -45,6 +45,15 @@ msconvert, or convert the file elsewhere and put the `.mzML` beside the source. 
 **Conversion takes minutes per file.** Under Docker on Apple Silicon the image runs under x86-64
 emulation; that is the cost. It happens once per file.
 
+**The log says `rosetta error: invalid gdt selector index` and msconvert exits with code 1.** The
+container is running under Rosetta, which cannot run the image's Wine. Give Docker a QEMU
+virtual machine instead: with colima, `colima delete` and `colima start --arch x86_64 --vm-type
+qemu`; in Docker Desktop, turn off "Use Rosetta for x86_64/amd64 emulation". See
+[[raw-data-formats#The msconvert bridge]].
+
+**colima refuses to start with `guest agent binary could not be found for Linux-x86_64`.** The
+x86-64 VM needs lima's extra guest agents: `brew install lima-additional-guestagents`.
+
 **`Raw data file not found (was the project folder moved?)`.** The project records the raw files'
 paths; relative when they are nearby, absolute otherwise. Move the raw files with the project, or
 add them again in the Samples workspace.

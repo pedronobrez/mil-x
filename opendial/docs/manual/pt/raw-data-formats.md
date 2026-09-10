@@ -71,8 +71,18 @@ uma vez.
 
 Dois conversores, escolhidos em [[settings]]:
 
-1. **Docker** — o Docker Desktop com a imagem oficial `proteowizard/pwiz-skyline-i-agree-to-the-vendor-licenses`, que traz os leitores dos fabricantes sob Wine; em Apple Silicon corre sob emulação x86-64, lentamente (minutos por arquivo) mas exatamente. Faça `docker pull` da imagem uma vez.
+1. **Docker** — qualquer daemon Docker com a imagem oficial `proteowizard/pwiz-skyline-i-agree-to-the-vendor-licenses`, que traz os leitores dos fabricantes sob Wine. A imagem é só x86-64, de modo que em Apple Silicon tem de correr numa máquina virtual emulada: a do Docker Desktop, ou a do colima. A Rosetta não consegue corrê-la — o Wine para de imediato com `rosetta error: invalid gdt selector index` — por isso a máquina tem de ser QEMU. A imagem tem 9 GB descompactada, puxada uma vez. A emulação completa é lenta mas exata: o `small.RAW` de 1,5 MB do próprio ProteoWizard (48 espectros de um Thermo LTQ) converte em cerca de 30 segundos, a maior parte o Wine a arrancar, e o mzML cai ao lado da origem com todo precursor e energia de colisão no lugar.
 2. **Um msconvert nativo** no PATH ou no caminho que você der — uma máquina Windows ou uma caixa Linux com a imagem também conseguem converter, e o mzML copiado para cá é reconhecido.
+
+Preparar o colima em Apple Silicon, uma vez:
+
+```bash
+brew install colima docker qemu lima-additional-guestagents
+colima start --arch x86_64 --vm-type qemu --cpu 4 --memory 8 --disk 40
+docker pull --platform linux/amd64 proteowizard/pwiz-skyline-i-agree-to-the-vendor-licenses:latest
+```
+
+`colima start` é preciso de novo depois de reiniciar a máquina. A aplicação encontra o daemon pelo contexto docker que o colima escreve, mesmo lançada pelo Finder.
 
 As variáveis de ambiente que o afinam estão em [[environment-variables]]. Sem conversor a corrida
 para no primeiro arquivo de fabricante com uma mensagem nomeando as duas opções.
