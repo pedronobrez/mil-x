@@ -19,7 +19,7 @@ public sealed class LinkTextBlock : TextBlock
     /// <summary>Raised with the link target (a slug for a wikilink, a URL otherwise) and its anchor.</summary>
     public event Action<string, string?, bool>? LinkClicked;
 
-    public void AddRun(string text, bool bold, bool italic, bool code, IBrush? background)
+    public void AddRun(string text, bool bold, bool italic, bool code, bool highlighted)
     {
         var run = new Run(text);
         if (bold) run.FontWeight = FontWeight.SemiBold;
@@ -28,23 +28,20 @@ public sealed class LinkTextBlock : TextBlock
         {
             run.FontFamily = (FontFamily)(Application.Current?.FindResource("OdMonoFont") ?? FontFamily.Default);
             run.FontSize = 12;
-            run.Background = Brush("OdSurfaceAlt", Colors.WhiteSmoke);
         }
-        if (background is not null) run.Background = background;
-        Inlines!.Add(run);
+        Inlines!.Add(run);   // in the tree first, so the brushes resolve against the window's theme
+        if (highlighted) Themed(run, TextElement.BackgroundProperty, "OdWarningSoft", Colors.LightYellow);
+        else if (code) Themed(run, TextElement.BackgroundProperty, "OdSurfaceAlt", Colors.WhiteSmoke);
         _length += text.Length;
     }
 
-    public void AddLink(string text, string target, string? anchor, bool wiki, bool bold, IBrush? background)
+    public void AddLink(string text, string target, string? anchor, bool wiki, bool bold, bool highlighted)
     {
-        var run = new Run(text)
-        {
-            Foreground = Brush("OdAccent", Colors.RoyalBlue),
-            TextDecorations = wiki ? null : Avalonia.Media.TextDecorations.Underline,
-        };
+        var run = new Run(text) { TextDecorations = wiki ? null : Avalonia.Media.TextDecorations.Underline };
         if (bold) run.FontWeight = FontWeight.SemiBold;
-        if (background is not null) run.Background = background;
         Inlines!.Add(run);
+        Themed(run, TextElement.ForegroundProperty, "OdAccent", Colors.RoyalBlue);
+        if (highlighted) Themed(run, TextElement.BackgroundProperty, "OdWarningSoft", Colors.LightYellow);
         _links.Add((_length, _length + text.Length, target, anchor, wiki));
         _length += text.Length;
     }
@@ -79,8 +76,13 @@ public sealed class LinkTextBlock : TextBlock
         }
     }
 
-    internal static IBrush Brush(string key, Color fallback) =>
-        Application.Current?.FindResource(key) as IBrush ?? new SolidColorBrush(fallback);
+    /// <summary>
+    /// Gives a property the theme's brush, and keeps it there. The brush is resolved through the
+    /// element once it is in a window, not through the application while the page is being built:
+    /// looked up that way, a dark window got the light surface behind its code, and white on white.
+    /// </summary>
+    internal static void Themed(StyledElement target, AvaloniaProperty property, string key, Color fallback) =>
+        target.Bind(property, target.GetResourceObservable(key, v => v as IBrush ?? new SolidColorBrush(fallback)));
 }
 
 /// <summary>
@@ -116,11 +118,18 @@ public sealed class MarkdownRenderer
         CodeBlock c => Code(c),
         QuoteBlock q => Quote(q),
         ImageBlock i => Image(i),
-        RuleBlock => new Border { Height = 1, Background = LinkTextBlock.Brush("OdLine", Colors.LightGray), Margin = new Thickness(0, 8, 0, 14) },
+        RuleBlock => Rule(),
         ListBlock l => List(l, 0),
         TableBlock t => Table(t),
         _ => null,
     };
+
+    private static Control Rule()
+    {
+        var rule = new Border { Height = 1, Margin = new Thickness(0, 8, 0, 14) };
+        LinkTextBlock.Themed(rule, Border.BackgroundProperty, "OdLine", Colors.LightGray);
+        return rule;
+    }
 
     private Control Heading(HeadingBlock h)
     {
@@ -132,9 +141,6 @@ public sealed class MarkdownRenderer
         return block;
     }
 
-    /// <summary>The words the reader searched for, marked on the page so the hit is findable.</summary>
-    private IBrush? HighlightBrush => _highlight.Length == 0 ? null : LinkTextBlock.Brush("OdWarningSoft", Colors.LightYellow);
-
     private LinkTextBlock Paragraph(string text, double size, Thickness margin)
     {
         var block = new LinkTextBlock { TextWrapping = TextWrapping.Wrap, FontSize = size, Margin = margin, LineHeight = size * 1.5 };
@@ -144,12 +150,12 @@ public sealed class MarkdownRenderer
         {
             if (span.Link is not null)
             {
-                block.AddLink(span.Text, span.Link, span.LinkAnchor, span.IsWikiLink, span.Bold, null);
+                block.AddLink(span.Text, span.Link, span.LinkAnchor, span.IsWikiLink, span.Bold, false);
                 continue;
             }
             foreach (var (piece, marked) in Split(span.Text))
             {
-                block.AddRun(piece, span.Bold, span.Italic, span.Code, marked ? HighlightBrush : null);
+                block.AddRun(piece, span.Bold, span.Italic, span.Code, marked);
             }
         }
         return block;
@@ -186,28 +192,30 @@ public sealed class MarkdownRenderer
             FontSize = 11.5,
             TextWrapping = TextWrapping.NoWrap,
         };
-        return new Border
+        var box = new Border
         {
             Classes = { "panel" },
-            Background = LinkTextBlock.Brush("OdSurfaceAlt", Colors.WhiteSmoke),
             Padding = new Thickness(12, 8),
             Margin = new Thickness(0, 2, 0, 12),
             Child = new ScrollViewer { HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, VerticalScrollBarVisibility = ScrollBarVisibility.Disabled, Content = text },
         };
+        LinkTextBlock.Themed(box, Border.BackgroundProperty, "OdSurfaceAlt", Colors.WhiteSmoke);
+        return box;
     }
 
     private Control Quote(QuoteBlock q)
     {
         var paragraph = Paragraph(q.Text, 13, new Thickness(0));
-        paragraph.Foreground = LinkTextBlock.Brush("OdInkMuted", Colors.Gray);
-        return new Border
+        LinkTextBlock.Themed(paragraph, TextBlock.ForegroundProperty, "OdInkMuted", Colors.Gray);
+        var quote = new Border
         {
-            BorderBrush = LinkTextBlock.Brush("OdAccentSoft", Colors.LightBlue),
             BorderThickness = new Thickness(3, 0, 0, 0),
             Padding = new Thickness(12, 2, 0, 2),
             Margin = new Thickness(0, 2, 0, 12),
             Child = paragraph,
         };
+        LinkTextBlock.Themed(quote, Border.BorderBrushProperty, "OdAccentSoft", Colors.LightBlue);
+        return quote;
     }
 
     private static Control Image(ImageBlock i)
@@ -230,7 +238,9 @@ public sealed class MarkdownRenderer
         var image = new Avalonia.Controls.Image { Source = bitmap, Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Left, MaxWidth = 900 };
         var caption = string.IsNullOrWhiteSpace(i.Alt) ? null : new TextBlock { Text = i.Alt, Classes = { "hint" }, Margin = new Thickness(0, 4, 0, 0) };
         var stack = new StackPanel { Margin = new Thickness(0, 4, 0, 14) };
-        stack.Children.Add(new Border { BorderBrush = LinkTextBlock.Brush("OdLine", Colors.LightGray), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(6), ClipToBounds = true, Child = image, HorizontalAlignment = HorizontalAlignment.Left });
+        var frame = new Border { BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(6), ClipToBounds = true, Child = image, HorizontalAlignment = HorizontalAlignment.Left };
+        LinkTextBlock.Themed(frame, Border.BorderBrushProperty, "OdLine", Colors.LightGray);
+        stack.Children.Add(frame);
         if (caption is not null) stack.Children.Add(caption);
         return stack;
     }
@@ -242,7 +252,8 @@ public sealed class MarkdownRenderer
         foreach (var item in list.Items)
         {
             var row = new Grid { ColumnDefinitions = new ColumnDefinitions("22,*") };
-            var marker = new TextBlock { Text = list.Ordered ? $"{number++}." : "•", Foreground = LinkTextBlock.Brush("OdInkMuted", Colors.Gray), VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 2, 0, 0) };
+            var marker = new TextBlock { Text = list.Ordered ? $"{number++}." : "•", VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 2, 0, 0) };
+            LinkTextBlock.Themed(marker, TextBlock.ForegroundProperty, "OdInkMuted", Colors.Gray);
             var text = Paragraph(item.Text, 13, new Thickness(0));
             Grid.SetColumn(text, 1);
             row.Children.Add(marker);
@@ -258,7 +269,6 @@ public sealed class MarkdownRenderer
         var columns = Math.Max(t.Header.Count, t.Rows.Count == 0 ? 0 : t.Rows.Max(r => r.Count));
         var grid = new Grid { Margin = new Thickness(0, 2, 0, 14) };
         for (var c = 0; c < columns; c++) grid.ColumnDefinitions.Add(new ColumnDefinition(c == columns - 1 ? GridLength.Star : GridLength.Auto) { MaxWidth = 420 });
-        var line = LinkTextBlock.Brush("OdLine", Colors.LightGray);
         void Add(IReadOnlyList<string> cells, int row, bool header)
         {
             grid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
@@ -266,15 +276,15 @@ public sealed class MarkdownRenderer
             {
                 var text = c < cells.Count ? cells[c] : string.Empty;
                 var block = Paragraph(text, 12.5, new Thickness(0));
-                if (header) { block.FontWeight = FontWeight.SemiBold; block.Foreground = LinkTextBlock.Brush("OdInkMuted", Colors.Gray); }
+                if (header) { block.FontWeight = FontWeight.SemiBold; LinkTextBlock.Themed(block, TextBlock.ForegroundProperty, "OdInkMuted", Colors.Gray); }
                 var cell = new Border
                 {
                     Child = block,
                     Padding = new Thickness(8, 5),
-                    BorderBrush = line,
                     BorderThickness = new Thickness(0, 0, 0, 1),
-                    Background = header ? LinkTextBlock.Brush("OdSurfaceAlt", Colors.WhiteSmoke) : null,
                 };
+                LinkTextBlock.Themed(cell, Border.BorderBrushProperty, "OdLine", Colors.LightGray);
+                if (header) LinkTextBlock.Themed(cell, Border.BackgroundProperty, "OdSurfaceAlt", Colors.WhiteSmoke);
                 Grid.SetRow(cell, row);
                 Grid.SetColumn(cell, c);
                 grid.Children.Add(cell);

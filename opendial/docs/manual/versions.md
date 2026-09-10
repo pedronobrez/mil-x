@@ -19,6 +19,10 @@ The current version. It tracks MS-DIAL 5.5.260817.
 - The **Two factors** page of the Statistics workspace: the two-way analysis of variance per feature with the interaction (type-II sums of squares, so unbalanced designs and empty cells are handled), and ASCA over the whole matrix with a permutation test per effect and a scores plot per effect. The second factor is a **Factor** column in the Samples workspace, saved with the project. See [[two-factor-analysis]].
 - The manual in Portuguese, beside the English one: **Português** in the Help window, and a second PDF.
 
+**Fixed**
+
+- The manual's code spans, search highlights, table headers and rules took their colours from the light theme whatever the window's theme, so a dark window drew its code white on white. Every brush on a page now follows the window it is in, and changes with the theme.
+
 ## 0.4.2 — September 2026
 
 It tracks MS-DIAL 5.5.260817.

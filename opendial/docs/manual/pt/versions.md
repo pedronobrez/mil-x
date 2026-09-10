@@ -20,6 +20,10 @@ A versão atual. Segue o MS-DIAL 5.5.260817.
 - A página **Two factors** da área Statistics: a análise de variância de dois fatores por feature com a interação (somas de quadrados do tipo II, de modo que desenhos desbalanceados e células vazias são tratados), e ASCA sobre a matriz inteira com um teste de permutação por efeito e um gráfico de escores por efeito. O segundo fator é uma coluna **Factor** na área Samples, salva com o projeto. Veja [[two-factor-analysis]].
 - O manual em português, ao lado do inglês: **Português** na janela de ajuda, e um segundo PDF.
 
+**Corrigido**
+
+- Os trechos de código, as marcas da busca, os cabeçalhos de tabela e as réguas do manual tomavam as cores do tema claro fosse qual fosse o tema da janela, de modo que uma janela escura desenhava o código branco sobre branco. Todo pincel de uma página agora segue a janela em que está, e muda com o tema.
+
 ## 0.4.2 — setembro de 2026
 
 Segue o MS-DIAL 5.5.260817.

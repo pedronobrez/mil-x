@@ -1,8 +1,10 @@
 using System.Text.RegularExpressions;
 using Avalonia.Controls;
+using Avalonia.Controls.Documents;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.Media;
 using Avalonia.VisualTree;
 using OpenDIAL.Desktop.Help;
 using OpenDIAL.Desktop.Views;
@@ -259,6 +261,42 @@ public class ManualTests
     {
         var text = string.Join("\n", Edition(language).Pages.Select(p => p.Body));
         foreach (var (_, name) in Manual.Languages) Assert.Contains(name, text);
+    }
+
+    /// <summary>
+    /// A page's brushes follow the window's theme. Looked up through the application while the page
+    /// was built, a dark window drew its code spans on the light theme's surface: white on white.
+    /// </summary>
+    [AvaloniaFact]
+    public void The_page_takes_its_brushes_from_the_window_theme()
+    {
+        static Color ColorOf(IBrush? brush) => Assert.IsAssignableFrom<ISolidColorBrush>(brush).Color;
+        static Color Resource(Window window, string key)
+        {
+            Assert.True(window.TryFindResource(key, window.ActualThemeVariant, out var value), key);
+            return ColorOf(Assert.IsAssignableFrom<IBrush>(value));
+        }
+
+        foreach (var variant in new[] { Avalonia.Styling.ThemeVariant.Dark, Avalonia.Styling.ThemeVariant.Light })
+        {
+            var vm = new HelpViewModel(Edition("en"));
+            var window = new HelpWindow { DataContext = vm, Width = 1100, Height = 760, RequestedThemeVariant = variant };
+            window.Show();
+            vm.Query = "drift";
+            vm.Open(vm.Results[0]);   // the statistics page: code spans, a table, and the word marked
+            var runs = window.GetVisualDescendants().OfType<LinkTextBlock>().SelectMany(b => b.Inlines!.OfType<Run>()).ToList();
+            var code = runs.Where(r => r.FontSize == 12 && r.Background is not null).ToList();
+            Assert.NotEmpty(code);
+            Assert.All(code, r => Assert.Equal(Resource(window, "OdSurfaceAlt"), ColorOf(r.Background)));
+            var marked = runs.Where(r => r.Text?.Equals("drift", StringComparison.OrdinalIgnoreCase) == true).ToList();
+            Assert.NotEmpty(marked);
+            Assert.All(marked, r => Assert.Equal(Resource(window, "OdWarningSoft"), ColorOf(r.Background)));
+            var links = window.GetVisualDescendants().OfType<LinkTextBlock>().SelectMany(b => b.Inlines!.OfType<Run>()).Where(r => r.Foreground is not null).ToList();
+            Assert.Contains(links, r => ColorOf(r.Foreground) == Resource(window, "OdAccent"));
+            // the two variants really differ, so the check above is not vacuous
+            if (variant == Avalonia.Styling.ThemeVariant.Dark) Assert.NotEqual(Colors.WhiteSmoke, ColorOf(code[0].Background));
+            window.Close();
+        }
     }
 
     [AvaloniaFact]
