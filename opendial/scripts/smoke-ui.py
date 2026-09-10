@@ -151,8 +151,26 @@ def type_text(text: str) -> None:
 def click_control(state: dict, name: str, what: str) -> None:
     spot = state["controls"].get(name)
     check(spot is not None, f"the window reports where {what} is")
+    front()   # a click on a window that is not frontmost only brings it forward
     x, y = to_screen(state, spot)
     click(x, y)
+
+
+def click_until(probe: str, name: str, what: str, changed, timeout: float) -> dict:
+    """Clicks a control and waits for the window to answer; one more click when the first was swallowed.
+
+    A page that has just been shown can take the first click as focus rather than as a press, so
+    the click is repeated once, after a short wait, before the wait is called a failure.
+    """
+    state = read_probe(probe)
+    click_control(state, name, what)
+    try:
+        return wait_for(probe, changed, f"{what} to answer", min(timeout, 10))
+    except Failed:
+        say(f"       {what} did not answer the first click; clicking again")
+        state = read_probe(probe)
+        click_control(state, name, what)
+        return wait_for(probe, changed, f"{what} to answer", timeout)
 
 
 def replace_text(state: dict, name: str, what: str, text: str) -> None:
@@ -568,9 +586,8 @@ def main() -> int:
                     send_command(probe, {"action": "selectStatisticsPage", "page": "Pathways"})
                     state = wait_for(probe, lambda s: (s.get("statistics") or {}).get("page") == "Pathways", "the Pathways page", 15)
                     before = state["statistics"].get("pathways")
-                    click_control(state, "control.PathwaysCompute", "the pathways' Compute button")
-                    state = wait_for(probe, lambda s: (s.get("statistics") or {}).get("pathways") not in (before, "", None),
-                                     "the pathways to be scored", 60)
+                    state = click_until(probe, "control.PathwaysCompute", "the pathways' Compute button",
+                                        lambda s: (s.get("statistics") or {}).get("pathways") not in (before, "", None), 60)
                     stats = state["statistics"]
                     check(bool(stats.get("pathways")), f"the pathway analysis answered: {stats.get('pathways')} ({stats.get('reactions')} reaction(s) tested)")
                     shot("statistics-pathways")
@@ -578,9 +595,8 @@ def main() -> int:
                     send_command(probe, {"action": "selectStatisticsPage", "page": "Two factors"})
                     state = wait_for(probe, lambda s: (s.get("statistics") or {}).get("page") == "Two factors", "the Two factors page", 15)
                     before = state["statistics"].get("twoFactor")
-                    click_control(state, "control.TwoFactorCompute", "the two-factor Compute button")
-                    state = wait_for(probe, lambda s: (s.get("statistics") or {}).get("twoFactor") not in (before, "", None, "Fitting every feature, then partitioning the matrix…"),
-                                     "the two-factor analysis to answer", 120)
+                    state = click_until(probe, "control.TwoFactorCompute", "the two-factor Compute button",
+                                        lambda s: (s.get("statistics") or {}).get("twoFactor") not in (before, "", None, "Fitting every feature, then partitioning the matrix…"), 120)
                     check(bool(state["statistics"].get("twoFactor")), f"the two-factor page answered: {state['statistics'].get('twoFactor')}")
                     shot("statistics-two-factor")
 
