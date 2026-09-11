@@ -9,7 +9,7 @@ summary: Redrawing a peak's integration window by hand in one injection or all o
 
 Automatic integration gets shoulders, tailing and split peaks wrong often enough that a result is
 not finished until the worst of them have been redrawn. The **integrate** strip sits above the peak
-grid in the Peaks tab of the [[evidence-panels]].
+grid of the [[evidence-panels]].
 
 ![re-integrating a feature](images/review-integrate.png)
 

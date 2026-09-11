@@ -28,8 +28,9 @@
     <!-- toolbar -->
     <Border DockPanel.Dock="Top" Classes="band">
       <DockPanel>
-        <TextBlock DockPanel.Dock="Right" Classes="muted" Text="{Binding Summary}" VerticalAlignment="Center" Margin="12,0,4,0" TextTrimming="CharacterEllipsis" />
-        <StackPanel Orientation="Horizontal" Spacing="2">
+        <!-- the buttons are docked first so the summary, which can be a sentence after a save,
+             takes what is left and trims instead of drawing over them -->
+        <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="2">
           <Button x:Name="ProcessBatch" Classes="tool strong" Content="Process batch" Command="{Binding $parent[Window].DataContext.ProcessBatchCommand}" ToolTip.Tip="Run the pipeline on the current batch (Cmd+R)" />
           <Button Classes="tool" Content="Re-export…" Command="{Binding $parent[Window].DataContext.ReexportCommand}" IsEnabled="{Binding HasResults}" />
           <Button Classes="tool" Content="Export to OpenQuant…" Command="{Binding $parent[Window].DataContext.ExportOpenQuantCommand}" IsEnabled="{Binding HasResults}" ToolTip.Tip="Write the listed features as an OpenQuant component CSV (precursor, fragment, RT window)" />
@@ -44,6 +45,7 @@
             </StackPanel>
           </Button>
         </StackPanel>
+        <TextBlock Classes="muted" Text="{Binding Summary}" VerticalAlignment="Center" Margin="12,0,4,0" TextAlignment="Right" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Summary}" />
       </DockPanel>
     </Border>
 
@@ -121,26 +123,29 @@
             </StackPanel>
           </Border>
 
-          <!-- evidence tabs -->
-          <Border Grid.Row="2" Classes="panel">
-            <TabControl x:Name="ResultTabs" Classes="panel-tabs" Margin="6,0,6,6">
-              <!-- peak shape across samples -->
-              <TabItem Header="Peaks">
-                <DockPanel Margin="0,6,0,0">
+          <!-- evidence: the peak in every sample above, the spectrum and the rest below.
+               A reviewer confirms an analyte from the chromatogram and the product spectrum
+               together, so both are on screen the moment a result opens; the other views are
+               tabs of the lower panel and never hide the peaks. -->
+          <Grid Grid.Row="2" RowDefinitions="1.15*,6,*">
+            <Border Grid.Row="0" Classes="panel" Padding="6">
+                <DockPanel>
                   <Border DockPanel.Dock="Top" Padding="0,0,0,6">
-                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" HorizontalAlignment="Right">
-                      <TextBlock Classes="label" Text="Columns" />
-                      <NumericUpDown Value="{Binding Columns}" Minimum="1" Maximum="8" Increment="1" FormatString="0" Width="112" MinWidth="112" MinHeight="26" HorizontalContentAlignment="Center" />
-                      <TextBlock Classes="label" Text="Rows" Margin="6,0,0,0" />
-                      <NumericUpDown Value="{Binding Rows}" Minimum="1" Maximum="6" Increment="1" FormatString="0" Width="112" MinWidth="112" MinHeight="26" HorizontalContentAlignment="Center" />
-                      <CheckBox Classes="compact" Content="Same Y" IsChecked="{Binding SameY}" Margin="6,0,0,0" />
-                      <CheckBox Classes="compact" Content="Link X" IsChecked="{Binding LinkX}" />
-                      <ComboBox Classes="compact" ItemsSource="{x:Static vm:AnalyticsViewModel.ZoomModes}" SelectedItem="{Binding ZoomMode}" Width="150" />
-                      <Button Classes="tool" Content="Magnify" Click="OnMagnifySelected" ToolTip.Tip="Enlarge the selected sample (double-click a panel does the same)" />
-                      <Button Classes="icon" Content="◀" Command="{Binding PreviousPageCommand}" Margin="6,0,0,0" />
+                    <DockPanel>
+                    <TextBlock Classes="eyebrow" Text="PEAKS" VerticalAlignment="Center" Margin="0,0,12,0" ToolTip.Tip="The feature's chromatogram in every sample" />
+                    <WrapPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
+                      <TextBlock Classes="label" Text="Grid" Margin="0,0,6,0" VerticalAlignment="Center" />
+                      <NumericUpDown Value="{Binding Columns}" Minimum="1" Maximum="8" Increment="1" FormatString="0" Width="100" MinWidth="100" MinHeight="26" HorizontalContentAlignment="Center" ToolTip.Tip="Columns of the grid" Margin="0,0,6,0" />
+                      <NumericUpDown Value="{Binding Rows}" Minimum="1" Maximum="6" Increment="1" FormatString="0" Width="100" MinWidth="100" MinHeight="26" HorizontalContentAlignment="Center" ToolTip.Tip="Rows of the grid" Margin="0,0,6,0" />
+                      <CheckBox Classes="compact" Content="Same Y" IsChecked="{Binding SameY}" Margin="6,0,6,0" VerticalAlignment="Center" />
+                      <CheckBox Classes="compact" Content="Link X" IsChecked="{Binding LinkX}" Margin="0,0,6,0" VerticalAlignment="Center" />
+                      <ComboBox Classes="compact" ItemsSource="{x:Static vm:AnalyticsViewModel.ZoomModes}" SelectedItem="{Binding ZoomMode}" Width="140" Margin="0,0,6,0" VerticalAlignment="Center" />
+                      <Button Classes="tool" Content="Magnify" Click="OnMagnifySelected" ToolTip.Tip="Enlarge the selected sample (double-click a panel does the same)" VerticalAlignment="Center" />
+                      <Button Classes="icon" Content="◀" Command="{Binding PreviousPageCommand}" Margin="6,0,0,0" VerticalAlignment="Center" />
                       <TextBlock Text="{Binding PageLabel}" VerticalAlignment="Center" MinWidth="36" TextAlignment="Center" />
-                      <Button Classes="icon" Content="▶" Command="{Binding NextPageCommand}" />
-                    </StackPanel>
+                      <Button Classes="icon" Content="▶" Command="{Binding NextPageCommand}" VerticalAlignment="Center" />
+                    </WrapPanel>
+                    </DockPanel>
                   </Border>
                   <Border DockPanel.Dock="Top" Classes="hairline-bottom" Padding="0,0,0,6" Margin="0,0,0,6">
                     <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
@@ -178,8 +183,10 @@
                     <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsGridBusy}" VerticalAlignment="Top" Height="3" Margin="2" />
                   </Panel>
                 </DockPanel>
-              </TabItem>
-
+            </Border>
+            <GridSplitter Grid.Row="1" Classes="horizontal" ResizeDirection="Rows" />
+            <Border Grid.Row="2" Classes="panel">
+            <TabControl x:Name="ResultTabs" Classes="panel-tabs" Margin="6,0,6,6">
               <!-- product spectrum against the library -->
               <TabItem Header="MS/MS">
                 <Grid Margin="0,6,0,0" ColumnDefinitions="*,260">
@@ -322,7 +329,8 @@
                 </DockPanel>
               </TabItem>
             </TabControl>
-          </Border>
+            </Border>
+          </Grid>
         </Grid>
 
         <!-- magnified panel overlay -->

@@ -2,13 +2,15 @@
 title: Os painéis de evidência
 section: Reviewing
 order: 22
-summary: As nove abas ao lado da tabela de íons — Peaks, MS/MS, Isotopes, Candidates, Abundance, Feature map, Samples, Statistics, Trend — e a pergunta que cada uma responde.
+summary: A grade de picos que está sempre na tela e as oito abas abaixo dela — MS/MS, Isotopes, Candidates, Abundance, Feature map, Samples, Statistics, Trend — e a pergunta que cada uma responde.
 ---
 
 # Os painéis de evidência
 
-Nove abas, cada uma respondendo a uma pergunta que um revisor de fato faz sobre a feature
-selecionada.
+Nove vistas, cada uma respondendo a uma pergunta que um revisor de fato faz sobre a feature
+selecionada. A primeira, o pico em toda amostra, é um painel próprio e está sempre na tela; as
+outras oito são abas abaixo dele, com o espectro de produto mostrado por padrão, de modo que um
+resultado abre no cromatograma e no espectro juntos. O divisor entre os dois é arrastável.
 
 ## Peaks
 
@@ -24,7 +26,7 @@ selecionada tem moldura na cor de destaque.
 
 | Controle | O que faz |
 | --- | --- |
-| **Columns**, **Rows** | a grade; pagina quando há mais injeções do que células, com **◀** `1/2` **▶** |
+| **Grid** `3 × 2` | colunas e linhas da grade; pagina quando há mais injeções do que células, com **◀** `1/2` **▶** |
 | **Same Y** | uma escala de intensidade para todo painel, para que uma injeção fraca pareça fraca |
 | **Link X** | uma janela de retenção para todo painel |
 | modo de zoom | **Expected window** (em torno do tempo de retenção da feature), **Peak** (a janela de integração de cada injeção com uma margem), **Full trace** |

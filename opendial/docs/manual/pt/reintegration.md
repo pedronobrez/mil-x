@@ -9,7 +9,7 @@ summary: Redesenhar à mão a janela de integração de um pico numa injeção o
 
 A integração automática erra ombros, caudas e picos partidos com frequência suficiente para que um
 resultado não esteja terminado até os piores terem sido redesenhados. A faixa **integrate** fica
-acima da grade de picos na aba Peaks dos [[evidence-panels]].
+acima da grade de picos dos [[evidence-panels]].
 
 ![reintegrando uma feature](images/review-integrate.png)
 

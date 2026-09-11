@@ -202,7 +202,33 @@ public class ReviewWorkspaceTests
 
         var tabs = view.GetVisualDescendants().OfType<TabControl>().FirstOrDefault(t => t.Name == "ResultTabs");
         Assert.NotNull(tabs);
-        Assert.Equal(9, tabs!.Items.Count);   // peaks, MS/MS, isotopes, candidates, abundance, map, samples, statistics, trend
+        Assert.Equal(8, tabs!.Items.Count);   // MS/MS, isotopes, candidates, abundance, map, samples, statistics, trend
+        Assert.Equal(0, tabs.SelectedIndex);   // the spectrum is the one showing when a result opens
+        // and the peak grid is not a tab: it sits above them, on screen from the start
+        var grid = view.GetVisualDescendants().OfType<ItemsControl>().FirstOrDefault(c => c.ItemsSource == vm.Panels);
+        Assert.NotNull(grid);
+        Assert.True(grid!.IsEffectivelyVisible);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void A_long_summary_trims_instead_of_drawing_over_the_toolbar_buttons()
+    {
+        // After a save the summary is a sentence; docked first it took the whole band and the
+        // buttons were laid out under it.
+        var (vm, _, _) = NewAnalytics();
+        var view = new AnalyticsView { DataContext = vm };
+        var window = new Window { Content = view, Width = 1280, Height = 820 };
+        window.Show();
+        vm.Summary = string.Join(' ', Enumerable.Repeat("Review saved to AlignResult_tags.xml (MS-DIAL reads this file too).", 6));
+        window.UpdateLayout();
+
+        var save = view.GetVisualDescendants().OfType<Button>().First(b => b.Name == "SaveReview");
+        var summary = view.GetVisualDescendants().OfType<TextBlock>().First(b => b.Text == vm.Summary);
+        var saveRight = save.TranslatePoint(new Point(save.Bounds.Width, 0), view)!.Value.X;
+        var summaryLeft = summary.TranslatePoint(new Point(0, 0), view)!.Value.X;
+        Assert.True(summaryLeft >= saveRight, $"summary starts at {summaryLeft:F0} but Save review ends at {saveRight:F0}");
+        Assert.True(summary.Bounds.Right <= view.Bounds.Width + 1, "the summary runs past the window");
         window.Close();
     }
 

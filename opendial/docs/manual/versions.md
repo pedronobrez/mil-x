@@ -19,8 +19,13 @@ The current version. It tracks MS-DIAL 5.5.260817.
 - The **Two factors** page of the Statistics workspace: the two-way analysis of variance per feature with the interaction (type-II sums of squares, so unbalanced designs and empty cells are handled), and ASCA over the whole matrix with a permutation test per effect and a scores plot per effect. The second factor is a **Factor** column in the Samples workspace, saved with the project. See [[two-factor-analysis]].
 - The manual in Portuguese, beside the English one: **Português** in the Help window, and a second PDF.
 
+**Changed**
+
+- The Analytics workspace opens on what confirming an analyte needs: the ion table, the peak in every sample, and the product spectrum, all on screen at once. The peak grid is a panel of its own above the evidence tabs instead of the first tab, and MS/MS is the tab showing by default; a divider between the two sets their heights. The grid's size is one **Grid** `3 × 2` control.
+
 **Fixed**
 
+- After a save, the Analytics toolbar's message drew over its own buttons; it now takes the space the buttons leave and trims, with the whole sentence in its tooltip.
 - The msconvert bridge is verified end to end on Apple Silicon: ProteoWizard's `small.RAW` converts through colima's x86-64 QEMU machine, from the command line and from the installed application, in about 30 seconds. Rosetta cannot run the image's Wine, and the manual and the converter's message now say so and give the colima route.
 - The manual's code spans, search highlights, table headers and rules took their colours from the light theme whatever the window's theme, so a dark window drew its code white on white. Every brush on a page now follows the window it is in, and changes with the theme.
 

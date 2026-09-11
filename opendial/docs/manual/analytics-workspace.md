@@ -22,7 +22,12 @@ processed project opens on it.
 - **The ion table** — every feature that passes the filter; see [[ion-table]]. It can be torn off into a window of its own.
 - **The identity** — the selected feature's name, id, retention time, m/z, adduct, formula, class, score and fill, with a chip for its annotation level and one reading **hand-picked** when the reviewer chose the name.
 - **The verdict** — the five tags, Confirm and Reject, and a comment box; see [[review-tags]].
-- **The evidence tabs** — Peaks, MS/MS, Isotopes, Candidates, Abundance, Feature map, Samples, Statistics, Trend; see [[evidence-panels]]. The Peaks tab also holds the integrate strip; see [[reintegration]].
+- **The peak in every sample** — the feature's chromatogram in each injection, always on screen, with the integrate strip above it; see [[evidence-panels#Peaks]] and [[reintegration]].
+- **The evidence tabs** below it — MS/MS first, then Isotopes, Candidates, Abundance, Feature map, Samples, Statistics, Trend; see [[evidence-panels]]. A divider between the two sets how much of the height each takes.
+
+A result opens on the three things a reviewer needs to confirm an analyte: the ion table, the peak
+in every sample, and the product spectrum against the library. Nothing has to be clicked open
+first.
 
 ## The toolbar
 

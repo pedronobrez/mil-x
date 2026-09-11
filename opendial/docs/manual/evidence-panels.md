@@ -2,12 +2,15 @@
 title: The evidence panels
 section: Reviewing
 order: 22
-summary: The nine tabs beside the ion table — Peaks, MS/MS, Isotopes, Candidates, Abundance, Feature map, Samples, Statistics, Trend — and the question each one answers.
+summary: The peak grid that is always on screen and the eight tabs below it — MS/MS, Isotopes, Candidates, Abundance, Feature map, Samples, Statistics, Trend — and the question each one answers.
 ---
 
 # The evidence panels
 
-Nine tabs, each answering one question a reviewer actually asks about the selected feature.
+Nine views, each answering one question a reviewer actually asks about the selected feature. The
+first, the peak in every sample, is a panel of its own and is always on screen; the other eight
+are tabs below it, with the product spectrum showing by default, so a result opens on the
+chromatogram and the spectrum together. The divider between the two is draggable.
 
 ## Peaks
 
@@ -23,7 +26,7 @@ colour.
 
 | Control | What it does |
 | --- | --- |
-| **Columns**, **Rows** | the grid; pages when there are more injections than cells, with **◀** `1/2` **▶** |
+| **Grid** `3 × 2` | columns and rows of the grid; pages when there are more injections than cells, with **◀** `1/2` **▶** |
 | **Same Y** | one intensity scale for every panel, so a weak injection looks weak |
 | **Link X** | one retention window for every panel |
 | zoom mode | **Expected window** (around the feature's retention time), **Peak** (each injection's own integration window with a margin), **Full trace** |

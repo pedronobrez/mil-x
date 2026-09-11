@@ -163,7 +163,7 @@ public partial class App : Application
                             case "analytics-metric":
                             {
                                 var tabs = Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(window).OfType<Avalonia.Controls.TabControl>().FirstOrDefault(t => t.Name == "ResultTabs");
-                                if (tabs is not null) tabs.SelectedIndex = Environment.GetEnvironmentVariable("OPENDIAL_SNAPSHOT_ACTION") == "analytics-spectrum" ? 1 : 3;
+                                if (tabs is not null) tabs.SelectedIndex = Environment.GetEnvironmentVariable("OPENDIAL_SNAPSHOT_ACTION") == "analytics-spectrum" ? 0 : 2;   // MS/MS, Candidates: the peaks sit above the tabs now
                                 await Task.Delay(1500);
                                 break;
                             }
@@ -213,7 +213,7 @@ public partial class App : Application
                                     Console.WriteLine($"[search]   {c.Name,-40} total {c.TotalScore,6:F3} dot {c.WeightedDotProduct,6:F3} rev {c.ReverseDotProduct,6:F3} matched {c.MatchedPeaksCount,4:F0}");
                                 }
                                 var searchTabs = Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(window).OfType<Avalonia.Controls.TabControl>().FirstOrDefault(t => t.Name == "ResultTabs");
-                                if (searchTabs is not null) searchTabs.SelectedIndex = 3;
+                                if (searchTabs is not null) searchTabs.SelectedIndex = 2;   // Candidates
                                 await Task.Delay(2000);
                                 break;
                             }
@@ -273,7 +273,7 @@ public partial class App : Application
                                 vm.Analytics.AnnotationFilter = "Annotated";
                                 await Task.Delay(1200);
                                 var tabs = Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(window).OfType<Avalonia.Controls.TabControl>().FirstOrDefault(t => t.Name == "ResultTabs");
-                                if (tabs is not null) tabs.SelectedIndex = 5;
+                                if (tabs is not null) tabs.SelectedIndex = 4;   // Feature map
                                 await Task.Delay(1800);
                                 break;
                             }
@@ -282,7 +282,7 @@ public partial class App : Application
                                 vm.Analytics.AnnotationFilter = "Confident";
                                 await Task.Delay(1200);
                                 var tabs = Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(window).OfType<Avalonia.Controls.TabControl>().FirstOrDefault(t => t.Name == "ResultTabs");
-                                if (tabs is not null) tabs.SelectedIndex = 3;
+                                if (tabs is not null) tabs.SelectedIndex = 2;   // Candidates
                                 await Task.Delay(1800);
                                 break;
                             }

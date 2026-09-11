@@ -20,8 +20,13 @@ A versão atual. Segue o MS-DIAL 5.5.260817.
 - A página **Two factors** da área Statistics: a análise de variância de dois fatores por feature com a interação (somas de quadrados do tipo II, de modo que desenhos desbalanceados e células vazias são tratados), e ASCA sobre a matriz inteira com um teste de permutação por efeito e um gráfico de escores por efeito. O segundo fator é uma coluna **Factor** na área Samples, salva com o projeto. Veja [[two-factor-analysis]].
 - O manual em português, ao lado do inglês: **Português** na janela de ajuda, e um segundo PDF.
 
+**Alterado**
+
+- A área Analytics abre no que confirmar um analito exige: a tabela de íons, o pico em toda amostra e o espectro de produto, tudo na tela de uma vez. A grade de picos é um painel próprio acima das abas de evidência em vez da primeira aba, e MS/MS é a aba mostrada por padrão; um divisor entre os dois define as alturas. O tamanho da grade é um único controle **Grid** `3 × 2`.
+
 **Corrigido**
 
+- Depois de salvar, a mensagem da barra de ferramentas de Analytics desenhava por cima dos próprios botões; agora ocupa o espaço que os botões deixam e recorta, com a frase inteira na dica.
 - A ponte msconvert está verificada de ponta a ponta em Apple Silicon: o `small.RAW` do ProteoWizard converte pela máquina QEMU x86-64 do colima, pela linha de comando e pela aplicação instalada, em cerca de 30 segundos. A Rosetta não consegue correr o Wine da imagem, e o manual e a mensagem do conversor agora dizem isso e dão o caminho do colima.
 - Os trechos de código, as marcas da busca, os cabeçalhos de tabela e as réguas do manual tomavam as cores do tema claro fosse qual fosse o tema da janela, de modo que uma janela escura desenhava o código branco sobre branco. Todo pincel de uma página agora segue a janela em que está, e muda com o tema.
 

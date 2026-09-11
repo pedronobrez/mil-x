@@ -22,7 +22,12 @@ as duas. `⌘2` mostra-a, e um projeto processado abre nela.
 - **A tabela de íons** — toda feature que passa o filtro; veja [[ion-table]]. Pode ser destacada numa janela própria.
 - **A identidade** — o nome, id, tempo de retenção, m/z, aduto, fórmula, classe, pontuação e preenchimento da feature selecionada, com uma etiqueta para o seu nível de anotação e outra que diz **hand-picked** quando o revisor escolheu o nome.
 - **O veredito** — as cinco marcações, Confirm e Reject, e uma caixa de comentário; veja [[review-tags]].
-- **As abas de evidência** — Peaks, MS/MS, Isotopes, Candidates, Abundance, Feature map, Samples, Statistics, Trend; veja [[evidence-panels]]. A aba Peaks também guarda a faixa de integração; veja [[reintegration]].
+- **O pico em toda amostra** — o cromatograma da feature em cada injeção, sempre na tela, com a faixa de integração acima; veja [[evidence-panels#Peaks]] e [[reintegration]].
+- **As abas de evidência** abaixo dele — MS/MS primeiro, depois Isotopes, Candidates, Abundance, Feature map, Samples, Statistics, Trend; veja [[evidence-panels]]. Um divisor entre os dois define quanto da altura cada um ocupa.
+
+Um resultado abre nas três coisas de que um revisor precisa para confirmar um analito: a tabela de
+íons, o pico em toda amostra e o espectro de produto contra a biblioteca. Nada precisa ser aberto
+com um clique antes.
 
 ## A barra de ferramentas
 
