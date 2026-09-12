@@ -28,6 +28,7 @@ The current version. It tracks MS-DIAL 5.5.260817.
 
 **Fixed**
 
+- A session that ended with the ion table in its own window crashed on the next start: the window was asked for before the main one was on screen. It now opens once the main window has.
 - The tag keys never fired: they were written as `Ctrl` with a bare digit, which Avalonia reads as another key; and `Alt+C` fired only while the focus sat inside the review.
 - The spectrum mirror's *measured* and *reference* labels drew over the m/z of a base peak at the right edge; each now takes the emptier side of its half.
 - After a save, the Analytics toolbar's message drew over its own buttons; it now takes the space the buttons leave and trims, with the whole sentence in its tooltip.

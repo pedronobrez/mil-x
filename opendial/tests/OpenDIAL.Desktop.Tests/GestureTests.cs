@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.Threading;
 using Avalonia.LogicalTree;
 using OpenDIAL.Desktop.Views;
 using Xunit;
@@ -132,6 +133,26 @@ public class GestureTests
         torn.Close();
         window.Close();
         try { Directory.Delete(folder, true); } catch { }
+    }
+
+    /// <summary>
+    /// A session that ended with the table in its own window starts with it there again — and used
+    /// to crash on the way: the tear-off was asked for before the main window was on screen.
+    /// </summary>
+    [AvaloniaFact]
+    public void Starting_with_the_ion_table_torn_off_opens_its_window_after_the_main_one()
+    {
+        var vm = new ViewModels.MainWindowViewModel(new Services.SettingsService(), new NoDialogs(), new NoMessages());
+        vm.Settings.Current.IonTableDetached = true;
+        var window = new MainWindow { DataContext = vm, Width = 1200, Height = 800 };
+        Assert.False(vm.Analytics.IonTableDetached);   // not yet: the owner is not on screen
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(vm.Analytics.IonTableDetached);
+        vm.Analytics.RequestDetachIonTable!(false);
+        Assert.False(vm.Analytics.IonTableDetached);
+        vm.Settings.Current.IonTableDetached = false;
+        window.Close();
     }
 
     [AvaloniaFact]

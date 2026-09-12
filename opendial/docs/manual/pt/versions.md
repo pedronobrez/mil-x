@@ -29,6 +29,7 @@ A versão atual. Segue o MS-DIAL 5.5.260817.
 
 **Corrigido**
 
+- Uma sessão que terminava com a tabela de íons na sua própria janela caía no arranque seguinte: a janela era pedida antes de a principal estar na tela. Agora abre depois de a principal ter aberto.
 - As teclas de marcação nunca disparavam: estavam escritas como `Ctrl` com um dígito puro, que o Avalonia lê como outra tecla; e `Alt+C` só disparava com o foco dentro da revisão.
 - Os rótulos *measured* e *reference* do espelho de espectros desenhavam por cima do m/z de um pico-base na borda direita; cada um toma agora o lado mais vazio da sua metade.
 - Depois de salvar, a mensagem da barra de ferramentas de Analytics desenhava por cima dos próprios botões; agora ocupa o espaço que os botões deixam e recorta, com a frase inteira na dica.

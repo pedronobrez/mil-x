@@ -78,7 +78,13 @@ public partial class MainWindow : Window
         _vm.Analytics.RequestDetachIonTable = DetachIonTable;
         // the column order the reviewer arranged is theirs, and should survive a restart
         RestoreColumnOrder(InlineIonTable());
-        if (_vm.Settings.Current.IonTableDetached) DetachIonTable(true);
+        if (_vm.Settings.Current.IonTableDetached)
+        {
+            // the table's window is owned by this one, and an owner has to be on screen first: at
+            // start-up the data context arrives before the window is shown, so the tear-off waits
+            if (IsVisible) DetachIonTable(true);
+            else Opened += (_, _) => Dispatcher.UIThread.Post(() => { if (_vm?.Settings.Current.IonTableDetached == true) DetachIonTable(true); });
+        }
         AttachProbe(_vm);
     }
 
