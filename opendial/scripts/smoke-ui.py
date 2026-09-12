@@ -94,14 +94,35 @@ def quit_running() -> None:
     time.sleep(1)
 
 
-def front() -> None:
-    osascript(f'tell application "System Events" to set frontmost of process "{APP_PROCESS}" to true')
-    time.sleep(0.4)
+def frontmost_process() -> str:
+    """The application the window server is sending keys to right now."""
+    return osascript('tell application "System Events" to name of first process whose frontmost is true')
 
 
-def press(key_code: int, modifier: str = "command") -> None:
+def front(patience: float = 6.0) -> None:
+    """Brings the window forward, and makes sure it got there before anything is typed at it.
+
+    A keystroke is not addressed to an application: System Events hands it to whatever is frontmost.
+    Asking for the front and typing straight away is a race — the terminal the script runs in, a
+    notification, or the application still coming up can hold it for a moment — and a key that
+    lands in another application is gone, so no amount of waiting afterwards brings it back. This
+    asks, checks, and asks again.
+    """
+    deadline = time.time() + patience
+    while True:
+        osascript(f'tell application "System Events" to set frontmost of process "{APP_PROCESS}" to true')
+        time.sleep(0.4)
+        if frontmost_process() == APP_PROCESS:
+            return
+        if time.time() >= deadline:
+            say(f"       warning: {frontmost_process()!r} is holding the front, so a key may not arrive")
+            return
+
+
+def press(key_code: int, modifier: str | None = "command") -> None:
     front()
-    osascript(f'tell application "System Events" to key code {key_code} using {modifier} down', check=True)
+    using = f" using {modifier} down" if modifier else ""
+    osascript(f'tell application "System Events" to key code {key_code}{using}', check=True)
 
 
 def press_with(key_code: int, modifiers: str) -> None:
@@ -115,17 +136,15 @@ def press_with(key_code: int, modifiers: str) -> None:
 
 
 def window_frame() -> tuple[float, float, float, float]:
-    """The window's frame in screen points: where it is, and how big including its title bar."""
-    position = osascript(f'tell application "System Events" to tell process "{APP_PROCESS}" '
-                         'to get position of window 1')
-    size = osascript(f'tell application "System Events" to tell process "{APP_PROCESS}" '
-                     'to get size of window 1')
-    try:
-        x, y = [float(v) for v in position.split(", ")]
-        w, h = [float(v) for v in size.split(", ")]
-    except ValueError as error:
-        raise Failed(f"could not read the window frame: {position!r} {size!r}") from error
-    return x, y, w, h
+    """The main window's frame in screen points: where it is, and how big including its title bar.
+
+    Asked for by name rather than as "window 1". A tooltip is a window of its own, and the system
+    lists it before the real one, so a pointer resting over a button with a tooltip used to turn
+    every click that followed into a click at the tooltip's corner — hundreds of points away from
+    what the script meant to press, and only when the pointer happened to be somewhere with a
+    tooltip, which is what made it come and go.
+    """
+    return window_frame_named(APP_PROCESS)
 
 
 def window_frame_named(title_prefix: str) -> tuple[float, float, float, float]:
@@ -188,6 +207,7 @@ def click_control(state: dict, name: str, what: str) -> None:
     check(spot is not None, f"the window reports where {what} is")
     front()   # a click on a window that is not frontmost only brings it forward
     x, y = to_screen(state, spot)
+    say(f"       clicking {what} at {x:.0f}, {y:.0f} on screen")
     click(x, y)
 
 
@@ -206,6 +226,36 @@ def click_until(probe: str, name: str, what: str, changed, timeout: float) -> di
         state = read_probe(probe)
         click_control(state, name, what)
         return wait_for(probe, changed, f"{what} to answer", timeout)
+
+
+def press_until(probe: str, key_code: int, changed, what: str, timeout: float,
+                modifier: str | None = "command", modifiers: str | None = None,
+                patience: float = 6.0) -> dict:
+    """Presses a shortcut and waits for the window to answer; presses again when nothing happened.
+
+    The one failure this rides over is a key that never arrived. A shortcut goes to whichever
+    application is frontmost when it is sent, and the front can be taken in the fraction of a
+    second between asking for it and the key going down; that key is then lost, and waiting the
+    whole timeout out only turns a lost keystroke into a failed test. Pressing again recovers it.
+    The wait between presses is longer than the window ever needs to answer one, so a press is not
+    repeated on top of one that did land — which matters for a key that toggles.
+    """
+    deadline = time.time() + timeout
+    attempt = 0
+    while True:
+        attempt += 1
+        if modifiers:
+            press_with(key_code, modifiers)
+        else:
+            press(key_code, modifier)
+        try:
+            return wait_for(probe, changed, what, max(1.0, min(patience, deadline - time.time())))
+        except Failed:
+            if time.time() >= deadline:
+                raise Failed(f"nothing happened when waiting for {what}, after {attempt} press(es) over "
+                             f"{timeout:.0f} s; the front is {frontmost_process()!r} and the window was "
+                             f"reporting {json.dumps({k: v for k, v in read_probe(probe).items() if k != 'controls'}, indent=2)}")
+            say(f"       {what}: nothing yet; pressing again")
 
 
 def replace_text(state: dict, name: str, what: str, text: str) -> None:
@@ -385,7 +435,15 @@ def main() -> int:
               "--stdout", out_log, "--stderr", err_log]
     if launch_path:
         launch += ["--args", launch_path]
-    result = subprocess.run(launch, capture_output=True, text=True)
+    # LaunchServices can still be holding the instance that was just quit, and answers a launch with
+    # a bare -600 for a second or two after the process is gone; that is worth waiting out
+    for attempt in range(10):
+        result = subprocess.run(launch, capture_output=True, text=True)
+        if result.returncode == 0:
+            break
+        if attempt == 0:
+            say("       the launch was refused; the system may still be putting the last instance away")
+        time.sleep(2)
     if result.returncode != 0:
         say(f"FAIL: could not launch it: {result.stderr.strip() or result.stdout.strip()}")
         if running():
@@ -433,9 +491,8 @@ def main() -> int:
             check(not state["hasResults"], "and has no results yet")
 
             say("Cmd+R processes the batch")
-            press(KEY_R)
-            state = wait_for(probe, lambda s: (s.get("run") or {}).get("running") or s.get("hasResults"),
-                             "the run to start", 30)
+            state = press_until(probe, KEY_R, lambda s: (s.get("run") or {}).get("running") or s.get("hasResults"),
+                                "the run to start", 30)
             check(state["workspaceName"] == "Analytics", "processing switches to the review workspace")
             started = time.time()
             state = wait_for(probe, lambda s: s.get("hasResults") and s.get("ionRows", 0) > 0 and not (s.get("run") or {}).get("running"),
@@ -527,9 +584,8 @@ def main() -> int:
                       "the OpenQuant component list exists")
 
                 say("the manual opens from the keyboard and answers a search")
-                front()
-                osascript('tell application "System Events" to key code 122', check=True)   # F1
-                state = wait_for(probe, lambda s: (s.get("help") or {}).get("open") is True, "the help window to open", 15)
+                state = press_until(probe, 122, lambda s: (s.get("help") or {}).get("open") is True,
+                                    "F1 to open the help window", 30, modifier=None)
                 check(state["help"]["page"] == "analytics-workspace",
                       f"F1 on the review workspace opens its page: {state['help']['title']!r}")
                 send_command(probe, {"action": "openHelp", "page": "index", "query": "drift correction"})
@@ -554,28 +610,24 @@ def main() -> int:
                 state = wait_for(probe, lambda s: s.get("ionRows", 0) > 1, "the table to fill again", 15)
                 check(state["ionRows"] > 1, f"the table shows all {state['ionRows']} features again")
 
-        # a shortcut only lands when the window is frontmost, and something else on the desk can take
-        # the front for a moment; thirty seconds rides that out without hiding a shortcut that never fires
+        # a key goes to whatever is frontmost, and something else on the desk can take the front for a
+        # moment; press_until presses again rather than waiting out a keystroke that went elsewhere
         SHORTCUT_WAIT = 30
         say("every workspace shortcut goes where it says")
         for number, code in KEY_CODES.items():
-            front()   # whatever took the front since the last step gives it back before the key goes down
-            press(code)
-            state = wait_for(probe, lambda s, n=number: s.get("workspace") == n - 1,
-                             f"Cmd+{number} to select {WORKSPACES[number - 1]}", SHORTCUT_WAIT)
+            state = press_until(probe, code, lambda s, n=number: s.get("workspace") == n - 1,
+                                f"Cmd+{number} to select {WORKSPACES[number - 1]}", SHORTCUT_WAIT)
             check(state["workspaceName"] == WORKSPACES[number - 1],
                   f"Cmd+{number} selects {WORKSPACES[number - 1]}")
 
         say("and so does the control key, for a keyboard without a command key")
-        front()
-        press(KEY_CODES[2], modifier="control")
-        wait_for(probe, lambda s: s.get("workspace") == 1, "Ctrl+2 to select Analytics", SHORTCUT_WAIT)
+        press_until(probe, KEY_CODES[2], lambda s: s.get("workspace") == 1,
+                    "Ctrl+2 to select Analytics", SHORTCUT_WAIT, modifier="control")
         check(True, "Ctrl+2 selects Analytics")
 
         if can_click:
             say("the workspace tabs answer a click, where the window says they are")
-            press(KEY_CODES[1])
-            wait_for(probe, lambda s: s.get("workspace") == 0, "the Explorer", SHORTCUT_WAIT)
+            press_until(probe, KEY_CODES[1], lambda s: s.get("workspace") == 0, "the Explorer", SHORTCUT_WAIT)
             state = read_probe(probe)
             spot = state["controls"].get("workspace.Statistics")
             check(spot is not None, "the window reports where the Statistics tab is")
@@ -645,15 +697,15 @@ def main() -> int:
 
             if args.project:
                 say("the review keys tag the selected feature from wherever the focus is")
-                press(KEY_CODES[2])
-                state = wait_for(probe, lambda s: s.get("workspace") == 1, "Analytics", SHORTCUT_WAIT)
+                state = press_until(probe, KEY_CODES[2], lambda s: s.get("workspace") == 1, "Analytics", SHORTCUT_WAIT)
                 before = (state.get("review") or {}).get("confirmed", 0)
-                press_with(KEY_CODES[1], "command down, shift down")
-                state = wait_for(probe, lambda s: (s.get("review") or {}).get("confirmed") == before + 1,
-                                 "⌘⇧1 to tag the selected feature Confirmed", SHORTCUT_WAIT)
+                state = press_until(probe, KEY_CODES[1], lambda s: (s.get("review") or {}).get("confirmed") == before + 1,
+                                    "⌘⇧1 to tag the selected feature Confirmed", SHORTCUT_WAIT,
+                                    modifiers="command down, shift down", patience=10)
                 check(True, f"⌘⇧1 tags the selected feature: {before} → {before + 1} confirmed")
-                press_with(KEY_CODES[1], "command down, shift down")
-                wait_for(probe, lambda s: (s.get("review") or {}).get("confirmed") == before, "⌘⇧1 again to take the tag off", SHORTCUT_WAIT)
+                press_until(probe, KEY_CODES[1], lambda s: (s.get("review") or {}).get("confirmed") == before,
+                            "⌘⇧1 again to take the tag off", SHORTCUT_WAIT,
+                            modifiers="command down, shift down", patience=10)
                 check(True, "and ⌘⇧1 again takes it off, so the project is left as it was")
 
                 say("the ion table tears off, and docks back when its window is dragged over the main one")

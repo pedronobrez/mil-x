@@ -109,12 +109,18 @@ marcações e as cópias de segurança em disco, exporta a tabela revisada e a l
 manual com `F1` e busca nele. `--keep` deixa a aplicação a correr para olhar; `--shots` guarda as
 capturas de tela.
 
-Três coisas sobre o macOS tornam isto menos óbvio do que parece: o `click at` do System Events não
-faz nada numa janela Avalonia, porque passa pela camada de acessibilidade, de modo que eventos
+Cinco coisas sobre o macOS tornam isto menos óbvio do que parece: o `click at` do System Events
+não faz nada numa janela Avalonia, porque passa pela camada de acessibilidade, de modo que eventos
 reais de mouse são enviados com `cliclick`; as teclas têm de ser enviadas como códigos de tecla, já
-que um evento de caractere nunca chega a um atalho; e a janela tem de estar à frente antes do
-clique. `open --env` não consegue aplicar um ambiente a uma instância que já corre, de modo que o
-script garante que nenhuma corre. Um pedido de privacidade do macOS — a primeira vez que a
+que um evento de caractere nunca chega a um atalho; a janela tem de estar à frente antes do clique;
+uma tecla vai para o que estiver à frente no instante em que é enviada, não para uma aplicação à
+escolha, de modo que o script confere que a janela ficou mesmo à frente e pressiona de novo quando
+nada aconteceu — uma tecla que caiu noutra aplicação está perdida, e esperar mais não a traz de
+volta; e uma dica de ferramenta é uma janela por si, que o sistema lista antes da verdadeira, de
+modo que o quadro a partir do qual um clique é calculado é pedido pelo nome da janela em vez de
+tomado como "window 1". `open --env` não consegue aplicar um ambiente a uma instância que já corre, de modo que o
+script garante que nenhuma corre, e espera os poucos segundos em que o sistema ainda responde a um
+lançamento com um seco `-600` pela instância que acabou de guardar. Um pedido de privacidade do macOS — a primeira vez que a
 aplicação, ou o processo que a lançou, lê uma pasta protegida — para a corrida até uma pessoa
 responder; o script não consegue nem deve. `scripts/ui-drive.sh` faz as mesmas primitivas uma de
 cada vez para uma captura de tela ou uma olhada.

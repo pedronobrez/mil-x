@@ -110,11 +110,18 @@ through the system's save panel is handed over by the command channel), opens th
 `F1` and searches it. `--keep` leaves the application running to look at; `--shots` keeps the
 screenshots.
 
-Three things about macOS make this less obvious than it looks: System Events' `click at` does
+Five things about macOS make this less obvious than it looks: System Events' `click at` does
 nothing on an Avalonia window, because it goes through the accessibility layer, so real mouse
 events are posted with `cliclick`; keystrokes have to be sent as key codes, since a character
-event never reaches a shortcut; and the window has to be frontmost before the click. `open --env`
-cannot apply an environment to an instance that already runs, so the script makes sure none does.
+event never reaches a shortcut; the window has to be frontmost before the click; a keystroke
+goes to whatever is frontmost at the instant it is sent, not to an application of one's choosing,
+so the script checks the window actually got the front and presses again when nothing happened —
+a key that landed in another application is gone, and waiting longer cannot bring it back; and a
+tooltip is a window of its own that the system lists before the real one, so the frame a click is
+worked out from is asked for by the window's name rather than taken as "window 1".
+`open --env` cannot apply an environment to an instance that already runs, so the script makes
+sure none does, and waits out the couple of seconds in which the system still answers a launch
+with a bare `-600` for the instance it has only just put away.
 A macOS privacy prompt — the first time the application, or the process that launched it, reads a
 protected folder — stops the run until a person answers it; the script cannot and should not.
 `scripts/ui-drive.sh` does the same primitives one at a time for a screenshot or a look.
