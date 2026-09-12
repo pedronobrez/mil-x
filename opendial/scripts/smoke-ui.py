@@ -118,6 +118,31 @@ def window_frame() -> tuple[float, float, float, float]:
     return x, y, w, h
 
 
+def window_frame_named(title_prefix: str) -> tuple[float, float, float, float]:
+    """The frame of the window whose title starts so; the main window is not always window 1."""
+    where = (f'tell application "System Events" to tell process "{APP_PROCESS}" to '
+             f'get {{position, size}} of (first window whose name starts with "{title_prefix}")')
+    raw = osascript(where)
+    try:
+        x, y, w, h = [float(v) for v in raw.split(", ")]
+    except ValueError as error:
+        raise Failed(f"could not read the frame of the '{title_prefix}' window: {raw!r}") from error
+    return x, y, w, h
+
+
+def drag_hold(x: float, y: float, path: list[tuple[float, float]]) -> None:
+    """Presses at a point and drags along a path, leaving the button down; drag_release ends it."""
+    front()
+    steps = ["w:150", f"dd:{x:.0f},{y:.0f}", "w:200"]
+    for px, py in path:
+        steps += [f"dm:{px:.0f},{py:.0f}", "w:120"]
+    subprocess.run(["cliclick", *steps], check=True, capture_output=True)
+
+
+def drag_release(x: float, y: float) -> None:
+    subprocess.run(["cliclick", f"du:{x:.0f},{y:.0f}", "w:300"], check=True, capture_output=True)
+
+
 def to_screen(state: dict, control: dict) -> tuple[float, float]:
     """Turns a place inside the window into a place on the screen.
 
@@ -609,6 +634,36 @@ def main() -> int:
                     check(ok, f"the volcano plot was written as {fmt}: {(result or {}).get('message')}")
 
             if args.project:
+                say("the ion table tears off, and docks back when its window is dragged over the main one")
+                press(KEY_CODES[2])
+                state = wait_for(probe, lambda s: s.get("workspace") == 1, "Analytics", SHORTCUT_WAIT)
+                click_control(state, "control.ToggleIonTableWindow", "the Open in a window button")
+                state = wait_for(probe, lambda s: (s.get("review") or {}).get("ionTableDetached") is True,
+                                 "the table to open in its own window", 20)
+                check(True, "the ion table opened in its own window")
+                time.sleep(0.8)
+                shot("ion-table-detached")
+                ix, iy, iw, ih = window_frame_named("Ion table")
+                mx, my, mw, mh = window_frame_named("OpenDIAL")
+                grip = (ix + iw / 2, iy + 12)
+                target = (mx + mw * 0.2, my + mh * 0.5)
+                say(f"       dragging the window's title bar from {grip[0]:.0f}, {grip[1]:.0f} to {target[0]:.0f}, {target[1]:.0f}")
+                # the path goes past the zone's edge in steps, the way a hand does
+                path = [(grip[0] + (target[0] - grip[0]) * k / 6, grip[1] + (target[1] - grip[1]) * k / 6) for k in range(1, 7)]
+                drag_hold(grip[0], grip[1], path)
+                try:
+                    state = wait_for(probe, lambda s: (s.get("review") or {}).get("dockPreview") is True,
+                                     "the main window to show where the table will land", 10)
+                    check(True, "the drop place lights up in the main window while the window is held over it")
+                    shot("ion-table-dock-preview")
+                finally:
+                    drag_release(target[0], target[1])
+                state = wait_for(probe, lambda s: (s.get("review") or {}).get("ionTableDetached") is False,
+                                 "the table to dock back", 20)
+                check((state.get("review") or {}).get("dockPreview") is False, "the drop place goes away once the table is docked")
+                time.sleep(0.6)
+                shot("ion-table-docked-back")
+
                 # the --process form opens the manual from the keyboard; here it is opened by command,
                 # so the language switch is exercised on a project that loads in seconds
                 say("the manual reads in both languages")

@@ -21,7 +21,7 @@
             <Button Classes="tool" Content="Confirm all shown" Command="{Binding ConfirmAllShownCommand}" ToolTip.Tip="Tag every feature the filter is showing as Confirmed" />
             <Button Classes="tool" Content="Clear all shown" Command="{Binding ClearAllShownCommand}" />
             <Rectangle Classes="vsep" />
-            <Button Classes="tool" Command="{Binding ToggleIonTableWindowCommand}"
+            <Button x:Name="ToggleIonTableWindow" Classes="tool" Command="{Binding ToggleIonTableWindowCommand}"
                     Content="{Binding IonTableDetached, Converter={x:Static views:Converters.DetachLabel}}"
                     ToolTip.Tip="Move the ion table into a window of its own, so it can sit on a second screen beside the evidence" />
           </StackPanel>

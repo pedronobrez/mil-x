@@ -97,7 +97,9 @@ Lança `/Applications/OpenDIAL.app` pelo LaunchServices com uma pasta de configu
 o que a janela diz estar mostrando a partir do arquivo de sonda (veja
 [[environment-variables#Comandar a aplicação por script]]) em vez de adivinhar pelos pixels. A
 primeira forma abre um projeto processado e verifica o título, a tabela de íons, todo atalho de
-área de trabalho nas duas teclas modificadoras, e um clique numa aba. A segunda escreve um projeto
+área de trabalho nas duas teclas modificadoras, um clique numa aba, e a janela da tabela de íons:
+destaca a tabela, arrasta a janela pela barra de título sobre a principal com o mouse pressionado,
+vê o lugar de encaixe acender, solta, e vê a tabela reencaixar. A segunda escreve um projeto
 a partir dos arquivos brutos da pasta, pressiona `⌘R`, espera a corrida, verifica que os `.wiff`
 foram lidos pelo plugin dentro do pacote e que as exportações e o projeto foram gravados, e depois
 faz o que um revisor faz pelo teclado e pelo mouse: digita um id de feature no filtro, digita uma

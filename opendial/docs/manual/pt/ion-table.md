@@ -51,8 +51,15 @@ ordenadas clicando no cabeçalho; a ordem volta no próximo arranque.
 **Open in a window** move a tabela para uma segunda janela, para uma segunda tela. Ela hospeda o
 mesmo controle ligado ao mesmo estado, de modo que a seleção, os filtros e as marcações
 continuam em sintonia com os painéis da janela principal; nada da revisão se move com ela.
-Fechar a janela encaixa a tabela de novo, e se ela estava destacada é lembrado para o próximo
-arranque, com a ordem de colunas de cada uma.
+Enquanto está fora, a grade de picos e a evidência ocupam toda a largura da janela principal; a
+coluna da tabela não fica vazia.
+
+Três formas a trazem de volta: **Dock table** em qualquer das janelas, fechar a janela, ou arrastar
+a janela pela barra de título sobre a parte esquerda da janela principal. Quando a barra de título
+cruza os dois quintos esquerdos da janela principal, o lugar que a tabela vai ocupar acende ali —
+*Release to dock the ion table here* — e soltar o mouse aí encaixa-a; soltar em qualquer outro lugar
+deixa a janela onde foi largada. Se a tabela estava destacada é lembrado para o próximo arranque,
+com a ordem de colunas de cada uma.
 
 ## Seleção e navegação
 

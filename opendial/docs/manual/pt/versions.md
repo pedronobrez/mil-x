@@ -23,6 +23,7 @@ A versão atual. Segue o MS-DIAL 5.5.260817.
 **Alterado**
 
 - A área Analytics abre no que confirmar um analito exige: a tabela de íons, o pico em toda amostra e o espectro de produto, tudo na tela de uma vez. A grade de picos é um painel próprio acima das abas de evidência em vez da primeira aba, e MS/MS é a aba mostrada por padrão; um divisor entre os dois define as alturas. O tamanho da grade é um único controle **Grid** `3 × 2`.
+- A janela da tabela de íons reencaixa ao ser arrastada sobre a parte esquerda da janela principal: o lugar que vai ocupar acende quando a barra de título o cruza, e soltar aí encaixa-a. Enquanto a tabela está fora, os picos e o espectro ocupam toda a largura; a coluna dela não fica mais vazia.
 
 **Corrigido**
 

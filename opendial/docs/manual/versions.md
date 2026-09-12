@@ -22,6 +22,7 @@ The current version. It tracks MS-DIAL 5.5.260817.
 **Changed**
 
 - The Analytics workspace opens on what confirming an analyte needs: the ion table, the peak in every sample, and the product spectrum, all on screen at once. The peak grid is a panel of its own above the evidence tabs instead of the first tab, and MS/MS is the tab showing by default; a divider between the two sets their heights. The grid's size is one **Grid** `3 × 2` control.
+- The ion table's window docks back by being dragged over the left part of the main window: the place it will take lights up as the title bar crosses it, and letting go there docks it. While the table is away, the peaks and the spectrum take the whole width; its column no longer stands empty.
 
 **Fixed**
 

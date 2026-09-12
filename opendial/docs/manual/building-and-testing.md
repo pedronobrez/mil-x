@@ -98,7 +98,9 @@ It launches `/Applications/OpenDIAL.app` through LaunchServices with an isolated
 folder, and reads what the window says it is showing from the probe file (see
 [[environment-variables#Scripting the application]]) rather than guessing from pixels. The
 first form opens a processed project and checks the title, the ion table, every workspace
-shortcut on both modifier keys, and a click on a tab. The second writes a project from the raw
+shortcut on both modifier keys, a click on a tab, and the ion table's window: it tears the table
+off, drags the window by its title bar over the main one with the mouse held down, sees the drop
+place light up, lets go, and sees the table dock back. The second writes a project from the raw
 files in the folder, presses `⌘R`, waits for the run, checks that the `.wiff` files were read by
 the plugin inside the bundle and that the exports and the project were written, then does what a
 reviewer does through the keyboard and the mouse: types a feature id into the filter, types an

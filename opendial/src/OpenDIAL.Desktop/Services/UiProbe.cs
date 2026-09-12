@@ -171,6 +171,8 @@ public sealed class UiProbe
                 {
                     ["listed"] = analytics.IonRows.Count,
                     ["confirmed"] = analytics.ConfirmedCount,
+                    ["ionTableDetached"] = analytics.IonTableDetached,
+                    ["dockPreview"] = analytics.IonTableDockPreview,
                     ["rejected"] = analytics.RejectedCount,
                     ["reviewed"] = analytics.ReviewedCount,
                     ["peaksEdited"] = analytics.PeaksEdited,

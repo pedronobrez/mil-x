@@ -140,6 +140,8 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     [ObservableProperty] private bool _peaksEdited;
     /// <summary>The ion table is showing in its own window rather than beside the evidence.</summary>
     [ObservableProperty] private bool _ionTableDetached;
+    /// <summary>The torn-off window is being dragged over the place the table docks into; the place is shown.</summary>
+    [ObservableProperty] private bool _ionTableDockPreview;
 
     /// <summary>Set by the shell: opens or closes the window the ion table can be torn off into.</summary>
     public Action<bool>? RequestDetachIonTable { get; set; }

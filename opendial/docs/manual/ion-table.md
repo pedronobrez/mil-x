@@ -50,9 +50,16 @@ header; the order comes back on the next start.
 
 **Open in a window** moves the table into a second window, for a second screen. It hosts the same
 control bound to the same state, so the selection, the filters and the tagging stay in step with
-the panels on the main window; nothing about the review moves with it. Closing the window docks
-the table again, and whether it was torn off is remembered for the next start, with the column
-order of each.
+the panels on the main window; nothing about the review moves with it. While it is away, the peak
+grid and the evidence take the whole width of the main window; the table's column does not stand
+empty.
+
+Three ways bring it back: **Dock table** in either window, closing the window, or dragging the
+window by its title bar over the left part of the main window. As the title bar crosses the left
+two fifths of the main window, the place the table will take lights up there — *Release to dock the
+ion table here* — and letting go of the mouse there docks it; letting go anywhere else leaves the
+window where it was dropped. Whether the table was torn off is remembered for the next start,
+with the column order of each.
 
 ## Selection and navigation
 

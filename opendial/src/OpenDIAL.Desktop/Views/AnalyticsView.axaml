@@ -82,11 +82,19 @@
       </DockPanel>
     </Border>
 
-    <Grid ColumnDefinitions="1.15*,6,1.35*" Margin="8">
+    <Grid x:Name="ReviewGrid" ColumnDefinitions="1.15*,6,1.35*" Margin="8">
       <!-- ================= ion table ================= -->
+      <!-- torn off into its own window, its column and the splitter collapse (see code-behind), so the
+           peaks and the spectrum take the whole width rather than leaving a hole where it was -->
       <views:IonTableView Grid.Column="0" x:Name="InlineIonTable" IsVisible="{Binding !IonTableDetached}" />
 
-      <GridSplitter Grid.Column="1" Classes="vertical" ResizeDirection="Columns" />
+      <GridSplitter Grid.Column="1" Classes="vertical" ResizeDirection="Columns" IsVisible="{Binding !IonTableDetached}" />
+
+      <!-- where the table lands when its window is dragged back over the main one -->
+      <Border x:Name="DockPreview" Grid.Column="0" Grid.ColumnSpan="3" HorizontalAlignment="Left" IsVisible="{Binding IonTableDockPreview}"
+              Background="{DynamicResource OdAccentSoft}" BorderBrush="{DynamicResource OdAccent}" BorderThickness="2" CornerRadius="8" Opacity="0.85" ZIndex="10" IsHitTestVisible="False">
+        <TextBlock Text="Release to dock the ion table here" Foreground="{DynamicResource OdAccent}" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" Margin="24" />
+      </Border>
 
       <!-- ================= evidence for the selected feature ================= -->
       <Panel Grid.Column="2">

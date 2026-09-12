@@ -102,10 +102,17 @@ public partial class MainWindow : Window
                 _ionTableWindow.Closing += (_, _) =>
                 {
                     SaveColumnOrder(_ionTableWindow?.TableView);
+                    StopDockWatch();
                     _ionTableWindow = null;
-                    if (_vm is not null) _vm.Analytics.IonTableDetached = false;
+                    if (_vm is not null)
+                    {
+                        _vm.Analytics.IonTableDetached = false;
+                        _vm.Analytics.IonTableDockPreview = false;
+                    }
                     Dispatcher.UIThread.Post(() => RestoreColumnOrder(InlineIonTable()));
                 };
+                _ionTableWindow.Opened += (_, _) => _ionTableShownAt = _ionTableWindow?.Position;
+                _ionTableWindow.PositionChanged += (_, e) => OnIonTableWindowMoved(e.Point);
                 _ionTableWindow.Show(this);
                 Dispatcher.UIThread.Post(() => RestoreColumnOrder(_ionTableWindow?.TableView));
             }
@@ -120,6 +127,63 @@ public partial class MainWindow : Window
         }
         _vm.Settings.Current.IonTableDetached = detached;
         _ = _vm.Settings.SaveAsync();
+    }
+
+    // ---- docking the table back by dragging its window over the main one ----------------------
+    //
+    // Dragging the torn-off window by its title bar over the left part of the main window shows,
+    // in the main window, the place the table will take; letting go there docks it. The window
+    // manager owns the mouse during such a drag, so the drop is seen by polling the button.
+
+    private PixelPoint? _ionTableShownAt;
+    private bool _ionTableDragSeen;
+    private DispatcherTimer? _dockWatch;
+
+    private PixelRect MainFrame()
+    {
+        var size = FrameSize ?? ClientSize;
+        return new PixelRect(Position, PixelSize.FromSize(size, RenderScaling));
+    }
+
+    private bool IonTableWindowIsOverDockZone()
+    {
+        if (_ionTableWindow is null || !IsVisible || WindowState == WindowState.Minimized) return false;
+        var frame = PixelSize.FromSize(_ionTableWindow.FrameSize ?? _ionTableWindow.ClientSize, _ionTableWindow.RenderScaling);
+        return Services.DockSnap.IsOverZone(MainFrame(), _ionTableWindow.Position, frame, _ionTableWindow.RenderScaling);
+    }
+
+    private void OnIonTableWindowMoved(PixelPoint now)
+    {
+        if (_vm is null || _ionTableWindow is null) return;
+        var down = Services.MouseButtons.LeftIsDown();
+        if (down is null) return;   // a platform that cannot say: no snapping, no harm
+        if (_ionTableShownAt is { } shownAt && !Services.DockSnap.IsADrag(shownAt, now)) return;
+        if (down == true) _ionTableDragSeen = true;
+        if (!_ionTableDragSeen) return;   // moved by something other than a hand: the window manager, a script
+        _vm.Analytics.IonTableDockPreview = IonTableWindowIsOverDockZone();
+        if (_dockWatch is null)
+        {
+            _dockWatch = new DispatcherTimer(TimeSpan.FromMilliseconds(30), DispatcherPriority.Input, (_, _) => WatchForDrop());
+            _dockWatch.Start();
+        }
+    }
+
+    private void WatchForDrop()
+    {
+        if (_vm is null || _ionTableWindow is null) { StopDockWatch(); return; }
+        if (Services.MouseButtons.LeftIsDown() != false) return;   // still holding it
+        var drop = IonTableWindowIsOverDockZone();
+        StopDockWatch();
+        _vm.Analytics.IonTableDockPreview = false;
+        if (drop) DetachIonTable(false);
+    }
+
+    private void StopDockWatch()
+    {
+        _dockWatch?.Stop();
+        _dockWatch = null;
+        _ionTableDragSeen = false;
+        _ionTableShownAt = _ionTableWindow?.Position;
     }
 
     private void SaveColumnOrder(IonTableView? view)
