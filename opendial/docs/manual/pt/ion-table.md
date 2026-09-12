@@ -40,8 +40,8 @@ ordenadas clicando no cabeçalho; a ordem volta no próximo arranque.
 
 | Botão | O que faz |
 | --- | --- |
-| **▲** / **▼** | feature anterior e seguinte (`Alt+↑`, `Alt+↓`) |
-| **Next unreviewed** | a próxima feature sem veredito, dando a volta (`Alt+N`); diz quando não resta nenhuma no filtro |
+| **▲** / **▼** | feature anterior e seguinte (`⌘⇧↑`, `⌘⇧↓`) |
+| **Next unreviewed** | a próxima feature sem veredito, dando a volta (`⌘⇧N`); diz quando não resta nenhuma no filtro |
 | **Confirm all shown** | marca como Confirmed toda feature que o filtro está mostrando, que é como uma classe inteira de lipídios é aceite depois de a sua tendência de retenção conferir |
 | **Clear all shown** | remove toda marcação das features mostradas |
 | **Open in a window** / **Dock table** | destaca a tabela para uma janela própria, ou traz de volta |
@@ -63,7 +63,7 @@ com a ordem de colunas de cada uma.
 
 ## Seleção e navegação
 
-Um clique seleciona; `Alt+↓` e `Alt+↑` movem; `Alt+N` salta para a próxima não revisada. A linha
+Um clique seleciona; `⌘⇧↓` e `⌘⇧↑` movem; `⌘⇧N` salta para a próxima não revisada. A linha
 selecionada é mantida quando o filtro muda e ainda a contém, e passa para a primeira linha quando
 não. Clicar num ponto do mapa de features, numa linha das tabelas de VIP ou do S-plot, ou num nó
 da rede molecular seleciona essa feature aqui, limpando qualquer filtro que a escondesse.

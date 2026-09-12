@@ -213,18 +213,18 @@ public class ManualTests
         var Embedded = Edition(language);
         var page = Embedded.Find("keyboard-shortcuts")!.Body;
         var window = Path.Combine(RepositoryRoot, "src", "OpenDIAL.Desktop", "Views", "MainWindow.axaml");
-        var analytics = Path.Combine(RepositoryRoot, "src", "OpenDIAL.Desktop", "Views", "AnalyticsView.axaml");
+        var ionTable = Path.Combine(RepositoryRoot, "src", "OpenDIAL.Desktop", "Views", "IonTableWindow.axaml");
         var gestures = new Regex(@"Gesture=""([^""]+)""");
         var missing = new List<string>();
-        foreach (var file in new[] { window, analytics })
+        foreach (var file in new[] { window, ionTable })
         {
             foreach (Match m in gestures.Matches(File.ReadAllText(file)))
             {
-                var gesture = Regex.Replace(m.Groups[1].Value
-                    .Replace("Down", "↓").Replace("Up", "↑")
-                    .Replace("Cmd+", "⌘").Replace("OemQuestion", "?").Replace("Shift+", "⇧").Replace("⌘⇧+", "⌘⇧"),
-                    @"D(\d)", "$1").Replace("⌘+", "⌘");
-                // "⌘S" is written "⌘S" on the page; "Ctrl+1" as "Ctrl+1"; "Alt+C" as "Alt+C"
+                var raw = m.Groups[1].Value;
+                var gesture = raw.StartsWith("Cmd+", StringComparison.Ordinal)
+                    ? Regex.Replace(raw.Replace("Cmd+", "⌘").Replace("Shift+", "⇧").Replace("OemQuestion", "?").Replace("Down", "↓").Replace("Up", "↑"), @"D(\d)", "$1")
+                    : Regex.Replace(raw.Replace("Down", "↓").Replace("Up", "↑"), @"D(\d)", "$1");
+                // "⌘S" is written "⌘S" on the page, "⌘⇧1" as "⌘⇧1"; "Ctrl+Shift+1" as "Ctrl+Shift+1"
                 if (!page.Contains(gesture, StringComparison.Ordinal)) missing.Add(m.Groups[1].Value + " (" + gesture + ")");
             }
         }

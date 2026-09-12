@@ -104,6 +104,16 @@ def press(key_code: int, modifier: str = "command") -> None:
     osascript(f'tell application "System Events" to key code {key_code} using {modifier} down', check=True)
 
 
+def press_with(key_code: int, modifiers: str) -> None:
+    """A key with several modifiers, e.g. "command down, shift down"."""
+    front()
+    osascript(f'tell application "System Events" to key code {key_code} using {{{modifiers}}}', check=True)
+    # System Events can leave the modifiers logically down, and the next click then arrives as a
+    # shift-click or a command-click that a button ignores; let them go explicitly
+    if shutil.which("cliclick"):
+        subprocess.run(["cliclick", "ku:cmd,shift,ctrl,alt"], capture_output=True)
+
+
 def window_frame() -> tuple[float, float, float, float]:
     """The window's frame in screen points: where it is, and how big including its title bar."""
     position = osascript(f'tell application "System Events" to tell process "{APP_PROCESS}" '
@@ -634,12 +644,21 @@ def main() -> int:
                     check(ok, f"the volcano plot was written as {fmt}: {(result or {}).get('message')}")
 
             if args.project:
-                say("the ion table tears off, and docks back when its window is dragged over the main one")
+                say("the review keys tag the selected feature from wherever the focus is")
                 press(KEY_CODES[2])
                 state = wait_for(probe, lambda s: s.get("workspace") == 1, "Analytics", SHORTCUT_WAIT)
-                click_control(state, "control.ToggleIonTableWindow", "the Open in a window button")
-                state = wait_for(probe, lambda s: (s.get("review") or {}).get("ionTableDetached") is True,
-                                 "the table to open in its own window", 20)
+                before = (state.get("review") or {}).get("confirmed", 0)
+                press_with(KEY_CODES[1], "command down, shift down")
+                state = wait_for(probe, lambda s: (s.get("review") or {}).get("confirmed") == before + 1,
+                                 "⌘⇧1 to tag the selected feature Confirmed", SHORTCUT_WAIT)
+                check(True, f"⌘⇧1 tags the selected feature: {before} → {before + 1} confirmed")
+                press_with(KEY_CODES[1], "command down, shift down")
+                wait_for(probe, lambda s: (s.get("review") or {}).get("confirmed") == before, "⌘⇧1 again to take the tag off", SHORTCUT_WAIT)
+                check(True, "and ⌘⇧1 again takes it off, so the project is left as it was")
+
+                say("the ion table tears off, and docks back when its window is dragged over the main one")
+                state = click_until(probe, "control.ToggleIonTableWindow", "the Open in a window button",
+                                    lambda s: (s.get("review") or {}).get("ionTableDetached") is True, 20)
                 check(True, "the ion table opened in its own window")
                 time.sleep(0.8)
                 shot("ion-table-detached")

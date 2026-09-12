@@ -63,7 +63,7 @@ The rest of the shell — menus, the status bar, the log, the progress band — 
    part and is cached for the next time. See [[processing]].
 5. When it finishes the window lands on **Analytics** with the ion table filled. Select a feature,
    look at its peak in every sample, its MS/MS against the library, its candidates; tag it with
-   `Ctrl+1` to `Ctrl+5` or **Confirm ▸** and **Reject ▸**. **Save review** writes the tags to the
+   `⌘⇧1` to `⌘⇧5` or **Confirm ▸** and **Reject ▸**. **Save review** writes the tags to the
    file MS-DIAL reads. See [[analytics-workspace]].
 6. **Export reviewed table…** writes what the table is showing, with the review as columns.
    **Export to OpenQuant…** turns the list into a targeted method. See [[exports]].

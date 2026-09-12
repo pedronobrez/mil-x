@@ -97,10 +97,14 @@ public sealed class SpectrumChart : ChartBase
         {
             DrawSticks(ctx, plot, tx, ty, reference, Scale(reference), referenceColor, xMin, xMax, mirrored: true);
             ctx.DrawLine(new Pen(AxisBrush, 1), new Point(plot.X, zero), new Point(plot.Right, zero));
+            // each label sits in the corner of its half with the least peak under it, so a base peak
+            // at the right edge — the precursor's own neighbourhood — does not get its m/z written over
             var up = MakeText("measured", 10, new SolidColorBrush(measuredColor));
             var down = MakeText("reference", 10, new SolidColorBrush(referenceColor));
-            ctx.DrawText(up, new Point(plot.Right - up.Width - 6, plot.Y + 4));
-            ctx.DrawText(down, new Point(plot.Right - down.Width - 6, plot.Bottom - down.Height - 4));
+            var upLeft = LeftIsEmptier(Peaks, xMin, xMax);
+            var downLeft = LeftIsEmptier(reference, xMin, xMax);
+            ctx.DrawText(up, new Point(upLeft ? plot.X + 6 : plot.Right - up.Width - 6, plot.Y + 4));
+            ctx.DrawText(down, new Point(downLeft ? plot.X + 6 : plot.Right - down.Width - 6, plot.Bottom - down.Height - 4));
         }
 
         if (!double.IsNaN(PrecursorMz) && PrecursorMz >= xMin && PrecursorMz <= xMax)
@@ -111,6 +115,21 @@ public sealed class SpectrumChart : ChartBase
             var tri = Polyline(new[] { new Point(px, zero - 7), new Point(px - 5, zero - 1), new Point(px + 5, zero - 1) }, close: true);
             ctx.DrawGeometry(new SolidColorBrush(Categorical[1]), null, tri);
         }
+    }
+
+    /// <summary>Whether the left quarter of the visible range holds lower peaks than the right one.</summary>
+    internal static bool LeftIsEmptier(IReadOnlyList<Point>? peaks, double xMin, double xMax)
+    {
+        if (peaks is null || peaks.Count == 0) return false;
+        var quarter = (xMax - xMin) / 4;
+        double left = 0, right = 0;
+        foreach (var p in peaks)
+        {
+            if (p.X < xMin || p.X > xMax) continue;
+            if (p.X <= xMin + quarter) left = Math.Max(left, p.Y);
+            else if (p.X >= xMax - quarter) right = Math.Max(right, p.Y);
+        }
+        return left < right;
     }
 
     private void DrawSticks(Charts.ChartCanvas ctx, Rect plot, Func<double, double> tx, Func<double, double> ty, IReadOnlyList<Point> peaks, double scale, Color color,

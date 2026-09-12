@@ -32,19 +32,21 @@ both work everywhere.
 
 | Shortcut | Action |
 | --- | --- |
-| `Ctrl+1` | toggle **Confirmed** |
-| `Ctrl+2` | toggle **Low quality spectrum** |
-| `Ctrl+3` | toggle **Misannotation** |
-| `Ctrl+4` | toggle **Coelution (mixed spectra)** |
-| `Ctrl+5` | toggle **Overannotation** |
-| `Ctrl+0` | clear every tag on the feature |
-| `Alt+C` | **Confirm ▸** — Confirmed, and the next feature |
-| `Alt+X` | **Reject ▸** — Misannotation, and the next feature |
-| `Alt+N` | **Next unreviewed** |
-| `Alt+↓` | next feature |
-| `Alt+↑` | previous feature |
+| `⌘⇧1` / `Ctrl+Shift+1` | toggle **Confirmed** |
+| `⌘⇧2` / `Ctrl+Shift+2` | toggle **Low quality spectrum** |
+| `⌘⇧3` / `Ctrl+Shift+3` | toggle **Misannotation** |
+| `⌘⇧4` / `Ctrl+Shift+4` | toggle **Coelution (mixed spectra)** |
+| `⌘⇧5` / `Ctrl+Shift+5` | toggle **Overannotation** |
+| `⌘⇧0` / `Ctrl+Shift+0` | clear every tag on the feature |
+| `⌘⇧C` / `Ctrl+Shift+C` | **Confirm ▸** — Confirmed, and the next feature |
+| `⌘⇧X` / `Ctrl+Shift+X` | **Reject ▸** — Misannotation, and the next feature |
+| `⌘⇧N` / `Ctrl+Shift+N` | **Next unreviewed** |
+| `⌘⇧↓` / `Ctrl+Shift+↓` | next feature |
+| `⌘⇧↑` / `Ctrl+Shift+↑` | previous feature |
 
-The tag keys use `Ctrl`, not `⌘`, on every platform — `⌘1` to `⌘5` are the workspaces. See
+The review keys are the workspace keys with the shift key added: `⌘1` is a workspace, `⌘⇧1` is a
+tag. They work whatever has the focus — the table, a chart, a text box — in the main window while
+Analytics is showing and in the ion table's own window, and do nothing elsewhere. See
 [[review-tags]].
 
 ## Charts

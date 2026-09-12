@@ -106,10 +106,10 @@ lote, ou defina `Alignment light mode: True` no texto do método.
 construções anteriores os atalhos estavam escritos numa forma que o Avalonia lia como a tecla
 errada. Se voltar a acontecer, os `GestureTests` dizem que binding está errado.
 
-**`Ctrl+1` marca uma feature em vez de mudar de área de trabalho.** Por desenho: `Ctrl` com um
-dígito é uma marcação de revisão, `⌘` com um dígito é uma área de trabalho. No Linux e no Windows
-as áreas de trabalho também estão em `Ctrl`, e as teclas de marcação continuam a funcionar na área
-de revisão.
+**Uma tecla de revisão (`⌘⇧1`, `⌘⇧C`, …) não faz nada.** Elas agem só enquanto a revisão está na
+tela: a área Analytics, ou a janela própria da tabela de íons. Construções anteriores ligavam as
+marcações a `Ctrl` com um dígito puro, que o Avalonia lia como outra tecla, e os vereditos a `Alt`,
+que só disparava com o foco dentro da revisão; as duas formas foram embora.
 
 **A faixa de filtros cobre as contagens numa janela estreita.** Corrigido: a faixa rola para o
 lado. Alargue a janela se for mais estreita do que 1100 pontos.

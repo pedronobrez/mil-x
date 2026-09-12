@@ -79,6 +79,62 @@ public class GestureTests
     }
 
     [AvaloniaFact]
+    public void Every_shortcut_on_the_ion_table_window_binds_the_key_it_names()
+    {
+        var window = new IonTableWindow();
+        Assert.NotEmpty(window.KeyBindings);
+        foreach (var binding in window.KeyBindings)
+        {
+            var gesture = binding.Gesture!;
+            Assert.False(gesture.Key is Key.None or Key.Cancel or Key.Clear or Key.Back or Key.Tab or Key.LineFeed,
+                $"{gesture} binds {gesture.Key}");
+        }
+    }
+
+    /// <summary>
+    /// The review keys used to live on the Analytics control, where they fired only while the focus
+    /// was inside it — and the tag ones were written as bare digits, so they never fired at all.
+    /// They are on the window now, with the shift key, and act only while the review is on screen.
+    /// </summary>
+    [AvaloniaFact]
+    public void The_tag_shortcut_tags_the_selected_feature_from_the_window()
+    {
+        var vm = new ViewModels.MainWindowViewModel(new Services.SettingsService(), new NoDialogs(), new NoMessages());
+        var folder = ReviewWorkspaceTests.LoadSessionInto(vm.Analytics);
+        var window = new MainWindow { DataContext = vm, Width = 1200, Height = 800 };
+        window.Show();
+        vm.Analytics.SelectedRow = vm.Analytics.IonRows[0];
+
+        // away from the review the key does nothing
+        vm.SelectedWorkspace = 4;
+        window.KeyPress(Key.D1, RawInputModifiers.Meta | RawInputModifiers.Shift, PhysicalKey.Digit1, "!");
+        Assert.Equal(0, vm.Analytics.ConfirmedCount);
+
+        // on it, ⌘⇧1 toggles Confirmed, and the control spelling does the same
+        vm.SelectedWorkspace = 1;
+        window.KeyPress(Key.D1, RawInputModifiers.Meta | RawInputModifiers.Shift, PhysicalKey.Digit1, "!");
+        Assert.Equal(1, vm.Analytics.ConfirmedCount);
+        window.KeyPress(Key.D1, RawInputModifiers.Control | RawInputModifiers.Shift, PhysicalKey.Digit1, "!");
+        Assert.Equal(0, vm.Analytics.ConfirmedCount);
+
+        // ⌘⇧C confirms and moves to the next feature
+        window.KeyPress(Key.C, RawInputModifiers.Meta | RawInputModifiers.Shift, PhysicalKey.C, "C");
+        Assert.Equal(1, vm.Analytics.ConfirmedCount);
+        Assert.Same(vm.Analytics.IonRows[1], vm.Analytics.SelectedRow);
+
+        // and with the table in its own window the keys work from the review's other window too
+        vm.SelectedWorkspace = 4;
+        vm.Analytics.IonTableDetached = true;
+        var torn = new IonTableWindow { DataContext = vm.Analytics, Width = 900, Height = 600 };
+        torn.Show();
+        torn.KeyPress(Key.D3, RawInputModifiers.Meta | RawInputModifiers.Shift, PhysicalKey.Digit3, "#");
+        Assert.Equal(1, vm.Analytics.RejectedCount);
+        torn.Close();
+        window.Close();
+        try { Directory.Delete(folder, true); } catch { }
+    }
+
+    [AvaloniaFact]
     public void The_workspace_shortcuts_actually_switch_workspace()
     {
         var vm = new ViewModels.MainWindowViewModel(

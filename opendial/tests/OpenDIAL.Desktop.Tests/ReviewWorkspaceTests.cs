@@ -49,6 +49,16 @@ public class ReviewWorkspaceTests
     /// <summary>The same fixture, reachable from the visual tests.</summary>
     internal static (AnalyticsViewModel Vm, CurationStore Store, string Folder) NewAnalyticsForVisuals() => NewAnalytics();
 
+    /// <summary>Loads the same four-feature session into a view model that already exists — the shell's own.</summary>
+    internal static string LoadSessionInto(AnalyticsViewModel vm)
+    {
+        var folder = Path.Combine(Path.GetTempPath(), "opendial-ui-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        var store = CurationStore.Load(Path.Combine(folder, "AlignResult-1.arf"));
+        vm.LoadForTest(new[] { Row(0, "PC 34:1", "PC", 760.5851, 11.4), Row(1, "low score: PE 36:2", "PE", 744.5538, 10.9) }, Samples(), store);
+        return folder;
+    }
+
     private static (AnalyticsViewModel Vm, CurationStore Store, string Folder) NewAnalytics()
     {
         var folder = Path.Combine(Path.GetTempPath(), "opendial-ui-" + Guid.NewGuid().ToString("N"));

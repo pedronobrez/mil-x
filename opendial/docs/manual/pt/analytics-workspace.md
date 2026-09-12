@@ -71,8 +71,8 @@ estatística ou da rede limpa qualquer filtro que a esconda.
 
 1. Filtre para uma classe, ou para **Not reviewed**.
 2. Leia a grade de picos, o MS/MS, os candidatos.
-3. `Alt+C` para confirmar e seguir, `Alt+X` para rejeitar e seguir, `Ctrl+1` a `Ctrl+5` para uma marcação específica, um comentário se for preciso.
-4. `Alt+N` para a próxima feature que ninguém olhou.
+3. `⌘⇧C` para confirmar e seguir, `⌘⇧X` para rejeitar e seguir, `⌘⇧1` a `⌘⇧5` para uma marcação específica, um comentário se for preciso.
+4. `⌘⇧N` para a próxima feature que ninguém olhou.
 5. **Save review**, ou simplesmente saia: a revisão também é gravada quando se deixa a área de trabalho com marcações por salvar.
 
 Tudo sobre o ciclo está em [[review-tags]].

@@ -15,14 +15,14 @@ one done there shows up here.
 
 | Key | Tag | Means |
 | --- | --- | --- |
-| `Ctrl+1` | **Confirmed** | checked, and right |
-| `Ctrl+2` | **Low quality spectrum** | too weak or noisy to judge |
-| `Ctrl+3` | **Misannotation** | the name is wrong |
-| `Ctrl+4` | **Coelution (mixed spectra)** | two compounds under one peak |
-| `Ctrl+5` | **Overannotation** | an isotope, adduct or in-source fragment of something else, or a name claiming more than the spectrum shows |
-| `Ctrl+0` | *(clear)* | removes every tag from the feature |
+| `⌘⇧1` | **Confirmed** | checked, and right |
+| `⌘⇧2` | **Low quality spectrum** | too weak or noisy to judge |
+| `⌘⇧3` | **Misannotation** | the name is wrong |
+| `⌘⇧4` | **Coelution (mixed spectra)** | two compounds under one peak |
+| `⌘⇧5` | **Overannotation** | an isotope, adduct or in-source fragment of something else, or a name claiming more than the spectrum shows |
+| `⌘⇧0` | *(clear)* | removes every tag from the feature |
 
-They are not exclusive: a feature can be both Coelution and Overannotation. Each key toggles its
+On a keyboard without a command key, `Ctrl+Shift` with the same digit. They are not exclusive: a feature can be both Coelution and Overannotation. Each key toggles its
 tag; the verdict strip's buttons — **Confirmed**, **Low quality**, **Misannotation**,
 **Coelution**, **Overannotation**, **Clear** — do the same with the mouse, and light up when the
 tag is on. The ion table shows the tags in short form and, in its first column, `✓` for Confirmed,
@@ -30,9 +30,9 @@ tag is on. The ion table shows the tags in short form and, in its first column, 
 
 ## Confirm and Reject
 
-**Confirm ▸** (`Alt+C`) sets Confirmed, clears Misannotation, and moves to the next feature.
-**Reject ▸** (`Alt+X`) sets Misannotation, clears Confirmed, and moves on. Together with
-**Next unreviewed** (`Alt+N`), which skips what is already decided, they are the whole of a fast
+**Confirm ▸** (`⌘⇧C`) sets Confirmed, clears Misannotation, and moves to the next feature.
+**Reject ▸** (`⌘⇧X`) sets Misannotation, clears Confirmed, and moves on. Together with
+**Next unreviewed** (`⌘⇧N`), which skips what is already decided, they are the whole of a fast
 pass.
 
 ## Reviewed

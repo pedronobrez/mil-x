@@ -24,8 +24,12 @@ The current version. It tracks MS-DIAL 5.5.260817.
 - The Analytics workspace opens on what confirming an analyte needs: the ion table, the peak in every sample, and the product spectrum, all on screen at once. The peak grid is a panel of its own above the evidence tabs instead of the first tab, and MS/MS is the tab showing by default; a divider between the two sets their heights. The grid's size is one **Grid** `3 × 2` control.
 - The ion table's window docks back by being dragged over the left part of the main window: the place it will take lights up as the title bar crosses it, and letting go there docks it. While the table is away, the peaks and the spectrum take the whole width; its column no longer stands empty.
 
+- The review keys are `⌘⇧` (`Ctrl+Shift`) with a digit for a tag, with C and X for the verdicts, with N for the next unreviewed feature and with the arrows for the next and previous one. They are bound on the windows, so they work whatever has the focus, in the main window while Analytics shows and in the ion table's own window.
+
 **Fixed**
 
+- The tag keys never fired: they were written as `Ctrl` with a bare digit, which Avalonia reads as another key; and `Alt+C` fired only while the focus sat inside the review.
+- The spectrum mirror's *measured* and *reference* labels drew over the m/z of a base peak at the right edge; each now takes the emptier side of its half.
 - After a save, the Analytics toolbar's message drew over its own buttons; it now takes the space the buttons leave and trims, with the whole sentence in its tooltip.
 - The msconvert bridge is verified end to end on Apple Silicon: ProteoWizard's `small.RAW` converts through colima's x86-64 QEMU machine, from the command line and from the installed application, in about 30 seconds. Rosetta cannot run the image's Wine, and the manual and the converter's message now say so and give the colima route.
 - The manual's code spans, search highlights, table headers and rules took their colours from the light theme whatever the window's theme, so a dark window drew its code white on white. Every brush on a page now follows the window it is in, and changes with the theme.

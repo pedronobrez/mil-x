@@ -25,8 +25,12 @@ A versão atual. Segue o MS-DIAL 5.5.260817.
 - A área Analytics abre no que confirmar um analito exige: a tabela de íons, o pico em toda amostra e o espectro de produto, tudo na tela de uma vez. A grade de picos é um painel próprio acima das abas de evidência em vez da primeira aba, e MS/MS é a aba mostrada por padrão; um divisor entre os dois define as alturas. O tamanho da grade é um único controle **Grid** `3 × 2`.
 - A janela da tabela de íons reencaixa ao ser arrastada sobre a parte esquerda da janela principal: o lugar que vai ocupar acende quando a barra de título o cruza, e soltar aí encaixa-a. Enquanto a tabela está fora, os picos e o espectro ocupam toda a largura; a coluna dela não fica mais vazia.
 
+- As teclas de revisão são `⌘⇧` (`Ctrl+Shift`) com um dígito para uma marcação, com C e X para os vereditos, com N para a próxima feature não revisada e com as setas para a seguinte e a anterior. Estão ligadas nas janelas, de modo que funcionam seja qual for o foco, na janela principal enquanto Analytics está na tela e na janela própria da tabela de íons.
+
 **Corrigido**
 
+- As teclas de marcação nunca disparavam: estavam escritas como `Ctrl` com um dígito puro, que o Avalonia lê como outra tecla; e `Alt+C` só disparava com o foco dentro da revisão.
+- Os rótulos *measured* e *reference* do espelho de espectros desenhavam por cima do m/z de um pico-base na borda direita; cada um toma agora o lado mais vazio da sua metade.
 - Depois de salvar, a mensagem da barra de ferramentas de Analytics desenhava por cima dos próprios botões; agora ocupa o espaço que os botões deixam e recorta, com a frase inteira na dica.
 - A ponte msconvert está verificada de ponta a ponta em Apple Silicon: o `small.RAW` do ProteoWizard converte pela máquina QEMU x86-64 do colima, pela linha de comando e pela aplicação instalada, em cerca de 30 segundos. A Rosetta não consegue correr o Wine da imagem, e o manual e a mensagem do conversor agora dizem isso e dão o caminho do colima.
 - Os trechos de código, as marcas da busca, os cabeçalhos de tabela e as réguas do manual tomavam as cores do tema claro fosse qual fosse o tema da janela, de modo que uma janela escura desenhava o código branco sobre branco. Todo pincel de uma página agora segue a janela em que está, e muda com o tema.

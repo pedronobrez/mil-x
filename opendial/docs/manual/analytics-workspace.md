@@ -71,8 +71,8 @@ network clears whatever filter hides it.
 
 1. Filter to a class, or to **Not reviewed**.
 2. Read the peak grid, the MS/MS, the candidates.
-3. `Alt+C` to confirm and move on, `Alt+X` to reject and move on, `Ctrl+1` to `Ctrl+5` for a specific tag, a comment if it needs one.
-4. `Alt+N` to the next feature nobody has looked at.
+3. `⌘⇧C` to confirm and move on, `⌘⇧X` to reject and move on, `⌘⇧1` to `⌘⇧5` for a specific tag, a comment if it needs one.
+4. `⌘⇧N` to the next feature nobody has looked at.
 5. **Save review**, or just leave: the review is also written when the workspace is left with unsaved tags.
 
 Everything about the loop is in [[review-tags]].

@@ -67,7 +67,7 @@ O resto da casca — menus, a barra de status, o log, a faixa de progresso — e
    fabricante é a parte lenta e fica em cache para a próxima vez. Veja [[processing]].
 5. Quando termina, a janela pousa em **Analytics** com a tabela de íons preenchida. Selecione uma
    feature, olhe o seu pico em cada amostra, o seu MS/MS contra a biblioteca, os seus candidatos;
-   marque-a com `Ctrl+1` a `Ctrl+5` ou com **Confirm ▸** e **Reject ▸**. **Save review** grava as
+   marque-a com `⌘⇧1` a `⌘⇧5` ou com **Confirm ▸** e **Reject ▸**. **Save review** grava as
    marcações no arquivo que o MS-DIAL lê. Veja [[analytics-workspace]].
 6. **Export reviewed table…** grava o que a tabela está mostrando, com a revisão em colunas.
    **Export to OpenQuant…** transforma a lista num método dirigido. Veja [[exports]].

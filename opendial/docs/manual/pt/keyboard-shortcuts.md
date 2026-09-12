@@ -32,20 +32,22 @@ listados, os dois funcionam em todo lado.
 
 | Atalho | Ação |
 | --- | --- |
-| `Ctrl+1` | alternar **Confirmed** |
-| `Ctrl+2` | alternar **Low quality spectrum** |
-| `Ctrl+3` | alternar **Misannotation** |
-| `Ctrl+4` | alternar **Coelution (mixed spectra)** |
-| `Ctrl+5` | alternar **Overannotation** |
-| `Ctrl+0` | limpar toda marcação da feature |
-| `Alt+C` | **Confirm ▸** — Confirmed, e a feature seguinte |
-| `Alt+X` | **Reject ▸** — Misannotation, e a feature seguinte |
-| `Alt+N` | **Next unreviewed** |
-| `Alt+↓` | feature seguinte |
-| `Alt+↑` | feature anterior |
+| `⌘⇧1` / `Ctrl+Shift+1` | alternar **Confirmed** |
+| `⌘⇧2` / `Ctrl+Shift+2` | alternar **Low quality spectrum** |
+| `⌘⇧3` / `Ctrl+Shift+3` | alternar **Misannotation** |
+| `⌘⇧4` / `Ctrl+Shift+4` | alternar **Coelution (mixed spectra)** |
+| `⌘⇧5` / `Ctrl+Shift+5` | alternar **Overannotation** |
+| `⌘⇧0` / `Ctrl+Shift+0` | limpar toda marcação da feature |
+| `⌘⇧C` / `Ctrl+Shift+C` | **Confirm ▸** — Confirmed, e a feature seguinte |
+| `⌘⇧X` / `Ctrl+Shift+X` | **Reject ▸** — Misannotation, e a feature seguinte |
+| `⌘⇧N` / `Ctrl+Shift+N` | **Next unreviewed** |
+| `⌘⇧↓` / `Ctrl+Shift+↓` | feature seguinte |
+| `⌘⇧↑` / `Ctrl+Shift+↑` | feature anterior |
 
-As teclas de marcação usam `Ctrl`, não `⌘`, em toda plataforma — `⌘1` a `⌘5` são as áreas de
-trabalho. Veja [[review-tags]].
+As teclas de revisão são as teclas de área de trabalho com shift: `⌘1` é uma área de trabalho,
+`⌘⇧1` é uma marcação. Funcionam seja qual for o foco — a tabela, um gráfico, uma caixa de texto —
+na janela principal enquanto Analytics está na tela e na janela própria da tabela de íons, e não
+fazem nada noutro lugar. Veja [[review-tags]].
 
 ## Gráficos
 

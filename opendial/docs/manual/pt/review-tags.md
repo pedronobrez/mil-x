@@ -15,14 +15,14 @@ aplicação Windows, e uma feita lá aparece aqui.
 
 | Tecla | Marcação | Significa |
 | --- | --- | --- |
-| `Ctrl+1` | **Confirmed** | verificada, e certa |
-| `Ctrl+2` | **Low quality spectrum** | fraca ou ruidosa demais para julgar |
-| `Ctrl+3` | **Misannotation** | o nome está errado |
-| `Ctrl+4` | **Coelution (mixed spectra)** | dois compostos sob um pico |
-| `Ctrl+5` | **Overannotation** | um isótopo, aduto ou fragmento em fonte de outra coisa, ou um nome que afirma mais do que o espectro mostra |
-| `Ctrl+0` | *(limpar)* | remove toda marcação da feature |
+| `⌘⇧1` | **Confirmed** | verificada, e certa |
+| `⌘⇧2` | **Low quality spectrum** | fraca ou ruidosa demais para julgar |
+| `⌘⇧3` | **Misannotation** | o nome está errado |
+| `⌘⇧4` | **Coelution (mixed spectra)** | dois compostos sob um pico |
+| `⌘⇧5` | **Overannotation** | um isótopo, aduto ou fragmento em fonte de outra coisa, ou um nome que afirma mais do que o espectro mostra |
+| `⌘⇧0` | *(limpar)* | remove toda marcação da feature |
 
-Não são exclusivas: uma feature pode ser Coelution e Overannotation ao mesmo tempo. Cada tecla
+Num teclado sem tecla de comando, `Ctrl+Shift` com o mesmo dígito. Não são exclusivas: uma feature pode ser Coelution e Overannotation ao mesmo tempo. Cada tecla
 alterna a sua marcação; os botões da faixa de veredito — **Confirmed**, **Low quality**,
 **Misannotation**, **Coelution**, **Overannotation**, **Clear** — fazem o mesmo com o mouse, e
 acendem quando a marcação está ligada. A tabela de íons mostra as marcações em forma curta e, na
@@ -31,9 +31,9 @@ sinalizada para voltar.
 
 ## Confirm e Reject
 
-**Confirm ▸** (`Alt+C`) põe Confirmed, limpa Misannotation, e passa à feature seguinte.
-**Reject ▸** (`Alt+X`) põe Misannotation, limpa Confirmed, e segue. Juntamente com **Next
-unreviewed** (`Alt+N`), que salta o que já está decidido, são tudo o que uma passagem rápida
+**Confirm ▸** (`⌘⇧C`) põe Confirmed, limpa Misannotation, e passa à feature seguinte.
+**Reject ▸** (`⌘⇧X`) põe Misannotation, limpa Confirmed, e segue. Juntamente com **Next
+unreviewed** (`⌘⇧N`), que salta o que já está decidido, são tudo o que uma passagem rápida
 precisa.
 
 ## Revisada

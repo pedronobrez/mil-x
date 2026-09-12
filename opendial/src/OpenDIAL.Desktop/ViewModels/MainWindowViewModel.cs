@@ -114,6 +114,27 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [RelayCommand] private void SelectWorkspace(object? index) => SelectedWorkspace = index is string s && int.TryParse(s, out var i) ? i : index is int n ? n : SelectedWorkspace;
     [RelayCommand] private void ToggleLog() => ShowLog = !ShowLog;
 
+    /// <summary>
+    /// A review shortcut from the main window. They are bound on the window so they fire whatever has
+    /// the focus, and act only while the review is on screen: in the Analytics workspace, or with the
+    /// ion table in its own window, which is a review too.
+    /// </summary>
+    [RelayCommand]
+    private void ReviewKey(string? what)
+    {
+        if (SelectedWorkspace != 1 && !Analytics.IonTableDetached) return;
+        switch (what)
+        {
+            case "tag1": case "tag2": case "tag3": case "tag4": case "tag5": Analytics.ToggleTagCommand.Execute(what[3..]); break;
+            case "clear": Analytics.ClearTagsCommand.Execute(null); break;
+            case "confirm": Analytics.ConfirmAndNextCommand.Execute(null); break;
+            case "reject": Analytics.RejectAndNextCommand.Execute(null); break;
+            case "unreviewed": Analytics.NextUnreviewedCommand.Execute(null); break;
+            case "next": Analytics.NextSpotCommand.Execute(null); break;
+            case "previous": Analytics.PreviousSpotCommand.Execute(null); break;
+        }
+    }
+
     // ---------------------------------------------------------------- project lifecycle
 
     public async Task<bool> ConfirmDiscardAsync(string action)

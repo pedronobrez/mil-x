@@ -10,19 +10,8 @@
     on the left, the evidence for the selected feature is on the right, and the verdict is one
     keystroke away in the curation strip between them.
   -->
-  <UserControl.KeyBindings>
-    <KeyBinding Gesture="Ctrl+1" Command="{Binding ToggleTagCommand}" CommandParameter="1" />
-    <KeyBinding Gesture="Ctrl+2" Command="{Binding ToggleTagCommand}" CommandParameter="2" />
-    <KeyBinding Gesture="Ctrl+3" Command="{Binding ToggleTagCommand}" CommandParameter="3" />
-    <KeyBinding Gesture="Ctrl+4" Command="{Binding ToggleTagCommand}" CommandParameter="4" />
-    <KeyBinding Gesture="Ctrl+5" Command="{Binding ToggleTagCommand}" CommandParameter="5" />
-    <KeyBinding Gesture="Ctrl+0" Command="{Binding ClearTagsCommand}" />
-    <KeyBinding Gesture="Alt+C" Command="{Binding ConfirmAndNextCommand}" />
-    <KeyBinding Gesture="Alt+X" Command="{Binding RejectAndNextCommand}" />
-    <KeyBinding Gesture="Alt+N" Command="{Binding NextUnreviewedCommand}" />
-    <KeyBinding Gesture="Alt+Down" Command="{Binding NextSpotCommand}" />
-    <KeyBinding Gesture="Alt+Up" Command="{Binding PreviousSpotCommand}" />
-  </UserControl.KeyBindings>
+  <!-- the review keys are bound on the windows (MainWindow, IonTableWindow), not here: a control's
+       bindings fire only while the focus is inside it, and a reviewer's focus is wherever it last was -->
 
   <DockPanel>
     <!-- toolbar -->

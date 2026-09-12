@@ -103,9 +103,10 @@ or set `Alignment light mode: True` in the method text.
 shortcuts were written in a form Avalonia parsed to the wrong key. If it recurs, the
 `GestureTests` say which binding is wrong.
 
-**`Ctrl+1` tags a feature instead of switching workspace.** By design: `Ctrl` with a digit is a
-review tag, `⌘` with a digit is a workspace. On Linux and Windows the workspaces are also on
-`Ctrl`, and the tag keys still work in the review workspace.
+**A review key (`⌘⇧1`, `⌘⇧C`, …) does nothing.** They act only while the review is on screen:
+the Analytics workspace, or the ion table's own window. Earlier builds bound the tags to `Ctrl`
+with a bare digit, which Avalonia read as another key, and the verdicts to `Alt`, which fired
+only while the focus was inside the review; both are gone.
 
 **The filter band covers the counts on a narrow window.** Fixed: the band scrolls sideways. Widen
 the window if it is narrower than 1100 points.

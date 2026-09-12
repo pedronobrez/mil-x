@@ -40,8 +40,8 @@ header; the order comes back on the next start.
 
 | Button | What it does |
 | --- | --- |
-| **▲** / **▼** | previous and next feature (`Alt+↑`, `Alt+↓`) |
-| **Next unreviewed** | the next feature with no verdict, wrapping round (`Alt+N`); says so when there is none left in the filter |
+| **▲** / **▼** | previous and next feature (`⌘⇧↑`, `⌘⇧↓`) |
+| **Next unreviewed** | the next feature with no verdict, wrapping round (`⌘⇧N`); says so when there is none left in the filter |
 | **Confirm all shown** | tags every feature the filter is showing as Confirmed, which is how a whole lipid class is accepted once its retention trend checks out |
 | **Clear all shown** | removes every tag from the features shown |
 | **Open in a window** / **Dock table** | tears the table off into a window of its own, or brings it back |
@@ -63,7 +63,7 @@ with the column order of each.
 
 ## Selection and navigation
 
-A click selects; `Alt+↓` and `Alt+↑` move; `Alt+N` skips to the next unreviewed. The selected row
+A click selects; `⌘⇧↓` and `⌘⇧↑` move; `⌘⇧N` skips to the next unreviewed. The selected row
 is kept when the filter changes and still contains it, and moves to the first row when it does not.
 Clicking a dot in the feature map, a row of the VIP or S-plot tables, or a node of the molecular
 network selects that feature here, clearing whatever filter hid it.

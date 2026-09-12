@@ -35,6 +35,31 @@
     <KeyBinding Gesture="Cmd+L" Command="{Binding ToggleLogCommand}" />
     <KeyBinding Gesture="F1" Command="{Binding OpenHelpCommand}" />
     <KeyBinding Gesture="Cmd+Shift+OemQuestion" Command="{Binding OpenHelpCommand}" />
+    <!-- the review: ⌘⇧ with a digit is a tag, with C/X a verdict and the next feature, with N the
+         next unreviewed one, with ↓/↑ the next and previous; Ctrl+Shift the same for a keyboard
+         without a command key. The shell forwards them only while the review is on screen. -->
+    <KeyBinding Gesture="Cmd+Shift+D1" Command="{Binding ReviewKeyCommand}" CommandParameter="tag1" />
+    <KeyBinding Gesture="Cmd+Shift+D2" Command="{Binding ReviewKeyCommand}" CommandParameter="tag2" />
+    <KeyBinding Gesture="Cmd+Shift+D3" Command="{Binding ReviewKeyCommand}" CommandParameter="tag3" />
+    <KeyBinding Gesture="Cmd+Shift+D4" Command="{Binding ReviewKeyCommand}" CommandParameter="tag4" />
+    <KeyBinding Gesture="Cmd+Shift+D5" Command="{Binding ReviewKeyCommand}" CommandParameter="tag5" />
+    <KeyBinding Gesture="Cmd+Shift+D0" Command="{Binding ReviewKeyCommand}" CommandParameter="clear" />
+    <KeyBinding Gesture="Cmd+Shift+C" Command="{Binding ReviewKeyCommand}" CommandParameter="confirm" />
+    <KeyBinding Gesture="Cmd+Shift+X" Command="{Binding ReviewKeyCommand}" CommandParameter="reject" />
+    <KeyBinding Gesture="Cmd+Shift+N" Command="{Binding ReviewKeyCommand}" CommandParameter="unreviewed" />
+    <KeyBinding Gesture="Cmd+Shift+Down" Command="{Binding ReviewKeyCommand}" CommandParameter="next" />
+    <KeyBinding Gesture="Cmd+Shift+Up" Command="{Binding ReviewKeyCommand}" CommandParameter="previous" />
+    <KeyBinding Gesture="Ctrl+Shift+D1" Command="{Binding ReviewKeyCommand}" CommandParameter="tag1" />
+    <KeyBinding Gesture="Ctrl+Shift+D2" Command="{Binding ReviewKeyCommand}" CommandParameter="tag2" />
+    <KeyBinding Gesture="Ctrl+Shift+D3" Command="{Binding ReviewKeyCommand}" CommandParameter="tag3" />
+    <KeyBinding Gesture="Ctrl+Shift+D4" Command="{Binding ReviewKeyCommand}" CommandParameter="tag4" />
+    <KeyBinding Gesture="Ctrl+Shift+D5" Command="{Binding ReviewKeyCommand}" CommandParameter="tag5" />
+    <KeyBinding Gesture="Ctrl+Shift+D0" Command="{Binding ReviewKeyCommand}" CommandParameter="clear" />
+    <KeyBinding Gesture="Ctrl+Shift+C" Command="{Binding ReviewKeyCommand}" CommandParameter="confirm" />
+    <KeyBinding Gesture="Ctrl+Shift+X" Command="{Binding ReviewKeyCommand}" CommandParameter="reject" />
+    <KeyBinding Gesture="Ctrl+Shift+N" Command="{Binding ReviewKeyCommand}" CommandParameter="unreviewed" />
+    <KeyBinding Gesture="Ctrl+Shift+Down" Command="{Binding ReviewKeyCommand}" CommandParameter="next" />
+    <KeyBinding Gesture="Ctrl+Shift+Up" Command="{Binding ReviewKeyCommand}" CommandParameter="previous" />
   </Window.KeyBindings>
 
   <DockPanel>
