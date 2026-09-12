@@ -137,42 +137,19 @@ public partial class ChartFrame : UserControl
         }
     }
 
-    private void OnExportSvg(object? sender, RoutedEventArgs e) => _ = ExportAsync("svg", 0);
-    private void OnExportPng2(object? sender, RoutedEventArgs e) => _ = ExportAsync("png", 2);
-    private void OnExportPng4(object? sender, RoutedEventArgs e) => _ = ExportAsync("png", 4);
-    private void OnExportPng6(object? sender, RoutedEventArgs e) => _ = ExportAsync("png", 6);
+    private void OnExport(object? sender, RoutedEventArgs e) => _ = ExportAsync(null);
 
     /// <summary>What a script hands over instead of the save panel; null asks the person.</summary>
     public string? ExportPathOverride { get; set; }
 
-    public async Task<string?> ExportAsync(string format, double scale)
-    {
-        var chart = Chart;
-        if (chart is null) return null;
-        var suggested = (string.IsNullOrWhiteSpace(HeadingText) ? "chart" : HeadingText.ToLowerInvariant().Replace(' ', '-').Replace("·", "").Replace("--", "-")) + "." + format;
-        string? path = ExportPathOverride;
-        if (path is null)
-        {
-            var top = TopLevel.GetTopLevel(this);
-            if (top is null) return null;
-            var file = await top.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
-            {
-                Title = "Save the chart",
-                SuggestedFileName = suggested,
-                DefaultExtension = format,
-                FileTypeChoices = new[] { new FilePickerFileType(format.ToUpperInvariant()) { Patterns = new[] { "*." + format } } },
-            });
-            path = file?.TryGetLocalPath();
-        }
-        if (string.IsNullOrEmpty(path)) return null;
-        if (format == "svg")
-        {
-            ChartExport.SaveSvg(chart, path, ChartPalette.Surface((Application.Current?.ActualThemeVariant ?? Avalonia.Styling.ThemeVariant.Light) == Avalonia.Styling.ThemeVariant.Dark));
-        }
-        else
-        {
-            ChartExport.SavePng(chart, path, scale);
-        }
-        return path;
-    }
+    /// <summary>
+    /// The figure. Null options ask how it should look; given options skip the dialog, which is
+    /// what the probe's command does.
+    /// </summary>
+    public async Task<string?> ExportAsync(ChartExportOptions? options) =>
+        Chart is { } chart ? await ChartExportFlow.RunAsync(chart, HeadingText, options, ExportPathOverride) : null;
+
+    /// <summary>The older call, kept for the scripts: a format and a resolution, everything else as it was.</summary>
+    public Task<string?> ExportAsync(string format, double scale) =>
+        ExportAsync(new ChartExportOptions { Format = format, Scale = scale <= 0 ? 3 : scale, Theme = "Screen" });
 }

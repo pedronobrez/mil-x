@@ -63,8 +63,10 @@ table, so the tables join. The internal standards themselves are not in the rati
 
 ## The charts
 
-Every chart in the Statistics workspace writes itself out as **SVG** or as **PNG** at two, four
-or six times its on-screen size, from the **Export…** menu at its top right; see [[chart-export]].
+Every chart in the application writes itself out as **SVG** or as **PNG** at two to six times its
+on-screen size — from **Export…** at the top right of a Statistics chart, or from **Export as a
+picture…** in the right-click menu of any other. The dialog also chooses the theme the figure is
+drawn in, so a light figure comes out of a dark window; see [[chart-export]].
 
 ## The network tables
 

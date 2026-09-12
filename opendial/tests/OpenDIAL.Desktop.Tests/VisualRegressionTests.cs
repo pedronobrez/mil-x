@@ -168,6 +168,34 @@ public class VisualRegressionTests
     }
 
     [AvaloniaFact]
+    public void The_export_dialog_looks_like_its_reference()
+    {
+        var chart = new OpenDIAL.Desktop.Controls.SpectrumChart
+        {
+            Peaks = new[]
+            {
+                new Point(70.07, 22), new Point(88.08, 58), new Point(106.09, 100),
+                new Point(227.20, 41), new Point(288.26, 96),
+            },
+            ReferencePeaks = new[] { new Point(88.08, 30), new Point(182.19, 100), new Point(288.25, 24) },
+            PrecursorMz = 288.2543,
+            Title = "Representative MS/MS · Cer d12:0/4:0 (spot 196, m/z 288.2543) · mirror: library reference",
+            YLabel = "Relative intensity (%)",
+            XLabel = "m/z",
+        };
+        var behind = new Window { Content = chart, Width = 620, Height = 300 };
+        behind.Show();
+        behind.UpdateLayout();
+
+        var window = new ChartExportWindow { Width = 820, Height = 560 };
+        window.Show();
+        window.Prepare(chart, "Representative MS/MS", new OpenDIAL.Desktop.Charts.ChartExportOptions());
+        AssertLooksLike(window, "export-dialog");
+        window.Close();
+        behind.Close();
+    }
+
+    [AvaloniaFact]
     public void The_help_window_looks_like_its_reference()
     {
         var vm = new Help.HelpViewModel(Help.Manual.Load());

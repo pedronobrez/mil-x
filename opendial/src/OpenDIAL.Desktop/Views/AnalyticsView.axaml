@@ -187,7 +187,7 @@
               <!-- product spectrum against the library -->
               <TabItem Header="MS/MS">
                 <Grid Margin="0,6,0,0" ColumnDefinitions="*,260">
-                  <c:SpectrumChart Grid.Column="0" Peaks="{Binding Ms2Peaks}" ReferencePeaks="{Binding ReferencePeaks}" PrecursorMz="{Binding Ms2Precursor}" Title="{Binding Ms2Title}" />
+                  <c:SpectrumChart x:Name="Ms2Mirror" Grid.Column="0" Peaks="{Binding Ms2Peaks}" ReferencePeaks="{Binding ReferencePeaks}" PrecursorMz="{Binding Ms2Precursor}" Title="{Binding Ms2Title}" />
                   <Border Grid.Column="1" Classes="hairline-left" Padding="12,4,4,4">
                     <StackPanel Spacing="6">
                       <TextBlock Classes="eyebrow" Text="MATCH SCORES" Margin="0,0,0,2" />

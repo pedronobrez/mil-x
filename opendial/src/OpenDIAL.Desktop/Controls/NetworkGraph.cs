@@ -42,11 +42,16 @@ public sealed class NetworkGraph : Control, Charts.IChartRenderable
         AffectsRender<NetworkGraph>(NetworkProperty, SelectedFeatureIdProperty);
     }
 
+    public NetworkGraph()
+    {
+        Charts.ChartExportFlow.AttachMenu(this, () => "molecular network");
+    }
+
     public SpectralNetworkResult? Network { get => GetValue(NetworkProperty); set => SetValue(NetworkProperty, value); }
     public int SelectedFeatureId { get => GetValue(SelectedFeatureIdProperty); set => SetValue(SelectedFeatureIdProperty, value); }
     public event EventHandler<NetworkNodeEventArgs> NodeClicked { add => AddHandler(NodeClickedEvent, value); remove => RemoveHandler(NodeClickedEvent, value); }
 
-    private bool Dark => (Application.Current?.ActualThemeVariant ?? Avalonia.Styling.ThemeVariant.Light) == Avalonia.Styling.ThemeVariant.Dark;
+    private bool Dark => Charts.ChartTheme.IsDark(this, Application.Current?.ActualThemeVariant);
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
@@ -150,6 +155,7 @@ public sealed class NetworkGraph : Control, Charts.IChartRenderable
 
     public void RenderTo(Charts.ChartCanvas context)
     {
+        Charts.ChartTheme.PaintPaper(this, context);
         var network = Network;
         var width = Bounds.Width;
         var height = Bounds.Height;

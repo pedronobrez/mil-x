@@ -52,16 +52,8 @@
               </Flyout>
             </Button.Flyout>
           </Button>
-          <Button x:Name="ExportButton" Classes="tool" Content="Export…" ToolTip.Tip="Save the chart as a picture">
-            <Button.Flyout>
-              <MenuFlyout Placement="BottomEdgeAlignedRight">
-                <MenuItem Header="SVG (vector)" Click="OnExportSvg" />
-                <MenuItem Header="PNG, 2× resolution" Click="OnExportPng2" />
-                <MenuItem Header="PNG, 4× resolution" Click="OnExportPng4" />
-                <MenuItem Header="PNG, 6× resolution" Click="OnExportPng6" />
-              </MenuFlyout>
-            </Button.Flyout>
-          </Button>
+          <Button x:Name="ExportButton" Classes="tool" Content="Export…" Click="OnExport"
+                  ToolTip.Tip="Save the chart as a picture: SVG or PNG, in the theme the figure wants rather than the window's" />
         </StackPanel>
         <TextBlock x:Name="Heading" Classes="eyebrow" Margin="4,0,0,0" VerticalAlignment="Center" />
       </DockPanel>

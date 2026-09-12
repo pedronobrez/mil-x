@@ -5,6 +5,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Styling;
+using Avalonia.VisualTree;
 
 namespace OpenDIAL.Desktop.Controls;
 
@@ -89,7 +90,20 @@ public abstract class ChartBase : Control, Charts.IChartRenderable
         ClipToBounds = true;
         MinHeight = 60;
         ActualThemeVariantChanged += (_, _) => InvalidateVisual();
+        // not ContextFlyout: the right button pans here, so the menu is opened by hand below, on a
+        // right click that turned out not to be a pan
+        _exportMenu = Charts.ChartExportFlow.BuildMenu(this, Heading);
     }
+
+    private readonly Avalonia.Controls.MenuFlyout _exportMenu;
+
+    /// <summary>Whether the export menu is showing; the tests ask, since a flyout is not in this tree.</summary>
+    internal bool ExportMenuIsOpen => _exportMenu.IsOpen;
+
+    /// <summary>What a figure made of this chart is called: its own title, or the panel's heading.</summary>
+    private string? Heading() =>
+        !string.IsNullOrWhiteSpace(Title) ? Title
+        : this.FindAncestorOfType<ChartFrame>()?.HeadingText;
 
     public string? Title { get => GetValue(TitleProperty); set => SetValue(TitleProperty, value); }
     public string? XLabel { get => GetValue(XLabelProperty); set => SetValue(XLabelProperty, value); }
@@ -124,7 +138,7 @@ public abstract class ChartBase : Control, Charts.IChartRenderable
 
     // ------------------------------------------------------------------ theme tokens
 
-    protected bool IsDark => ActualThemeVariant == ThemeVariant.Dark;
+    protected bool IsDark => Charts.ChartTheme.IsDark(this, ActualThemeVariant);
     protected Color InkColor => IsDark ? Color.Parse("#e6e8eb") : Color.Parse("#1a1d21");
     protected Color MutedColor => IsDark ? Color.Parse("#9ba3ae") : Color.Parse("#6b7280");
     protected Color FaintColor => IsDark ? Color.Parse("#6b7280") : Color.Parse("#9aa1ac");
@@ -140,7 +154,8 @@ public abstract class ChartBase : Control, Charts.IChartRenderable
     protected IBrush MutedBrush => new SolidColorBrush(MutedColor);
     protected IBrush GridBrush => new SolidColorBrush(LineColor);
     protected IBrush AxisBrush => new SolidColorBrush(LineStrongColor);
-    protected IBrush PlotBackground => new SolidColorBrush(SurfaceColor);
+    /// <summary>What goes behind the whole chart: the export's paper when one was asked for, else the surface.</summary>
+    protected IBrush PlotBackground => new SolidColorBrush(Charts.ChartTheme.Paper(this, SurfaceColor));
     protected IBrush TooltipBackground => new SolidColorBrush(Color.FromArgb(0xEE, SurfaceColor.R, SurfaceColor.G, SurfaceColor.B));
 
     /// <summary>Series colour by index: accent first, then the categorical palette, or whatever palette was chosen.</summary>
@@ -571,6 +586,8 @@ public abstract class ChartBase : Control, Charts.IChartRenderable
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         base.OnPointerReleased(e);
+        // a right click that moved the chart was a pan, and means no menu
+        var askedForTheMenu = e.InitialPressMouseButton == MouseButton.Right && !_dragged;
         if (_dragStart is { } start)
         {
             var plot = PlotRect;
@@ -614,6 +631,11 @@ public abstract class ChartBase : Control, Charts.IChartRenderable
             _panning = false;
             e.Pointer.Capture(null);
             InvalidateVisual();
+        }
+        if (askedForTheMenu)
+        {
+            _exportMenu.ShowAt(this, showAtPointer: true);
+            e.Handled = true;
         }
     }
 

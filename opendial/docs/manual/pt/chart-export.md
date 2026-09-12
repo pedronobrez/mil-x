@@ -2,7 +2,7 @@
 title: Gráficos, suas opções e sua exportação
 section: Reviewing
 order: 26
-summary: O que se pode dizer a todo gráfico da área Statistics sobre título, rótulos, tamanhos, paleta e escala de cores, e como ele é gravado como SVG ou PNG.
+summary: O que se pode dizer a todo gráfico sobre título, rótulos, tamanhos, paleta e escala de cores, e como ele sai da aplicação como figura — SVG ou PNG, claro ou escuro, sobre papel ou sobre nada.
 ---
 
 # Gráficos, suas opções e sua exportação
@@ -11,6 +11,14 @@ Todo gráfico da [[statistics-workspace]] fica numa moldura com dois controles n
 direito: **⚙** abre as opções do gráfico, e **Export…** grava-o como imagem. A moldura não se
 importa com o gráfico que contém; os mesmos dois controles funcionam nos gráficos de dispersão,
 nas caixas, nas barras, nos mapas de calor, no dendrograma e na rede.
+
+Todo outro gráfico da aplicação — o cromatograma e o espectro do [[explorer-workspace]], os painéis
+de pico, o espelho, o envelope isotópico, o mapa de features e as barras de abundância da
+[[analytics-workspace]] — tem a exportação sem a moldura: **clique com o botão direito no gráfico**
+e escolha **Export as a picture…**. Aqueles painéis estão cheios de evidência e não têm espaço para
+uma faixa de botões, de modo que o comando vive no menu. Num gráfico em que o botão direito
+desloca, um *arrasto* com o direito continua deslocando; só um clique direito que não se move
+oferece o menu.
 
 ## As opções
 
@@ -34,23 +42,46 @@ gravada em lado nenhum. As opções que um gráfico não tem ficam em cinza.
 
 ## Exportar
 
-**Export…** oferece **SVG** e **PNG a 2×, 4× e 6×** o tamanho em tela, e pergunta onde salvar; o
-nome sugerido é a linha acima do gráfico.
+**Export…**, ou **Export as a picture…** no menu do próprio gráfico, abre um só diálogo: a figura
+como será gravada, ao lado das escolhas que a fazem.
 
-**SVG** é o que se leva para uma figura. É desenhado pelo mesmo código que desenha a tela — toda
-linha é uma linha, todo ponto um círculo, todo rótulo um elemento de texto na fonte do gráfico —
-de modo que abre no Illustrator, no Inkscape ou num navegador em qualquer tamanho sem nada para
-redesenhar, e os rótulos podem ser editados no lugar. O fundo é o do próprio gráfico (branco no
-tema claro, a cor do painel no escuro).
+![o diálogo de exportação](images/export-dialog.png)
 
-**PNG** é a mesma imagem rasterizada a um múltiplo da resolução da tela, de modo que um gráfico
-com 600 pixels de largura em tela tem 2400 pixels a 4×, o que a 300 dpi é uma figura de oito
-polegadas. O 6× é para uma de página inteira. Os dois são gravados com as opções como estão nesse
-momento: defina a escala de fonte e a paleta primeiro, depois exporte.
+| Escolha | O que faz |
+| --- | --- |
+| **Format** | **SVG**, uma figura vetorial, ou **PNG**, uma imagem |
+| **Resolution** | só para PNG: 2×, 3×, 4× ou 6× o tamanho do gráfico em tela |
+| **Theme** | **Light**, **Dark**, ou **As on screen** |
+| **Background** | **Paper** (a superfície do próprio tema), **White**, ou **Transparent** |
+| **Type size** | todo o texto da figura junto, de 0,7 a 2,2 do que a tela mostra |
+
+**O tema é o da figura, não o da janela.** Quem revisa no tema escuro ainda quer uma figura clara
+para um artigo, um slide ou uma impressora, e não deveria ter de trocar a aplicação inteira para
+consegui-la — por isso o diálogo abre em **Light**, esteja a aplicação como estiver. **As on
+screen** mantém o tema da janela, que é o que uma figura para um slide escuro quer. Todo o resto do
+gráfico — a paleta, os rótulos, a grade, a legenda, as elipses — fica exatamente como as opções do
+gráfico o deixaram; só a tinta, as réguas e o papel mudam.
+
+**Transparent** grava um PNG sem nada atrás da figura, para pousar sobre um slide colorido. Um SVG
+pedido do mesmo jeito é gravado sem o seu retângulo de fundo.
+
+A pré-visualização é a exportação: o mesmo gráfico desenhado pelo mesmo código com as mesmas
+definições, de modo que o que está no diálogo é o que cai no arquivo. A linha ao lado dos botões diz
+o tamanho do arquivo — em pixels para um PNG, em pontos para um SVG, que serve depois em qualquer
+tamanho. As escolhas ficam guardadas, nas configurações, para a próxima figura.
+
+**SVG** é o que se leva para uma figura. Toda linha é uma linha, todo ponto um círculo, todo rótulo
+um elemento de texto na fonte do gráfico, de modo que abre no Illustrator, no Inkscape ou num
+navegador em qualquer tamanho sem nada para redesenhar, e os rótulos podem ser editados no lugar.
+**PNG** é a mesma imagem rasterizada: um gráfico com 600 pontos de largura em tela tem 2400 pixels
+a 4×, o que a 300 dpi é uma figura de oito polegadas. Os dois são desenhados pelo código que
+desenha a tela, de modo que uma figura a 6× é a figura da tela, apenas maior.
 
 ## De um script
 
-As molduras são visíveis ao canal de comando descrito em [[building-and-testing#O smoke test]], e
-um gráfico pode ser exportado sem o painel de salvar nomeando o caminho; `ChartExport.SaveSvg` e
-`ChartExport.SavePng` são as duas chamadas, e os testes gravam todo gráfico de toda página das duas
-formas para provar que conseguem.
+O canal de comando descrito em [[building-and-testing#O smoke test]] exporta um gráfico sem
+nenhum dos dois diálogos: `exportChart` recebe o `path`, um `page` e `index` para um gráfico de uma
+página de estatística ou um `control` para um gráfico nomeado de qualquer área, e os mesmos
+`format`, `scale`, `theme`, `background` e `fontScale` que o diálogo oferece. `ChartExport.Save` é a
+única chamada por trás de tudo isso, e os testes gravam figuras dos dois jeitos — clara a partir de
+uma janela escura, sobre branco e sobre nada — para provar que saem como pedidas.

@@ -36,6 +36,7 @@ public sealed class RankChart : Control, Charts.IChartRenderable
 
     public RankChart()
     {
+        Charts.ChartExportFlow.AttachMenu(this, () => Title);
         ClipToBounds = true;
         MinHeight = 60;
     }
@@ -52,7 +53,7 @@ public sealed class RankChart : Control, Charts.IChartRenderable
     /// <summary>Bars take their group's colour; otherwise every bar is the accent.</summary>
     public bool ColourByGroup { get => GetValue(ColourByGroupProperty); set => SetValue(ColourByGroupProperty, value); }
 
-    private bool Dark => (Application.Current?.ActualThemeVariant ?? Avalonia.Styling.ThemeVariant.Light) == Avalonia.Styling.ThemeVariant.Dark;
+    private bool Dark => Charts.ChartTheme.IsDark(this, Application.Current?.ActualThemeVariant);
 
     public override void Render(DrawingContext context) => RenderTo(new Charts.AvaloniaCanvas(context));
 
@@ -60,7 +61,7 @@ public sealed class RankChart : Control, Charts.IChartRenderable
     {
         var w = Bounds.Width;
         var h = Bounds.Height;
-        ctx.DrawRectangle(new SolidColorBrush(ChartPalette.Surface(Dark)), null, new Rect(Bounds.Size));
+        ctx.DrawRectangle(new SolidColorBrush(Charts.ChartTheme.Paper(this, ChartPalette.Surface(Dark))), null, new Rect(Bounds.Size));
         var items = Items;
         var ink = new SolidColorBrush(ChartPalette.Ink(Dark));
         var muted = new SolidColorBrush(ChartPalette.Muted(Dark));

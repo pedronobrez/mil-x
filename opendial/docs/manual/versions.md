@@ -17,6 +17,8 @@ The current version. It tracks MS-DIAL 5.5.260817.
 **New**
 
 - The **Two factors** page of the Statistics workspace: the two-way analysis of variance per feature with the interaction (type-II sums of squares, so unbalanced designs and empty cells are handled), and ASCA over the whole matrix with a permutation test per effect and a scores plot per effect. The second factor is a **Factor** column in the Samples workspace, saved with the project. See [[two-factor-analysis]].
+- A figure leaves the application looking the way the figure wants rather than the way the window does. **Export…**, and **Export as a picture…** in the right-click menu every chart now has, open one dialog: format, resolution, **theme** — light, dark, or as on screen, opening on light so a dark session still gives a light figure — background (the theme's paper, white, or nothing at all), and the size of the type. The preview is the export itself, and the choices are remembered. See [[chart-export]].
+- Every chart in Explorer and Analytics can be exported, not only those of the Statistics workspace: the chromatogram, the spectrum, the peak panels, the mirror, the isotope envelope, the feature map and the abundance bars.
 - The manual in Portuguese, beside the English one: **Português** in the Help window, and a second PDF.
 
 **Changed**
@@ -28,6 +30,7 @@ The current version. It tracks MS-DIAL 5.5.260817.
 
 **Fixed**
 
+- A PNG of a chart with a title or an axis label drew both at the wrong size above 1×: a title twice as tall as it should be, the axis label off the edge, while everything around them scaled properly. The picture is now drawn by the same code as the screen and the SVG, at every resolution.
 - A session that ended with the ion table in its own window crashed on the next start: the window was asked for before the main one was on screen. It now opens once the main window has.
 - The tag keys never fired: they were written as `Ctrl` with a bare digit, which Avalonia reads as another key; and `Alt+C` fired only while the focus sat inside the review.
 - The spectrum mirror's *measured* and *reference* labels drew over the m/z of a base peak at the right edge; each now takes the emptier side of its half.

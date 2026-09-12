@@ -76,6 +76,13 @@ public partial class MainWindow : Window
             await new StandardsWindow(confirmed, current).ShowDialog<IReadOnlyList<OpenDIAL.Pipeline.Statistics.StandardAssignment>?>(this);
         _vm.LogLines.CollectionChanged += OnLogChanged;
         _vm.Analytics.RequestDetachIonTable = DetachIonTable;
+        // how the last figure left the application is how the next export dialog opens
+        ChartExportWindow.Defaults = _vm.Settings.Current.ChartExport;
+        ChartExportWindow.Remember = options =>
+        {
+            _vm.Settings.Current.ChartExport = options;
+            _ = _vm.Settings.SaveAsync();
+        };
         // the column order the reviewer arranged is theirs, and should survive a restart
         RestoreColumnOrder(InlineIonTable());
         if (_vm.Settings.Current.IonTableDetached)
@@ -292,27 +299,50 @@ public partial class MainWindow : Window
                 // the page by its header, the way a person picks it; the workspace is shown first
                 var header = command.TryGetProperty("page", out var pg) ? pg.GetString() : null;
                 _vm.SelectedWorkspace = 4;
+                UpdateLayout();   // the workspace is built the first time it is shown, and this may be that time
                 var tabs = this.GetVisualDescendants().OfType<TabControl>().FirstOrDefault(t => t.Name == "StatsTabs") ?? throw new InvalidOperationException("the statistics workspace is not built");
                 var item = tabs.Items.OfType<TabItem>().FirstOrDefault(t => string.Equals(t.Header as string, header, StringComparison.OrdinalIgnoreCase)) ?? throw new ArgumentException($"no page '{header}'");
                 tabs.SelectedItem = item;
                 UpdateLayout();
                 return $"{header} shown";
             }
+            case "selectFeature":
+            {
+                // the row a reviewer would click, by the alignment id the table shows. The field is
+                // "feature" rather than "id": every command carries an "id" of its own already.
+                if (!command.TryGetProperty("feature", out var fid)) throw new ArgumentException("the command needs a feature");
+                var wanted = fid.GetInt32();
+                SelectedWorkspaceForReview();
+                _vm.Analytics.SelectFeature(wanted);
+                UpdateLayout();
+                var row = _vm.Analytics.SelectedRow;
+                if (row is null || row.Id != wanted) throw new ArgumentException($"no feature #{wanted} in the table");
+                return $"#{row.Id} {row.DisplayName} selected";
+            }
             case "exportChart":
             {
-                // a chart of a statistics page, by its index on the page, written without the save panel
+                // a chart written without the two dialogs: the settings come with the command, the
+                // path with it too. Either a chart of a statistics page by its index, or any named
+                // chart of any workspace — the chromatogram and the mirror are named ones.
+                var options = ExportOptionsFrom(command);
+                if (command.TryGetProperty("control", out var cn) && cn.GetString() is { Length: > 0 } name)
+                {
+                    var chart = this.GetVisualDescendants().OfType<Control>()
+                        .FirstOrDefault(c => c.Name == name && c is Charts.IChartRenderable && c.IsEffectivelyVisible)
+                        ?? throw new ArgumentException($"no chart named '{name}' is showing");
+                    var written = await Charts.ChartExportFlow.RunAsync(chart, name, options, Path());
+                    return written is null ? "nothing written" : $"{name} written to {written}";
+                }
                 var header = command.TryGetProperty("page", out var pg) ? pg.GetString() : null;
                 if (header is not null) await RunProbeCommandAsync(System.Text.Json.JsonDocument.Parse($"{{\"action\":\"selectStatisticsPage\",\"page\":{System.Text.Json.JsonSerializer.Serialize(header)}}}").RootElement);
                 var index = command.TryGetProperty("index", out var ix) ? ix.GetInt32() : 0;
-                var format = command.TryGetProperty("format", out var f) ? f.GetString() ?? "svg" : "svg";
-                var scale = command.TryGetProperty("scale", out var sc) ? sc.GetDouble() : 3;
                 var frames = this.GetVisualDescendants().OfType<Controls.ChartFrame>().Where(c => c.IsEffectivelyVisible).ToList();
                 if (index < 0 || index >= frames.Count) throw new ArgumentException($"the page has {frames.Count} chart(s)");
                 var frame = frames[index];
                 frame.ExportPathOverride = Path();
                 try
                 {
-                    var written = await frame.ExportAsync(format, scale);
+                    var written = await frame.ExportAsync(options);
                     return written is null ? "nothing written" : $"{frame.HeadingText} written to {written}";
                 }
                 finally
@@ -323,6 +353,27 @@ public partial class MainWindow : Window
             default:
                 throw new ArgumentException($"unknown action '{action}'");
         }
+    }
+
+    /// <summary>The export settings a command asked for; what it left out is what the dialog would default to.</summary>
+    private static Charts.ChartExportOptions ExportOptionsFrom(System.Text.Json.JsonElement command)
+    {
+        var defaults = new Charts.ChartExportOptions();
+        return new Charts.ChartExportOptions
+        {
+            Format = command.TryGetProperty("format", out var f) ? f.GetString() ?? defaults.Format : defaults.Format,
+            Scale = command.TryGetProperty("scale", out var sc) ? sc.GetDouble() : defaults.Scale,
+            Theme = command.TryGetProperty("theme", out var th) ? th.GetString() ?? defaults.Theme : defaults.Theme,
+            Background = command.TryGetProperty("background", out var bg) ? bg.GetString() ?? defaults.Background : defaults.Background,
+            FontScale = command.TryGetProperty("fontScale", out var fs) ? fs.GetDouble() : defaults.FontScale,
+        };
+    }
+
+    /// <summary>The review workspace, or the ion table's own window when the table is out there.</summary>
+    private void SelectedWorkspaceForReview()
+    {
+        if (_vm is null) return;
+        if (!_vm.Analytics.IonTableDetached) _vm.SelectedWorkspace = 1;
     }
 
     private void OnLogChanged(object? sender, NotifyCollectionChangedEventArgs e)

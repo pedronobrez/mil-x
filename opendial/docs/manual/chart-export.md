@@ -2,7 +2,7 @@
 title: Charts, their options and their export
 section: Reviewing
 order: 26
-summary: What every chart in the Statistics workspace can be told about its title, labels, sizes, palette and colour scale, and how it is written out as SVG or PNG.
+summary: What every chart can be told about its title, labels, sizes, palette and colour scale, and how it leaves the application as a figure — SVG or PNG, light or dark, on paper or on nothing.
 ---
 
 # Charts, their options and their export
@@ -11,6 +11,13 @@ Every chart in the [[statistics-workspace]] sits in a frame with two controls at
 **⚙** opens the chart's options, and **Export…** writes it out as a picture. The frame does not
 care which chart it holds; the same two controls work on the scatter plots, the box plots, the bar
 charts, the heatmaps, the dendrogram and the network.
+
+Every other chart in the application — the chromatogram and the spectrum in the
+[[explorer-workspace]], the peak panels, the mirror, the isotope envelope, the feature map and the
+abundance bars of the [[analytics-workspace]] — has the export without the frame: **right-click the
+chart** and choose **Export as a picture…**. The panels there are full of evidence and have no room
+for a strip of buttons, so the command lives in the menu instead. On a chart where the right button
+pans, a right *drag* still pans; only a right click that does not move offers the menu.
 
 ## The options
 
@@ -34,23 +41,46 @@ anywhere. The options a chart does not have are greyed out.
 
 ## Export
 
-**Export…** offers **SVG** and **PNG at 2×, 4× and 6×** the on-screen size, and asks where to
-save; the suggested name is the chart's eyebrow.
+**Export…**, or **Export as a picture…** in a chart's own menu, opens one dialog: the figure as it
+will be written, beside the choices that make it.
 
-**SVG** is the one to take to a figure. It is drawn from the same code that draws the screen —
-every line is a line, every point a circle, every label a text element in the chart's font — so
-it opens in Illustrator, Inkscape or a browser at any size with nothing to redraw, and the labels
-can be edited in place. The background is the chart's own (white in the light theme, the panel
-colour in the dark one).
+![the export dialog](images/export-dialog.png)
 
-**PNG** is the same picture rasterised at a multiple of the screen's resolution, so a chart 600
-pixels wide on screen is 2400 pixels at 4×, which at 300 dpi is an eight-inch figure. The 6× is
-for a full-page one. Both are written with the options as they are set at that moment: set the
-font scale and the palette first, then export.
+| Choice | What it does |
+| --- | --- |
+| **Format** | **SVG**, a vector figure, or **PNG**, a picture |
+| **Resolution** | PNG only: 2×, 3×, 4× or 6× the chart's size on screen |
+| **Theme** | **Light**, **Dark**, or **As on screen** |
+| **Background** | **Paper** (the theme's own surface), **White**, or **Transparent** |
+| **Type size** | every piece of text on the figure together, 0.7 to 2.2 of what the screen shows |
+
+**The theme is the figure's, not the window's.** A reviewer working in the dark theme still wants a
+light figure for a paper, a slide or a printer, and should not have to switch the whole application
+to get one — so **Light** is what the dialog opens with, however the application is set. **As on
+screen** keeps the window's theme, which is what a figure for a dark slide deck wants. Everything
+else about the chart — the palette, the labels, the grid, the legend, the ellipses — is exactly as
+the chart options have it; only the ink, the rules and the paper change.
+
+**Transparent** writes a PNG with nothing behind the figure, for dropping onto a coloured slide. An
+SVG asked for the same way is written without its background rectangle.
+
+The preview is the export: the same chart drawn through the same code with the same settings, so
+what is in the dialog is what lands in the file. The line beside the buttons says how big the file
+will be — in pixels for a PNG, in points for an SVG, which can then be used at any size. The
+choices are remembered, in the settings, for the next figure.
+
+**SVG** is the one to take to a figure. Every line is a line, every point a circle, every label a
+text element in the chart's font, so it opens in Illustrator, Inkscape or a browser at any size
+with nothing to redraw, and the labels can be edited in place. **PNG** is the same picture
+rasterised: a chart 600 points wide on screen is 2400 pixels at 4×, which at 300 dpi is an
+eight-inch figure. Both are drawn by the code that draws the screen, so a figure at 6× is the
+figure on screen, only larger.
 
 ## From a script
 
-The frames are visible to the driving channel described in [[building-and-testing#The smoke test]],
-and a chart can be exported without the save panel by naming the path;
-`ChartExport.SaveSvg` and `ChartExport.SavePng` are the two calls, and the tests write every
-chart of every page both ways to prove they can.
+The driving channel described in [[building-and-testing#The smoke test]] exports a chart without
+either dialog: `exportChart` takes the `path`, a `page` and `index` for a chart of a statistics
+page or a `control` for a named chart of any workspace, and the same `format`, `scale`, `theme`,
+`background` and `fontScale` the dialog offers. `ChartExport.Save` is the one call behind all of
+it, and the tests write figures both ways — light from a dark window, on white and on nothing — to
+prove they come out as asked.

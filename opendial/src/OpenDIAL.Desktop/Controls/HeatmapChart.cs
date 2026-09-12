@@ -53,6 +53,7 @@ public sealed class HeatmapChart : Control, Charts.IChartRenderable
 
     public HeatmapChart()
     {
+        Charts.ChartExportFlow.AttachMenu(this, () => Title);
         ClipToBounds = true;
         MinHeight = 80;
     }
@@ -68,7 +69,7 @@ public sealed class HeatmapChart : Control, Charts.IChartRenderable
     /// <summary>The id of the row last clicked, when the data carries row ids.</summary>
     public int SelectedRowId { get => GetValue(SelectedRowIdProperty); set => SetValue(SelectedRowIdProperty, value); }
 
-    private bool Dark => (Application.Current?.ActualThemeVariant ?? Avalonia.Styling.ThemeVariant.Light) == Avalonia.Styling.ThemeVariant.Dark;
+    private bool Dark => Charts.ChartTheme.IsDark(this, Application.Current?.ActualThemeVariant);
 
     private Rect _cells;
     private double _cellW, _cellH;
@@ -80,7 +81,7 @@ public sealed class HeatmapChart : Control, Charts.IChartRenderable
         var data = Data;
         var w = Bounds.Width;
         var h = Bounds.Height;
-        ctx.DrawRectangle(new SolidColorBrush(ChartPalette.Surface(Dark)), null, new Rect(Bounds.Size));
+        ctx.DrawRectangle(new SolidColorBrush(Charts.ChartTheme.Paper(this, ChartPalette.Surface(Dark))), null, new Rect(Bounds.Size));
         if (data is null || data.RowLabels.Count == 0 || data.ColumnLabels.Count == 0 || w < 60 || h < 40)
         {
             var empty = Text("No data", 12, new SolidColorBrush(ChartPalette.Faint(Dark)));

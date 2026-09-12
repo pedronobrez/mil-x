@@ -21,14 +21,20 @@ public sealed class Dendrogram : Control, Charts.IChartRenderable
         AffectsRender<Dendrogram>(RootProperty);
     }
 
+    public Dendrogram()
+    {
+        Charts.ChartExportFlow.AttachMenu(this, () => "clustering tree");
+    }
+
     public ClusterNode? Root { get => GetValue(RootProperty); set => SetValue(RootProperty, value); }
 
-    private bool Dark => (Application.Current?.ActualThemeVariant ?? Avalonia.Styling.ThemeVariant.Light) == Avalonia.Styling.ThemeVariant.Dark;
+    private bool Dark => Charts.ChartTheme.IsDark(this, Application.Current?.ActualThemeVariant);
 
     public override void Render(DrawingContext context) => RenderTo(new Charts.AvaloniaCanvas(context));
 
     public void RenderTo(Charts.ChartCanvas context)
     {
+        Charts.ChartTheme.PaintPaper(this, context);
         var root = Root;
         var width = Bounds.Width;
         var height = Bounds.Height;

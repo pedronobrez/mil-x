@@ -95,7 +95,7 @@
           </DockPanel>
         </Border>
         <Border Grid.Row="4" Classes="panel">
-          <c:SpectrumChart Peaks="{Binding SpectrumPeaks}" ReferencePeaks="{Binding ReferencePeaks}" PrecursorMz="{Binding PrecursorMz}" Title="{Binding SpectrumTitle}" TopLabels="{Binding TopLabels}" />
+          <c:SpectrumChart x:Name="Spectrum" Peaks="{Binding SpectrumPeaks}" ReferencePeaks="{Binding ReferencePeaks}" PrecursorMz="{Binding PrecursorMz}" Title="{Binding SpectrumTitle}" TopLabels="{Binding TopLabels}" />
         </Border>
       </Grid>
       <GridSplitter Grid.Column="3" Classes="vertical" ResizeDirection="Columns" />

@@ -33,6 +33,7 @@ import argparse
 import glob
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -694,6 +695,19 @@ def main() -> int:
                     if ok and fmt == "svg":
                         ok = open(chart, encoding="utf-8").read().lstrip().startswith("<svg")
                     check(ok, f"the volcano plot was written as {fmt}: {(result or {}).get('message')}")
+
+                say("a figure comes out in the theme it was asked for, not the window's")
+                for theme, paper in (("Light", "#ffffff"), ("Dark", "#1e2124")):
+                    chart = os.path.join(work, f"volcano-{theme.lower()}.svg")
+                    send_command(probe, {"action": "exportChart", "page": "Volcano plot", "index": 0,
+                                         "format": "svg", "theme": theme, "path": chart})
+                    first = re.search(r'<rect[^>]*fill="(#[0-9a-f]{6})"', open(chart, encoding="utf-8").read())
+                    check(first is not None and first.group(1) == paper,
+                          f"a {theme.lower()} figure is drawn on {paper}, whatever the window's theme")
+                clear = os.path.join(work, "volcano-clear.png")
+                send_command(probe, {"action": "exportChart", "page": "Volcano plot", "index": 0,
+                                     "format": "png", "scale": 2, "theme": "Light", "background": "Transparent", "path": clear})
+                check(os.path.getsize(clear) > 500, "and one with nothing behind it was written as PNG")
 
             if args.project:
                 say("the review keys tag the selected feature from wherever the focus is")

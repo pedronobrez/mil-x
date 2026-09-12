@@ -23,7 +23,7 @@ public sealed class MiniBars : Control, Charts.IChartRenderable
 
     public IReadOnlyList<ClassHeight>? Items { get => GetValue(ItemsProperty); set => SetValue(ItemsProperty, value); }
 
-    private bool _dark => (Application.Current?.ActualThemeVariant ?? Avalonia.Styling.ThemeVariant.Light) == Avalonia.Styling.ThemeVariant.Dark;
+    private bool _dark => Charts.ChartTheme.IsDark(this, Application.Current?.ActualThemeVariant);
 
     public override void Render(DrawingContext context) => RenderTo(new Charts.AvaloniaCanvas(context));
 

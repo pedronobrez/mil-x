@@ -45,6 +45,11 @@ public sealed class PathwayGraph : Control, Charts.IChartRenderable
         AffectsRender<PathwayGraph>(ResultProperty, SelectedReactionProperty, HighlightedChainProperty, ShowUnchangedProperty, ShowUntestedProperty, FontScaleProperty, TitleProperty);
     }
 
+    public PathwayGraph()
+    {
+        Charts.ChartExportFlow.AttachMenu(this, () => Title ?? "pathways");
+    }
+
     public PathwayResult? Result { get => GetValue(ResultProperty); set => SetValue(ResultProperty, value); }
     public ReactionScore? SelectedReaction { get => GetValue(SelectedReactionProperty); set => SetValue(SelectedReactionProperty, value); }
     public IReadOnlyList<string>? HighlightedChain { get => GetValue(HighlightedChainProperty); set => SetValue(HighlightedChainProperty, value); }
@@ -53,7 +58,7 @@ public sealed class PathwayGraph : Control, Charts.IChartRenderable
     public double FontScale { get => GetValue(FontScaleProperty); set => SetValue(FontScaleProperty, value); }
     public string? Title { get => GetValue(TitleProperty); set => SetValue(TitleProperty, value); }
 
-    private bool Dark => (Application.Current?.ActualThemeVariant ?? Avalonia.Styling.ThemeVariant.Light) == Avalonia.Styling.ThemeVariant.Dark;
+    private bool Dark => Charts.ChartTheme.IsDark(this, Application.Current?.ActualThemeVariant);
 
     /// <summary>BioPAN's colours: green for a reaction running faster in the first class, purple for slower.</summary>
     public static Color ActiveColor => Color.Parse("#2f9e5f");
@@ -172,6 +177,7 @@ public sealed class PathwayGraph : Control, Charts.IChartRenderable
 
     public void RenderTo(Charts.ChartCanvas context)
     {
+        Charts.ChartTheme.PaintPaper(this, context);
         _drawnEdges.Clear();
         _drawnNodes.Clear();
         var result = Result;

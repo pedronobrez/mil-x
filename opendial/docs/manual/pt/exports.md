@@ -65,8 +65,10 @@ de modo que as tabelas se juntam. Os próprios padrões internos não estão nas
 
 ## Os gráficos
 
-Todo gráfico da área Statistics grava-se como **SVG** ou como **PNG** a duas, quatro ou seis vezes
-o seu tamanho em tela, pelo menu **Export…** no seu canto superior direito; veja [[chart-export]].
+Todo gráfico da aplicação grava-se como **SVG** ou como **PNG** a duas até seis vezes o seu tamanho
+em tela — por **Export…** no canto superior direito de um gráfico de Statistics, ou por **Export as
+a picture…** no menu de botão direito de qualquer outro. O diálogo também escolhe o tema em que a
+figura é desenhada, de modo que uma figura clara sai de uma janela escura; veja [[chart-export]].
 
 ## As tabelas da rede
 

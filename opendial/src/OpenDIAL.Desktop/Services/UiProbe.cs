@@ -205,6 +205,15 @@ public sealed class UiProbe
                         ["gapFilled"] = p.IsGapFilled,
                     }).ToList(),
                 },
+                // what the MS/MS panel is showing, which is how a script tells a feature with a
+                // library mirror from one with only a measured spectrum
+                ["spectrum"] = new Dictionary<string, object?>
+                {
+                    ["title"] = analytics.Ms2Title,
+                    ["peaks"] = analytics.Ms2Peaks?.Count ?? 0,
+                    ["referencePeaks"] = analytics.ReferencePeaks?.Count ?? 0,
+                    ["mirrored"] = (analytics.ReferencePeaks?.Count ?? 0) > 0 && (analytics.Ms2Peaks?.Count ?? 0) > 0,
+                },
                 ["statistics"] = new Dictionary<string, object?>
                 {
                     ["hasResults"] = vm.Statistics.HasResults,

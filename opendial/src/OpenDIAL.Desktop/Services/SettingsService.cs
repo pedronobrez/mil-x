@@ -28,6 +28,8 @@ public sealed class AppSettings
     public List<string> IonTableColumnOrder { get; set; } = new();
     /// <summary>The ion table was last used in its own window.</summary>
     public bool IonTableDetached { get; set; } = false;
+    /// <summary>How the last figure was exported, which is what the next export dialog opens with.</summary>
+    public Charts.ChartExportOptions ChartExport { get; set; } = new();
 }
 
 /// <summary>Persists <see cref="AppSettings"/> as JSON under %APPDATA%/OpenDIAL/settings.json (~/.config/OpenDIAL on macOS/Linux), or wherever OPENDIAL_SETTINGS_DIR points.</summary>

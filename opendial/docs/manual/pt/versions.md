@@ -18,6 +18,8 @@ A versão atual. Segue o MS-DIAL 5.5.260817.
 **Novo**
 
 - A página **Two factors** da área Statistics: a análise de variância de dois fatores por feature com a interação (somas de quadrados do tipo II, de modo que desenhos desbalanceados e células vazias são tratados), e ASCA sobre a matriz inteira com um teste de permutação por efeito e um gráfico de escores por efeito. O segundo fator é uma coluna **Factor** na área Samples, salva com o projeto. Veja [[two-factor-analysis]].
+- Uma figura sai da aplicação com a cara que a figura quer, não com a da janela. **Export…**, e **Export as a picture…** no menu de botão direito que todo gráfico agora tem, abrem um só diálogo: formato, resolução, **tema** — claro, escuro, ou como na tela, abrindo em claro para que uma sessão escura ainda dê uma figura clara —, fundo (o papel do tema, branco, ou nada) e o tamanho do texto. A pré-visualização é a própria exportação, e as escolhas ficam guardadas. Veja [[chart-export]].
+- Todo gráfico do Explorer e da Analytics pode ser exportado, não só os da área Statistics: o cromatograma, o espectro, os painéis de pico, o espelho, o envelope isotópico, o mapa de features e as barras de abundância.
 - O manual em português, ao lado do inglês: **Português** na janela de ajuda, e um segundo PDF.
 
 **Alterado**
@@ -29,6 +31,7 @@ A versão atual. Segue o MS-DIAL 5.5.260817.
 
 **Corrigido**
 
+- Um PNG de um gráfico com título ou rótulo de eixo desenhava os dois no tamanho errado acima de 1×: um título com o dobro da altura, o rótulo do eixo fora da borda, enquanto tudo à volta escalava certo. A imagem é agora desenhada pelo mesmo código da tela e do SVG, em toda resolução.
 - Uma sessão que terminava com a tabela de íons na sua própria janela caía no arranque seguinte: a janela era pedida antes de a principal estar na tela. Agora abre depois de a principal ter aberto.
 - As teclas de marcação nunca disparavam: estavam escritas como `Ctrl` com um dígito puro, que o Avalonia lê como outra tecla; e `Alt+C` só disparava com o foco dentro da revisão.
 - Os rótulos *measured* e *reference* do espelho de espectros desenhavam por cima do m/z de um pico-base na borda direita; cada um toma agora o lado mais vazio da sua metade.
