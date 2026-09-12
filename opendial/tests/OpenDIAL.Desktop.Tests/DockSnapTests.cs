@@ -83,3 +83,19 @@ public class DockSnapTests
         try { Directory.Delete(folder, true); } catch { }
     }
 }
+
+/// <summary>The mirror's corner labels go to whichever side of the plot has the lower peaks under them.</summary>
+public class SpectrumLabelTests
+{
+    [Fact]
+    public void The_label_takes_the_emptier_side()
+    {
+        var basePeakAtTheRightEdge = new[] { new Point(100, 5), new Point(313, 60), new Point(579, 100) };
+        Assert.True(OpenDIAL.Desktop.Controls.SpectrumChart.LeftIsEmptier(basePeakAtTheRightEdge, 50, 620));
+        var basePeakAtTheLeftEdge = new[] { new Point(60, 100), new Point(313, 60), new Point(579, 10) };
+        Assert.False(OpenDIAL.Desktop.Controls.SpectrumChart.LeftIsEmptier(basePeakAtTheLeftEdge, 50, 620));
+        // nothing at either edge: the right corner, where the label always was
+        Assert.False(OpenDIAL.Desktop.Controls.SpectrumChart.LeftIsEmptier(new[] { new Point(300, 100) }, 50, 620));
+        Assert.False(OpenDIAL.Desktop.Controls.SpectrumChart.LeftIsEmptier(null, 50, 620));
+    }
+}
