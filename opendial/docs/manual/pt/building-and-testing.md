@@ -99,7 +99,10 @@ o que a janela diz estar mostrando a partir do arquivo de sonda (veja
 primeira forma abre um projeto processado e verifica o título, a tabela de íons, todo atalho de
 área de trabalho nas duas teclas modificadoras, um clique numa aba, e a janela da tabela de íons:
 destaca a tabela, arrasta a janela pela barra de título sobre a principal com o mouse pressionado,
-vê o lugar de encaixe acender, solta, e vê a tabela reencaixar. A segunda escreve um projeto
+vê o lugar de encaixe acender, solta, e vê a tabela reencaixar. Pousa também numa feature cujo
+espectro de produto está espelhado contra a biblioteca, confere que o painel diz isso, e grava esse
+espelho como figura clara; um projeto sem nenhum MS/MS — processado antes do conserto do precursor
+por varredura — faz esse passo se afastar com um aviso em vez de falhar. A segunda escreve um projeto
 a partir dos arquivos brutos da pasta, pressiona `⌘R`, espera a corrida, verifica que os `.wiff`
 foram lidos pelo plugin dentro do pacote e que as exportações e o projeto foram gravados, e depois
 faz o que um revisor faz pelo teclado e pelo mouse: digita um id de feature no filtro, digita uma

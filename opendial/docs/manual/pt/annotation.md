@@ -72,6 +72,41 @@ etiqueta **hand-picked**, e é gravado em `<alignment>_curation.json` com **Save
 anotação da própria corrida não se perde: **Back to the automatic name** restaura-a. A tabela
 revisada marca essas features como *Manually annotated*.
 
+## Por que tão poucas features são nomeadas
+
+Uma corrida que nomeia trezentas de duas mil e quinhentas features em geral não perdeu os seus
+espectros; foi pontuada contra uma biblioteca que não lhe serve. As oito injeções de fígado são o
+exemplo trabalhado, com a biblioteca alfa de lipídios de 449 627 registros:
+
+| | features | com espectro de produto | nomeadas por MS/MS | nomeadas ao todo |
+| --- | --- | --- | --- | --- |
+| metabolômica, tempo de retenção na pontuação | 2665 | 2221 | 79 | 286 |
+| lipidômica, tempo de retenção na pontuação | 2665 | 2221 | 216 | 286 |
+| lipidômica, tempo de retenção fora da pontuação | 2667 | 2224 | 858 | 1198 |
+
+Leia de cima para baixo. **Cinco de cada seis features carregam espectro de produto**, de modo que
+a deconvolução não é o teto; o que muda a conta é como o espectro é pontuado.
+
+**O alvo ômico.** `Target omics: Lipidomics` liga as regras de lipídio do MS-DIAL — a classe pelos
+fragmentos da cabeça polar, as cadeias pelas perdas de acila — e quase triplica os nomes confiantes
+numa biblioteca de lipídios sem mexer em mais nada. Num projeto de lipidômica não é opcional.
+
+**Os tempos de retenção da biblioteca contra os seus.** Todo registro daquela biblioteca carrega um
+tempo de retenção, e eles ficam entre dez e dezoito minutos: o gradiente para o qual a biblioteca
+foi feita. Estas injeções eluem entre 0,3 e 8 minutos. Com `Use retention information for MSP-based
+annotation scoring` ligado, o termo de retenção de todo candidato fica perto de zero e puxa o total
+para baixo do corte, de modo que um casamento espectral correto é descartado por eluir na hora
+"errada". Desligá-lo — a caixa **Use RT for scoring** na [[method-workspace]] — leva os nomes de 286
+para 1198. Deixe-o ligado só quando os tempos de retenção da biblioteca foram medidos no método que
+está sendo rodado; aí ele é um filtro de verdade, e dos poucos que separam isômeros.
+
+**O que sobra depois disso** é a própria biblioteca: tem de existir um registro, no aduto certo, com
+fragmentos suficientes para pontuar. Aquela biblioteca é só `[M+H]+`, `[M+Na]+` e `[M+NH4]+` — que é
+o que o método busca — e os seus registros in silico carregam uma mediana de cinco picos, de modo
+que a porcentagem de picos casados e os produtos escalares estão sendo computados sobre muito
+pouco. Baixar o `Total score cutoff` compra mais nomes de menor confiança; a coluna **Level** da
+tabela de íons e a aba **Candidates** são onde essa troca se julga, feature a feature.
+
 ## Por que duas corridas podem discordar
 
 A detecção de picos, a atribuição de MS/MS e a deconvolução não dependem da biblioteca e concordam

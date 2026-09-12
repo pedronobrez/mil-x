@@ -68,6 +68,41 @@ a **hand-picked** chip, and is written to `<alignment>_curation.json` on **Save 
 run's own annotation is not lost: **Back to the automatic name** restores it. The reviewed table
 marks such features as *Manually annotated*.
 
+## Why so few features are named
+
+A run that names three hundred of two and a half thousand features has usually not lost its
+spectra; it has been scored against a library that does not fit it. The eight liver injections are
+the worked example, with the alpha lipid library of 449 627 records:
+
+| | features | with a product spectrum | named from MS/MS | named at all |
+| --- | --- | --- | --- | --- |
+| metabolomics, retention time in the score | 2665 | 2221 | 79 | 286 |
+| lipidomics, retention time in the score | 2665 | 2221 | 216 | 286 |
+| lipidomics, retention time out of the score | 2667 | 2224 | 858 | 1198 |
+
+Read it from the top. **Five features in six carry a product spectrum**, so the deconvolution is
+not the ceiling; what changes the count is how the spectrum is scored.
+
+**The omics target.** `Target omics: Lipidomics` switches on MS-DIAL's lipid rules — the class from
+the head-group fragments, the chains from the acyl losses — and nearly triples the confident names
+on a lipid library without touching anything else. On a lipid project it is not optional.
+
+**The library's retention times against yours.** Every record of that library carries a retention
+time, and they lie between ten and eighteen minutes: the gradient the library was built for. These
+injections elute between 0.3 and 8 minutes. With `Use retention information for MSP-based
+annotation scoring` on, the retention term of every candidate is therefore near zero and drags the
+total under the cut-off, so a correct spectral match is thrown away for eluting at the "wrong"
+time. Turning it off — the **Use RT for scoring** box in the [[method-workspace]] — takes the names
+from 286 to 1198. Leave it on only when the library's retention times were measured on the method
+being run; then it is a real filter, and one of the few that separate isomers.
+
+**What is left after that** is the library itself: a record has to exist, at the right adduct, with
+enough fragments to score. That library is `[M+H]+`, `[M+Na]+` and `[M+NH4]+` only — which is what
+the method searches — and its in-silico records carry a median of five peaks, so the matched-peak
+percentage and the dot products are being computed over very little. Lowering `Total score cutoff`
+buys more names of lower confidence; the ion table's **Level** column and the **Candidates** tab are
+where that trade-off is judged, feature by feature.
+
 ## Why two runs can disagree
 
 Peak detection, MS/MS assignment and deconvolution do not depend on the library and agree between

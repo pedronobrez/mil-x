@@ -710,6 +710,27 @@ def main() -> int:
                 check(os.path.getsize(clear) > 500, "and one with nothing behind it was written as PNG")
 
             if args.project:
+                say("the mirror shows the measured spectrum against the library")
+                try:
+                    state = send_command(probe, {"action": "selectFeature", "where": "mirrored"}, timeout=180)
+                except Failed as failure:
+                    # a project processed before the per-scan precursor fix has no MS/MS at all; the
+                    # rest of the run still means something, so this one step steps aside
+                    say(f"       skipped: {failure}")
+                else:
+                    spectrum = state.get("spectrum") or {}
+                    check(spectrum.get("mirrored") is True,
+                          f"a feature with a library match is showing: {spectrum.get('title')}")
+                    check(spectrum.get("referencePeaks", 0) > 0,
+                          f"{spectrum['peaks']} measured peaks against {spectrum['referencePeaks']} from the library")
+                    shot("mirror")
+                    figure = os.path.join(work, "mirror.svg")
+                    send_command(probe, {"action": "exportChart", "control": "Ms2Mirror", "format": "svg",
+                                         "theme": "Light", "path": figure})
+                    text = open(figure, encoding="utf-8").read()
+                    check(text.lstrip().startswith("<svg") and "measured" in text and "reference" in text,
+                          "and the mirror leaves as a figure with both halves labelled")
+
                 say("the review keys tag the selected feature from wherever the focus is")
                 state = press_until(probe, KEY_CODES[2], lambda s: s.get("workspace") == 1, "Analytics", SHORTCUT_WAIT)
                 before = (state.get("review") or {}).get("confirmed", 0)

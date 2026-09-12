@@ -915,7 +915,7 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
         BuildRows(value);
         BuildStats(value);
         BuildMetric();
-        _ = LoadSpectrumAsync(value);
+        SpectrumReady = LoadSpectrumAsync(value);
         _ = BuildGridAsync(value);
     }
 
@@ -1007,6 +1007,13 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
         var row = SampleRows.FirstOrDefault(r => r.Peak.FileId == fileId);
         if (row is not null) SelectedSampleRow = row;
     }
+
+    /// <summary>
+    /// The load of the selected feature's product spectrum and its library mirror, which run off the
+    /// interface thread. A script that selects a feature and asks what the panel shows has to wait
+    /// for this; a person waits by watching it appear.
+    /// </summary>
+    internal Task SpectrumReady { get; private set; } = Task.CompletedTask;
 
     private async Task LoadSpectrumAsync(AlignmentSpotRow spot)
     {

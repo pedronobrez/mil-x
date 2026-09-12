@@ -82,7 +82,7 @@ exactly.
 | `Total score cutoff` | `60` | per cent; below it a match is reported as `low score:` |
 | `MS1 tolerance for MSP-based annotation` | `0.01` | Da; how far a library precursor may sit from the peak's m/z |
 | `MS2 tolerance for MSP-based annotation` | `0.05` | Da; how far a fragment may sit from the reference's |
-| `Use retention information for MSP-based annotation scoring` | `True` | add retention similarity to the score when the library carries retention times |
+| `Use retention information for MSP-based annotation scoring` | `True` | add retention similarity to the score when the library carries retention times — turn it **off** when those times came from another gradient, or every candidate loses the term and correct matches fall under the cut-off; see [[annotation#Why so few features are named]] |
 | `… filtering` | `False` | reject records outside the RT tolerance outright |
 | `Only report top hit for MSP-based annotation` | `True` | keep one candidate per peak; `False` keeps the others for the Candidates tab |
 

@@ -310,14 +310,35 @@ public partial class MainWindow : Window
             {
                 // the row a reviewer would click, by the alignment id the table shows. The field is
                 // "feature" rather than "id": every command carries an "id" of its own already.
-                if (!command.TryGetProperty("feature", out var fid)) throw new ArgumentException("the command needs a feature");
-                var wanted = fid.GetInt32();
                 SelectedWorkspaceForReview();
-                _vm.Analytics.SelectFeature(wanted);
-                UpdateLayout();
-                var row = _vm.Analytics.SelectedRow;
-                if (row is null || row.Id != wanted) throw new ArgumentException($"no feature #{wanted} in the table");
-                return $"#{row.Id} {row.DisplayName} selected";
+                if (command.TryGetProperty("feature", out var fid))
+                {
+                    var wanted = fid.GetInt32();
+                    _vm.Analytics.SelectFeature(wanted);
+                    UpdateLayout();
+                    await _vm.Analytics.SpectrumReady;   // the panel's spectrum arrives off the interface thread
+                    var row = _vm.Analytics.SelectedRow;
+                    if (row is null || row.Id != wanted) throw new ArgumentException($"no feature #{wanted} in the table");
+                    return $"#{row.Id} {row.DisplayName} selected";
+                }
+                // or the first row that is what the script is looking for, since a script cannot know
+                // which ids of a given project carry a library match
+                var what = command.TryGetProperty("where", out var w) ? w.GetString() : null;
+                if (what is null) throw new ArgumentException("the command needs a feature or a where");
+                var tried = 0;
+                foreach (var candidate in _vm.Analytics.IonRows.Where(r => r.IsConfident))
+                {
+                    if (++tried > 60) break;
+                    _vm.Analytics.SelectFeature(candidate.Id);
+                    UpdateLayout();
+                    await _vm.Analytics.SpectrumReady;
+                    var mirrored = (_vm.Analytics.ReferencePeaks?.Count ?? 0) > 0 && _vm.Analytics.Ms2Peaks.Count > 0;
+                    if (!string.Equals(what, "mirrored", StringComparison.OrdinalIgnoreCase) || mirrored)
+                    {
+                        return $"#{candidate.Id} {candidate.DisplayName} selected";
+                    }
+                }
+                throw new ArgumentException($"no feature of the {_vm.Analytics.IonRows.Count} listed is {what} (tried {tried})");
             }
             case "exportChart":
             {

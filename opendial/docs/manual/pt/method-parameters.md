@@ -82,7 +82,7 @@ Windows pode ser reproduzida exatamente.
 | `Total score cutoff` | `60` | por cento; abaixo dele um casamento é reportado como `low score:` |
 | `MS1 tolerance for MSP-based annotation` | `0.01` | Da; quão longe um precursor da biblioteca pode ficar do m/z do pico |
 | `MS2 tolerance for MSP-based annotation` | `0.05` | Da; quão longe um fragmento pode ficar do da referência |
-| `Use retention information for MSP-based annotation scoring` | `True` | somar a similaridade de retenção à pontuação quando a biblioteca traz tempos de retenção |
+| `Use retention information for MSP-based annotation scoring` | `True` | somar a similaridade de retenção à pontuação quando a biblioteca traz tempos de retenção — **desligue** quando esses tempos vieram de outro gradiente, senão todo candidato perde o termo e casamentos corretos caem abaixo do corte; veja [[annotation#Por que tão poucas features são nomeadas]] |
 | `… filtering` | `False` | rejeitar de imediato os registros fora da tolerância de RT |
 | `Only report top hit for MSP-based annotation` | `True` | guardar um candidato por pico; `False` guarda os outros para a aba Candidates |
 

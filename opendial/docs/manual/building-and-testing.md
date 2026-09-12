@@ -100,7 +100,10 @@ folder, and reads what the window says it is showing from the probe file (see
 first form opens a processed project and checks the title, the ion table, every workspace
 shortcut on both modifier keys, a click on a tab, and the ion table's window: it tears the table
 off, drags the window by its title bar over the main one with the mouse held down, sees the drop
-place light up, lets go, and sees the table dock back. The second writes a project from the raw
+place light up, lets go, and sees the table dock back. It also lands on a feature whose product
+spectrum is mirrored against the library, checks the panel says so, and writes that mirror out as a
+light figure; a project with no MS/MS at all — one processed before the per-scan precursor fix —
+makes that one step step aside with a note rather than fail. The second writes a project from the raw
 files in the folder, presses `⌘R`, waits for the run, checks that the `.wiff` files were read by
 the plugin inside the bundle and that the exports and the project were written, then does what a
 reviewer does through the keyboard and the mouse: types a feature id into the filter, types an
