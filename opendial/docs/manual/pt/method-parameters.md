@@ -24,7 +24,7 @@ Windows pode ser reproduzida exatamente.
 | `MS1 data type` | `Centroid` | se as varreduras de survey são centroidadas ou de perfil. Os arquivos de fabricante convertidos e os `.wiff` lidos nativamente são centroidados; um mzML de perfil precisa de `Profile` |
 | `MS2 data type` | `Centroid` | o mesmo para as varreduras de produto |
 | `Ion mode` | `Positive` | `Positive` ou `Negative`; decide os adutos e a polaridade da biblioteca |
-| `Target omics` | `Metabolomics` | `Metabolomics` ou `Lipidomics`; lipidômica liga a validação de nomes de lipídios a partir dos fragmentos do MS-DIAL |
+| `Target omics` | `Metabolomics` | `Metabolomics` ou `Lipidomics`; lipidômica liga a validação de nomes de lipídios a partir dos fragmentos do MS-DIAL, e numa biblioteca de lipídios vale muito — as mesmas oito injeções de fígado, todo o resto igual, deram 79 features nomeadas pelo seu MS/MS como metabolômica e 216 como lipidômica |
 | `Acquisition type` | `DDA` | o padrão para arquivos novos: `DDA`, `SWATH` ou `AIF`; cada arquivo pode sobrepor-se a ele na área Samples |
 | `Machine category` | `LCMS` | `LCMS` ou `GCMS`; escrito a partir do modo, não editado |
 

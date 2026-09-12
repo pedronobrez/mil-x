@@ -24,7 +24,7 @@ exactly.
 | `MS1 data type` | `Centroid` | whether the survey scans are centroided or profile. Converted vendor files and natively read `.wiff` files are centroided; profile mzML needs `Profile` |
 | `MS2 data type` | `Centroid` | the same for product scans |
 | `Ion mode` | `Positive` | `Positive` or `Negative`; decides the adducts and the library polarity |
-| `Target omics` | `Metabolomics` | `Metabolomics` or `Lipidomics`; lipidomics switches on MS-DIAL's lipid-name validation from fragments |
+| `Target omics` | `Metabolomics` | `Metabolomics` or `Lipidomics`; lipidomics switches on MS-DIAL's lipid-name validation from fragments, and on a lipid library it is worth a great deal — the same eight liver injections, the same everything else, gave 79 features named from their MS/MS as metabolomics and 216 as lipidomics |
 | `Acquisition type` | `DDA` | the default for new files: `DDA`, `SWATH` or `AIF`; each file can override it in the Samples workspace |
 | `Machine category` | `LCMS` | `LCMS` or `GCMS`; written from the mode, not edited |
 

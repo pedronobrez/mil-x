@@ -88,6 +88,16 @@ Samples. O MS-DIAL 5.5 marcou os arquivos IDA do conjunto de validação como SW
 espectros por janela de isolamento e é mais folgado do que DDA. Veja
 [[processing#Tipos de aquisição]].
 
+**Nenhuma feature tem espectro de produto: todo nome é `no MS2: …`, todo nível é *m/z only*, e o
+painel MS/MS diz *No data* onde quer que o revisor clique.** Num `.wiff` de aquisição IDA isso
+quer dizer que os resultados foram gravados antes do conserto do precursor por varredura. Até ele,
+todo experimento dependente reportava o único precursor de reserva que o método de aquisição
+carrega, de modo que o casamento DDA do MS-DIAL — o precursor isolado contra o m/z do próprio pico,
+dentro da tolerância de centroide de MS2 — nunca casava nada, e o anotador caía na massa sozinha.
+Os arquivos brutos estão bem e o método está bem; reprocesse com esta versão. As mesmas oito
+injeções de fígado, o mesmo método: nada antes do conserto, e depois dele 79 features nomeadas pelo
+seu MS/MS, mais 199 com casamento de pontuação baixa e só 8 restando na massa sozinha.
+
 **Nomes diferentes do projeto Windows para os mesmos picos.** Quase sempre a biblioteca, não o
 processamento: uma construção diferente da biblioteca tem registros em massas diferentes. Aponte
 as duas para o mesmo arquivo. `ResultCompare --check-library` diz se uma biblioteca poderia ter

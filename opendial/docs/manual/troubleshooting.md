@@ -85,6 +85,16 @@ drops peaks the Windows run kept. See [[raw-data-formats#SCIEX .wiff]].
 workspace. MS-DIAL 5.5 marked the IDA files of the validation set as SWATH, which assigns spectra
 by isolation window and is looser than DDA. See [[processing#Acquisition types]].
 
+**No feature at all has a product spectrum: every name is `no MS2: …`, every level *m/z only*, and
+the MS/MS panel says *No data* wherever the reviewer clicks.** On a `.wiff` from an IDA
+acquisition this means the results were written before the per-scan precursor fix. Until then every
+dependent experiment reported the one placeholder precursor its acquisition method carries, so
+MS-DIAL's DDA matching — the isolated precursor against the peak's own m/z, within the MS2
+centroid tolerance — never matched anything, and the annotator fell back to the mass alone. The
+raw files are fine and the method is fine; reprocess them with this version. The same eight liver
+injections, the same method: nothing before the fix, and afterwards 79 features named from their
+MS/MS, 199 more with a low-scoring match and only 8 left on the mass alone.
+
 **Different names from the Windows project for the same peaks.** Almost always the library, not the
 processing: a different build of the library has records at different masses. Point both at the
 same file. `ResultCompare --check-library` says whether a library could have produced a run's
