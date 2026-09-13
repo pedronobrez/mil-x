@@ -61,6 +61,17 @@ file named for the table:
 `Feature id` is MS-DIAL's alignment ID, the same number as in the reviewed table and the ion
 table, so the tables join. The internal standards themselves are not in the ratio tables.
 
+## The run report
+
+**Run report…** in the Analytics toolbar writes one HTML file: the counts, what the library holds,
+the injections with their class and type, the whole method, the tail of the run log, and the figures
+that were on screen — the mirror, the Explorer's chromatogram and spectrum, and every framed chart
+of the Statistics workspace. The figures are inlined as vectors, so the file is self-contained and
+stays sharp at any size. Open it in a browser and print it to PDF.
+
+A method file alone is not a report: what a reader checks first is how many features came out, how
+many were named, and what the injections looked like.
+
 ## The charts
 
 Every chart in the application writes itself out as **SVG** or as **PNG** at two to six times its

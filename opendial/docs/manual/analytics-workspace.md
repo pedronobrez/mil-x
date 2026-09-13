@@ -38,6 +38,7 @@ first.
 | **Export to OpenQuant…** | the listed features as an OpenQuant component list; see [[openquant]] |
 | **Export reviewed table…** | the listed features with the review as columns; see [[exports]] |
 | **Open output folder** | the results folder in Finder |
+| **Run report…** | writes the run down — counts, library, injections, method, log and the figures on screen — as one HTML file with the figures inlined as vectors; open it and print to PDF. See [[exports#The run report]] |
 | **Split evidence** | shows a second set of evidence tabs beside the first, each on its own tab — the mirror beside the class statistics, the candidates beside the feature map. Both follow the selected feature; switch it off and the single set takes the whole width again |
 | **Save review** | writes the tags to `<alignment>_tags.xml` — the file MS-DIAL reads — and the rest of the curation beside it; a dot on the button means there is something unsaved |
 
@@ -54,6 +55,8 @@ The filters narrow the ion table and everything downstream of it — the feature
 | free text | name, class (ontology), adduct, formula, comment, an exact feature id, or an m/z written to four decimals |
 | **m/z** from–to, **RT** from–to | the region of the map you are working through |
 | **S/N ≥** | the minimum average signal-to-noise; the quickest way to put the weakest features aside without moving the peak-height cut-off of the run |
+| **Blank % ≤** | drop what the blanks carry: the mean height in the injections typed Blank against the mean in the samples. Twenty is a common first cut; a batch with no blank is left alone |
+| **One row per compound** | hide the adducts, isotopes, in-source fragments and dimers gathered behind the ion that represents each compound |
 | annotation | **All**, **Confident**, **Suggested** (a low-score or m/z-only name), **Annotated** (any name), **Unknown** |
 | class | one lipid class or ontology at a time, which is how a class-by-class pass runs |
 | review state | **All**, **Untagged**, **Reviewed**, **Not reviewed**, or one specific tag |

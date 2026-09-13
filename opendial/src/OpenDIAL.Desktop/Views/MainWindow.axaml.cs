@@ -92,7 +92,69 @@ public partial class MainWindow : Window
             if (IsVisible) DetachIonTable(true);
             else Opened += (_, _) => Dispatcher.UIThread.Post(() => { if (_vm?.Settings.Current.IonTableDetached == true) DetachIonTable(true); });
         }
+        _vm.GatherReport = GatherReport;
         AttachProbe(_vm);
+    }
+
+    /// <summary>
+    /// What the report says. The counts and the method the view models know; the figures only this
+    /// window can reach, because a figure is a control that has been laid out.
+    /// </summary>
+    private Services.ReportContent GatherReport()
+    {
+        var content = new Services.ReportContent();
+        if (_vm is null) return content;
+        var analytics = _vm.Analytics;
+        content.Counts = new[]
+        {
+            new Services.ReportRow("Features", analytics.IonRows.Count.ToString("N0")),
+            new Services.ReportRow("Annotated", analytics.AnnotatedCount.ToString("N0")),
+            new Services.ReportRow("Confirmed", analytics.ConfirmedCount.ToString("N0")),
+            new Services.ReportRow("Misannotation", analytics.RejectedCount.ToString("N0")),
+            new Services.ReportRow("Reviewed", analytics.ReviewedCount.ToString("N0")),
+            new Services.ReportRow("Injections", _vm.Samples.Samples.Count.ToString("N0")),
+            new Services.ReportRow("Ion groups", analytics.GroupSummary),
+        };
+        content.Library = new[]
+        {
+            new Services.ReportRow("File", _vm.Method.Parameters.MspFilePath),
+            new Services.ReportRow("What it holds", _vm.Method.LibraryReport),
+            new Services.ReportRow("Retention time in the score", _vm.Method.Parameters.UseRetentionInformationForScoring ? "yes" : "no"),
+        };
+        content.Injections = _vm.Samples.Samples
+            .Select(sample => (sample.Name, sample.Class, sample.SampleType.ToString(), string.Empty, string.Empty))
+            .ToList();
+        content.Method = _vm.Method.Parameters.MethodText;
+        content.Log = _vm.Run.LogLines.TakeLast(80).ToList();
+
+        var figures = new List<Services.ReportFigure>();
+        foreach (var (chart, title) in NamedCharts())
+        {
+            if (Services.RunReport.Figure(chart, title) is { } figure) figures.Add(figure);
+        }
+        content.Figures = figures;
+        return content;
+    }
+
+    /// <summary>The charts worth putting in a report, in the order a reader wants them.</summary>
+    private IEnumerable<(Control Chart, string Title)> NamedCharts()
+    {
+        var wanted = new[] { "Ms2Mirror", "Chromatogram", "Spectrum" };
+        foreach (var name in wanted)
+        {
+            var chart = this.GetVisualDescendants().OfType<Control>()
+                .FirstOrDefault(c => c.Name == name && c is Charts.IChartRenderable && c.IsEffectivelyVisible);
+            if (chart is not null) yield return (chart, name switch
+            {
+                "Ms2Mirror" => "The product spectrum of the selected feature against the library",
+                "Chromatogram" => "The chromatogram in the Explorer",
+                _ => "The spectrum in the Explorer",
+            });
+        }
+        foreach (var frame in this.GetVisualDescendants().OfType<Controls.ChartFrame>().Where(f => f.IsEffectivelyVisible))
+        {
+            if (frame.Chart is { } chart) yield return (chart, frame.HeadingText ?? "Statistics");
+        }
     }
 
     private IonTableView? InlineIonTable() =>
@@ -339,6 +401,17 @@ public partial class MainWindow : Window
                     }
                 }
                 throw new ArgumentException($"no feature of the {_vm.Analytics.IonRows.Count} listed is {what} (tried {tried})");
+            }
+            case "runReport":
+            {
+                if (_vm.GatherReport is null) throw new InvalidOperationException("the report is not wired");
+                var content = _vm.GatherReport();
+                content.Version = AppInfo.Version;
+                content.Project = _vm.ProjectName;
+                content.OutputFolder = _vm.OutputFolder;
+                var text = Services.RunReport.Build(content);
+                await File.WriteAllTextAsync(Path(), text);
+                return $"{content.Figures.Count} figure(s), {text.Length} characters";
             }
             case "exportChart":
             {

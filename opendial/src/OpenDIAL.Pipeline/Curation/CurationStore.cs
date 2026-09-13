@@ -14,6 +14,9 @@ public sealed class SpotCuration
     public bool Reviewed { get; set; }
 
     public bool IsEmpty => Tags.Count == 0 && Comment.Length == 0 && ManualName.Length == 0 && !Reviewed;
+
+    /// <summary>A copy, for the undo stack to hold on to.</summary>
+    public SpotCuration Copy() => new() { Tags = new HashSet<PeakSpotTagKind>(Tags), Comment = Comment, ManualName = ManualName, Reviewed = Reviewed };
 }
 
 /// <summary>
@@ -72,6 +75,85 @@ public sealed class CurationStore
         return c;
     }
 
+    // ---- undo ---------------------------------------------------------------------------------
+    // Confirm all shown over a filter of two thousand features is a decision a reviewer should be
+    // able to take back. Every change records the state of the spots it touched before touching
+    // them, and a bulk command wraps its changes in one step so that one undo puts all of it back.
+
+    private sealed record Step(string Label, List<(int Spot, SpotCuration Before)> Before);
+
+    private readonly Stack<Step> _undo = new();
+    private readonly Stack<Step> _redo = new();
+    private List<(int Spot, SpotCuration Before)>? _open;
+    private string _openLabel = string.Empty;
+
+    public bool CanUndo => _undo.Count > 0;
+    public bool CanRedo => _redo.Count > 0;
+    public string UndoLabel => _undo.Count > 0 ? _undo.Peek().Label : string.Empty;
+    public string RedoLabel => _redo.Count > 0 ? _redo.Peek().Label : string.Empty;
+
+    /// <summary>Opens one undo step; every change until it is disposed goes back together.</summary>
+    public IDisposable Begin(string label) {
+        if (_open is not null) return new Nothing();      // already inside one; the outer step wins
+        _open = new List<(int, SpotCuration)>();
+        _openLabel = label;
+        return new Transaction(this);
+    }
+
+    private void Record(int spotId, string label) {
+        if (_open is not null) {
+            if (_open.Any(e => e.Spot == spotId)) return;
+            _open.Add((spotId, Get(spotId).Copy()));
+            return;
+        }
+        _undo.Push(new Step(label, new List<(int, SpotCuration)> { (spotId, Get(spotId).Copy()) }));
+        _redo.Clear();
+        Trim();
+    }
+
+    private void Close() {
+        var open = _open;
+        _open = null;
+        if (open is null || open.Count == 0) return;
+        _undo.Push(new Step(_openLabel, open));
+        _redo.Clear();
+        Trim();
+    }
+
+    private void Trim() {
+        if (_undo.Count <= 200) return;
+        var kept = _undo.ToArray().Take(200).Reverse().ToList();
+        _undo.Clear();
+        foreach (var step in kept) _undo.Push(step);
+    }
+
+    /// <summary>Puts the last step back; answers what it was, or empty when there was nothing.</summary>
+    public string Undo() => Move(_undo, _redo);
+
+    public string Redo() => Move(_redo, _undo);
+
+    private string Move(Stack<Step> from, Stack<Step> to) {
+        if (from.Count == 0) return string.Empty;
+        var step = from.Pop();
+        var mirror = new List<(int Spot, SpotCuration Before)>();
+        foreach (var (spot, before) in step.Before) {
+            mirror.Add((spot, Get(spot).Copy()));
+            _bySpot[spot] = before.Copy();
+        }
+        to.Push(new Step(step.Label, mirror));
+        IsDirty = true;
+        return step.Label;
+    }
+
+    private sealed class Transaction : IDisposable {
+        private readonly CurationStore _store;
+        private bool _done;
+        public Transaction(CurationStore store) => _store = store;
+        public void Dispose() { if (_done) return; _done = true; _store.Close(); }
+    }
+
+    private sealed class Nothing : IDisposable { public void Dispose() { } }
+
     public bool HasAnything(int spotId) => _bySpot.TryGetValue(spotId, out var c) && !c.IsEmpty;
 
     public IReadOnlyCollection<PeakSpotTagKind> TagsOf(int spotId) =>
@@ -80,12 +162,14 @@ public sealed class CurationStore
     public bool HasTag(int spotId, PeakSpotTagKind tag) => _bySpot.TryGetValue(spotId, out var c) && c.Tags.Contains(tag);
 
     public void SetTag(int spotId, PeakSpotTagKind tag, bool on) {
+        Record(spotId, "tag");
         var c = Get(spotId);
         var changed = on ? c.Tags.Add(tag) : c.Tags.Remove(tag);
         if (changed) IsDirty = true;
     }
 
     public void ClearTags(int spotId) {
+        Record(spotId, "clear the tags");
         var c = Get(spotId);
         if (c.Tags.Count == 0) return;
         c.Tags.Clear();
@@ -93,6 +177,7 @@ public sealed class CurationStore
     }
 
     public void SetComment(int spotId, string comment) {
+        Record(spotId, "comment");
         var c = Get(spotId);
         comment ??= string.Empty;
         if (c.Comment == comment) return;
@@ -101,6 +186,7 @@ public sealed class CurationStore
     }
 
     public void SetManualName(int spotId, string name) {
+        Record(spotId, "name");
         var c = Get(spotId);
         name ??= string.Empty;
         if (c.ManualName == name) return;
@@ -109,6 +195,7 @@ public sealed class CurationStore
     }
 
     public void SetReviewed(int spotId, bool reviewed) {
+        Record(spotId, "reviewed");
         var c = Get(spotId);
         if (c.Reviewed == reviewed) return;
         c.Reviewed = reviewed;

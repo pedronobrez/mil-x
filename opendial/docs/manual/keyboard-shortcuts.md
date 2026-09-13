@@ -38,6 +38,8 @@ both work everywhere.
 | `⌘⇧4` / `Ctrl+Shift+4` | toggle **Coelution (mixed spectra)** |
 | `⌘⇧5` / `Ctrl+Shift+5` | toggle **Overannotation** |
 | `⌘⇧0` / `Ctrl+Shift+0` | clear every tag on the feature |
+| `⌘Z` / `Ctrl+Z` | undo the last review step, a whole **Confirm all shown** included |
+| `⌘⇧Z` / `Ctrl+Shift+Z` | redo it |
 | `⌘⇧C` / `Ctrl+Shift+C` | **Confirm ▸** — Confirmed, and the next feature |
 | `⌘⇧X` / `Ctrl+Shift+X` | **Reject ▸** — Misannotation, and the next feature |
 | `⌘⇧N` / `Ctrl+Shift+N` | **Next unreviewed** |

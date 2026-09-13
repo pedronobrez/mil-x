@@ -123,6 +123,24 @@
                 <CheckBox Grid.Row="13" Grid.Column="1" Content="Only report top hit" IsChecked="{Binding OnlyReportTopHit}" />
               </Grid>
 
+              <!-- what the chosen library actually holds, and what to do when its times are foreign -->
+              <Border Classes="card" Margin="0,10,0,0" Padding="14,12"
+                      DataContext="{Binding $parent[UserControl].DataContext}">
+                <StackPanel Spacing="8">
+                  <TextBlock Classes="eyebrow" Text="THE LIBRARY" Margin="0" />
+                  <TextBlock Text="{Binding LibraryReport}" TextWrapping="Wrap" Classes="muted" />
+                  <TextBlock Text="{Binding LibraryWarning}" TextWrapping="Wrap" Classes="danger"
+                             IsVisible="{Binding LibraryWarning, Converter={x:Static views:Converters.NotEmpty}}" />
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <Button Classes="tool" Content="Re-read" Command="{Binding ScanLibraryCommand}" />
+                    <Button Classes="tool" Content="Ignore its retention times" Command="{Binding IgnoreLibraryRetentionTimesCommand}"
+                            ToolTip.Tip="Leave the library's own times out of the score and out of the filtering" />
+                    <Button Classes="tool" Content="Calibrate to this run…" Command="{Binding CalibrateLibraryRetentionTimesCommand}"
+                            ToolTip.Tip="Fit the library's times to the ones this run measured for what it named, write a calibrated copy, and use it" />
+                  </StackPanel>
+                </StackPanel>
+              </Border>
+
               <Border Classes="section"><TextBlock Classes="eyebrow" Text="ALIGNMENT" /></Border>
               <Grid Classes="form" ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
                 <CheckBox Grid.Row="0" Grid.Column="1" Content="Align after peak picking" IsChecked="{Binding TogetherWithAlignment}" />

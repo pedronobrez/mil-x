@@ -64,7 +64,14 @@ public sealed class MethodParameters
     public float MatchedPeaksPercentageCutoff { get; set; } = 0.2f;
     public float MinimumSpectrumMatch { get; set; } = 1f;
     public float TotalScoreCutoff { get; set; } = 60f;
-    public bool UseRetentionInformationForScoring { get; set; } = true;
+    /// <summary>
+    /// Off by default. Almost every public library — MassBank, MoNA, GNPS, the lipid in-silico ones —
+    /// carries retention times measured on the gradient it was built for, and scoring against them
+    /// zeroes the retention term of every candidate on any other method, dragging correct spectral
+    /// matches under the total-score cut-off. On the liver batch that alone was the difference
+    /// between 286 names and 1198. Turn it on when the library was measured on the method being run.
+    /// </summary>
+    public bool UseRetentionInformationForScoring { get; set; } = false;
     public bool UseRetentionInformationForFiltering { get; set; } = false;
     public bool OnlyReportTopHit { get; set; } = true;
 

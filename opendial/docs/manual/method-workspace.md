@@ -27,6 +27,25 @@ focus, with any error shown under it in red.
 The status line under the form summarises it: `LC-MS · DDA · positive · library.msp · 3 parameters
 changed from defaults`.
 
+## The library
+
+Under the identification group, a panel says what the chosen `.msp` actually holds — how many
+records, which adducts, what range of mass, and whether it carries retention times and over what
+window. It is read from the file itself, in the background, whenever the path changes; a library of
+four hundred thousand records takes a second or two.
+
+| Control | What it does |
+| --- | --- |
+| **Re-read** | scans the file again, after it has been replaced on disk |
+| **Ignore its retention times** | leaves the library's own times out of the score and out of the filtering. This is the default for a new method |
+| **Calibrate to this run…** | fits the library's times to the ones the current result measured for the compounds it named, writes `<library>-rt-calibrated.msp` beside the original, points the method at it and puts retention back into the score |
+
+A warning appears in red when the library's retention window does not overlap the method's. That is
+the usual case with a public library, and scoring against it costs names rather than buying
+confidence — see [[annotation#Why so few features are named]]. The calibration needs a processed
+result with at least twenty names shared with the library; it reports how many compounds it fitted
+on and the R² of the fit.
+
 ## The form
 
 The sections, in the order they appear. Every field is explained, with its default and what it

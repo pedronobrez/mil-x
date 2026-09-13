@@ -39,6 +39,14 @@ pass.
 down the list in that order; the arrows and Next unreviewed follow the same one. The feature ids
 are a label, not a path through the work.
 
+## Taking it back
+
+`⌘Z` undoes the last review step and `⌘⇧Z` redoes it; the **Edit** menu has them as **Undo review step** and **Redo review step**. A step is one
+decision as the reviewer made it: one tag, one comment, one hand-picked name — or a whole **Confirm
+all shown** over a filter of two thousand features, which goes back in one keystroke. The status
+line says what was taken back, because a keystroke that silently changes two thousand rows is worse
+than no keystroke. Two hundred steps are kept; saving does not clear them.
+
 ## Reviewed
 
 A feature counts as **reviewed** when it carries any tag, or when the reviewer marked it so

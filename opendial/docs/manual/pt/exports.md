@@ -63,6 +63,17 @@ com o nome da tabela:
 `Feature id` é o alignment ID do MS-DIAL, o mesmo número da tabela revisada e da tabela de íons,
 de modo que as tabelas se juntam. Os próprios padrões internos não estão nas tabelas de razões.
 
+## O relatório da corrida
+
+**Run report…** na barra da Analytics escreve um arquivo HTML: as contagens, o que a biblioteca
+traz, as injeções com a sua classe e tipo, o método inteiro, o fim do log da corrida, e as figuras
+que estavam na tela — o espelho, o cromatograma e o espectro do Explorer, e todo gráfico emoldurado
+da área Statistics. As figuras vão em vetor embutido, de modo que o arquivo se basta e continua
+nítido em qualquer tamanho. Abra no navegador e imprima em PDF.
+
+Um arquivo de método sozinho não é um relatório: o que um leitor confere primeiro é quantas features
+saíram, quantas ganharam nome, e como estavam as injeções.
+
 ## Os gráficos
 
 Todo gráfico da aplicação grava-se como **SVG** ou como **PNG** a duas até seis vezes o seu tamanho

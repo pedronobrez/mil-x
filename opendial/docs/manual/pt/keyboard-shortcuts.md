@@ -38,6 +38,8 @@ listados, os dois funcionam em todo lado.
 | `⌘⇧4` / `Ctrl+Shift+4` | alternar **Coelution (mixed spectra)** |
 | `⌘⇧5` / `Ctrl+Shift+5` | alternar **Overannotation** |
 | `⌘⇧0` / `Ctrl+Shift+0` | limpar toda marcação da feature |
+| `⌘Z` / `Ctrl+Z` | desfazer o último passo da revisão, um **Confirm all shown** inteiro inclusive |
+| `⌘⇧Z` / `Ctrl+Shift+Z` | refazer |
 | `⌘⇧C` / `Ctrl+Shift+C` | **Confirm ▸** — Confirmed, e a feature seguinte |
 | `⌘⇧X` / `Ctrl+Shift+X` | **Reject ▸** — Misannotation, e a feature seguinte |
 | `⌘⇧N` / `Ctrl+Shift+N` | **Next unreviewed** |

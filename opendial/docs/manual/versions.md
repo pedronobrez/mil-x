@@ -10,9 +10,26 @@ summary: What each version of OpenDIAL brought; the notes are updated with every
 The version shown in **Help ▸ About OpenDIAL** and in the window's probe is the one stamped in
 `opendial/Directory.Build.props`. This page names it, and a test fails the build when it does not.
 
-## 0.5.0 — September 2026
+## 0.6.0 — September 2026
 
 The current version. It tracks MS-DIAL 5.5.260817.
+
+**New**
+
+- **The library is read rather than assumed.** The Method workspace says what the chosen `.msp` holds — how many records, which adducts, what range of mass and of time — and warns when its retention times belong to another gradient. **Ignore its retention times** leaves them out of the score; **Calibrate to this run…** fits them to the times this run measured for what it named, writes a calibrated copy beside the original and points the method at it. See [[annotation#Why so few features are named]].
+- **Retention time is out of the annotation score by default.** Almost every public library carries times from the gradient it was built on, and scoring against them throws correct spectral matches away: on the liver batch it was the difference between 286 names and 1198. Turn it back on when the library was measured on the method being run.
+- **One compound, not several ions.** The adducts, isotopes, in-source fragments and dimers of a compound are gathered behind the ion the run measured best: they elute together, their heights rise and fall together across the injections, and the distance between their masses is one an adduct pair gives. The ion table shows what each row is in the **Ion of** column, and **One row per compound** in the filter band hides the rest.
+- **Blank %** in the ion table and in the filters: the mean height in the injections typed Blank against the mean in the samples. It is the first cut of any untargeted run, and the answer to a red heatmap cell in a solvent.
+- **Undo for the review** (`⌘Z`, `⌘⇧Z`, and the Edit menu). A whole **Confirm all shown** over a filter of two thousand features goes back in one step, and the status line says what was taken back.
+- **Run report…** writes the run down: the counts, the library, the injections, the method, the log and the figures on screen, as one HTML file with the figures inlined as vectors. It opens in a browser and prints to PDF.
+
+**Changed**
+
+- The mirror keeps the width when the evidence area is split: below a pane width where both fit, the match scores step aside.
+
+## 0.5.0 — September 2026
+
+It tracks MS-DIAL 5.5.260817.
 
 **New**
 

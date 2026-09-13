@@ -25,6 +25,8 @@
           <Button Classes="tool" Content="Export to OpenQuant…" Command="{Binding $parent[Window].DataContext.ExportOpenQuantCommand}" IsEnabled="{Binding HasResults}" ToolTip.Tip="Write the listed features as an OpenQuant component CSV (precursor, fragment, RT window)" />
           <Button Classes="tool" Content="Export reviewed table…" Command="{Binding $parent[Window].DataContext.ExportReviewedTableCommand}" IsEnabled="{Binding HasResults}" ToolTip.Tip="Write the features the filter is showing, with their tags, comments and hand edits as columns" />
           <Button Classes="tool" Content="Open output folder" Command="{Binding OpenOutputFolderCommand}" IsEnabled="{Binding HasResults}" />
+          <Button Classes="tool" Content="Run report…" Command="{Binding $parent[Window].DataContext.ExportRunReportCommand}" IsEnabled="{Binding HasResults}"
+                  ToolTip.Tip="Write the run down: counts, library, injections, method, log and the figures on screen, as one HTML file that prints to PDF" />
           <Rectangle Classes="vsep" />
           <ToggleButton x:Name="SplitEvidence" Classes="tool" Content="Split evidence" IsChecked="{Binding EvidenceSplit}" IsEnabled="{Binding HasResults}"
                         ToolTip.Tip="Show two sets of evidence tabs side by side — the mirror beside the class statistics, say — each on its own tab" />
@@ -65,11 +67,14 @@
           <TextBox Text="{Binding RtTo}" Watermark="to" Width="62" />
           <TextBlock Classes="label" Text="S/N ≥" Margin="6,0,0,0" />
           <TextBox Text="{Binding SnFrom}" Watermark="min" Width="56" ToolTip.Tip="Keep only features whose average signal-to-noise reaches this" />
+          <TextBlock Classes="label" Text="Blank % ≤" Margin="6,0,0,0" />
+          <TextBox Text="{Binding BlankTo}" Watermark="max" Width="56" ToolTip.Tip="Drop the features the blanks carry: the mean height in the injections typed Blank against the mean in the samples. 20 is a common first cut" />
           <ComboBox Classes="compact" ItemsSource="{x:Static vm:AnalyticsViewModel.AnnotationFilters}" SelectedItem="{Binding AnnotationFilter}" Width="120" Margin="6,0,0,0" ToolTip.Tip="Annotation confidence" />
           <ComboBox Classes="compact" ItemsSource="{Binding Ontologies}" SelectedItem="{Binding OntologyFilter}" Width="140" ToolTip.Tip="Lipid class / ontology" />
           <ComboBox Classes="compact" ItemsSource="{x:Static vm:AnalyticsViewModel.TagFilters}" SelectedItem="{Binding TagFilter}" Width="170" ToolTip.Tip="Review state" />
           <CheckBox Classes="compact" Content="MS/MS only" IsChecked="{Binding MsmsOnly}" Margin="4,0,0,0" />
           <CheckBox Classes="compact" Content="Molecular ion" IsChecked="{Binding MolecularIonOnly}" ToolTip.Tip="Drop the features the run marked as isotopes of another" />
+          <CheckBox Classes="compact" Content="One row per compound" IsChecked="{Binding RepresentativesOnly}" ToolTip.Tip="Hide the adducts, isotopes, in-source fragments and dimers gathered behind the ion that represents each compound" />
           <CheckBox Classes="compact" Content="Hand-edited" IsChecked="{Binding ManuallyModifiedOnly}" ToolTip.Tip="Only features whose annotation or integration was changed by hand" />
         </StackPanel>
         </ScrollViewer>

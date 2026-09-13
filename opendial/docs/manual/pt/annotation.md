@@ -72,6 +72,23 @@ etiqueta **hand-picked**, e é gravado em `<alignment>_curation.json` com **Save
 anotação da própria corrida não se perde: **Back to the automatic name** restaura-a. A tabela
 revisada marca essas features como *Manually annotated*.
 
+## Um composto, vários íons
+
+Uma corrida não dirigida não reporta compostos, reporta íons: a molécula protonada, os seus adutos
+de sódio e de amônio, os seus isótopos, o que se partiu na fonte, cada um como uma feature. Duas mil
+e quinhentas features são algumas centenas de compostos vistos várias vezes.
+
+Três coisas precisam concordar antes de duas features serem chamadas do mesmo composto. Eluem juntas
+(dentro de um décimo da própria tolerância do alinhamento), as alturas sobem e descem juntas entre as
+injeções (correlação de ao menos 0,8 — os adutos de uma molécula acompanham-se porque são uma
+molécula só), e a distância entre as massas é uma que um par de adutos, um isótopo, um dímero ou uma
+perda de água ou amônia dá. Só a correlação agrupa uma região cheia; só a massa agrupa coincidências.
+
+O íon que a corrida mediu melhor representa o composto; os outros trazem **Ion of** na tabela,
+dizendo o que são e de qual feature. **One row per compound** na faixa de filtros esconde-os. Nada é
+apagado e nada é somado: as alturas continuam por íon, e o agrupamento é uma leitura da tabela, não
+uma alteração dela.
+
 ## Por que tão poucas features são nomeadas
 
 Uma corrida que nomeia trezentas de duas mil e quinhentas features em geral não perdeu os seus

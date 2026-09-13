@@ -26,6 +26,8 @@ every tag lands on.
 | **Fill %** | the share of injections in which the peak was detected rather than gap-filled |
 | **MS/MS** | `MS/MS` when at least one injection carried a product spectrum |
 | **S/N** | the mean signal-to-noise |
+| **Blank %** | the mean height in the injections typed Blank against the mean in the samples; empty when the batch has no blank |
+| **Ion of** | what this row is, when it is not a compound of its own: the adduct, isotope, in-source fragment or dimer of another feature, and of which — see [[annotation#One compound, several ions]] |
 | **Score** | the total match score of the reported annotation |
 | **Height** | the mean apex height |
 | **Iso** | `M` for a monoisotopic ion, `M+1`, `M+2` for a feature the run marked as an isotope of another; blank when it did not decide |

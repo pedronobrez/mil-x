@@ -68,6 +68,24 @@ a **hand-picked** chip, and is written to `<alignment>_curation.json` on **Save 
 run's own annotation is not lost: **Back to the automatic name** restores it. The reviewed table
 marks such features as *Manually annotated*.
 
+## One compound, several ions
+
+An untargeted run does not report compounds, it reports ions: the protonated molecule, its sodium
+and ammonium adducts, its isotopes, whatever fell apart in the source, each as a feature of its own.
+Two and a half thousand features are a few hundred compounds seen several times over.
+
+Three things have to agree before two features are called the same compound. They elute together
+(within a tenth of the alignment's own tolerance), their heights rise and fall together across the
+injections (a correlation of at least 0.8 — adducts of one molecule track each other because they
+are one molecule), and the distance between their masses is one an adduct pair, an isotope, a dimer
+or a loss of water or ammonia gives. Correlation alone groups a crowded region; mass alone groups
+coincidences.
+
+The ion the run measured best represents the compound; the rest carry **Ion of** in the table,
+saying what they are and of which feature. **One row per compound** in the filter band hides them.
+Nothing is deleted and nothing is merged: the heights stay per ion, and the grouping is a reading of
+the table, not a change to it.
+
 ## Why so few features are named
 
 A run that names three hundred of two and a half thousand features has usually not lost its

@@ -127,6 +127,7 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     [ObservableProperty] private string _rtFrom = string.Empty;
     [ObservableProperty] private string _rtTo = string.Empty;
     [ObservableProperty] private string _snFrom = string.Empty;
+    [ObservableProperty] private string _blankTo = string.Empty;
     [ObservableProperty] private bool _msmsOnly;
     [ObservableProperty] private bool _molecularIonOnly;
     [ObservableProperty] private bool _manuallyModifiedOnly;
@@ -299,6 +300,7 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
             _curation = CurationStore.Load(session.AlignmentFile.FilePath);
             _container = table.Container;
             _allRows = _spots.Select(s => new SpotRowViewModel(s, _curation)).ToList();
+            GroupIons();
             AnnotatedCount = _spots.Count(s => s.IsAnnotated);
             UnknownCount = _spots.Count - AnnotatedCount;
             HasResults = true;
@@ -346,6 +348,7 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     partial void OnRtFromChanged(string value) => RebuildRows();
     partial void OnRtToChanged(string value) => RebuildRows();
     partial void OnSnFromChanged(string value) => RebuildRows();
+    partial void OnBlankToChanged(string value) => RebuildRows();
     partial void OnMsmsOnlyChanged(bool value) => RebuildRows();
     partial void OnMolecularIonOnlyChanged(bool value) => RebuildRows();
     partial void OnManuallyModifiedOnlyChanged(bool value) => RebuildRows();
@@ -369,6 +372,7 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
         var rtLo = ParseBound(RtFrom);
         var rtHi = ParseBound(RtTo);
         var snLo = ParseBound(SnFrom);
+        var blankHi = ParseBound(BlankTo);
 
         bool Matches(SpotRowViewModel r)
         {
@@ -377,6 +381,10 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
             if (rtLo is not null && r.Rt < rtLo) return false;
             if (rtHi is not null && r.Rt > rtHi) return false;
             if (snLo is not null && r.SignalToNoise < snLo) return false;
+            // a feature the blanks carry as strongly as the samples is background; a batch with no
+            // blank reports no percentage, and the filter then keeps everything rather than nothing
+            if (blankHi is not null && !double.IsNaN(r.BlankPercent) && r.BlankPercent > blankHi) return false;
+            if (RepresentativesOnly && r.Group is { IsRepresentative: false }) return false;
             if (MsmsOnly && !r.MsmsAssigned) return false;
             if (MolecularIonOnly && !r.IsMolecularIon) return false;
             if (ManuallyModifiedOnly && !r.IsManuallyEdited) return false;
@@ -784,8 +792,11 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     private void ConfirmAndNext()
     {
         if (SelectedRow is null) return;
-        SelectedRow.SetTag(PeakSpotTagKind.Misannotation, false);
-        SelectedRow.SetTag(PeakSpotTagKind.Confirmed, true);
+        using (_curation?.Begin("Confirm"))
+        {
+            SelectedRow.SetTag(PeakSpotTagKind.Misannotation, false);
+            SelectedRow.SetTag(PeakSpotTagKind.Confirmed, true);
+        }
         AfterCuration();
         NextSpot();
     }
@@ -795,10 +806,70 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     private void RejectAndNext()
     {
         if (SelectedRow is null) return;
-        SelectedRow.SetTag(PeakSpotTagKind.Confirmed, false);
-        SelectedRow.SetTag(PeakSpotTagKind.Misannotation, true);
+        using (_curation?.Begin("Reject"))
+        {
+            SelectedRow.SetTag(PeakSpotTagKind.Confirmed, false);
+            SelectedRow.SetTag(PeakSpotTagKind.Misannotation, true);
+        }
         AfterCuration();
         NextSpot();
+    }
+
+    // ---- one compound, several ions -----------------------------------------------------------
+
+    /// <summary>Whether there is a review step to take back, for the shell and for a script.</summary>
+    public bool CanUndo => _curation?.CanUndo == true;
+
+    [ObservableProperty] private bool _representativesOnly;
+    [ObservableProperty] private string _groupSummary = string.Empty;
+
+    partial void OnRepresentativesOnlyChanged(bool value) => RebuildRows();
+
+    /// <summary>
+    /// Gathers the adducts, isotopes, in-source fragments and dimers of one compound behind the ion
+    /// the run measured best. An untargeted table reports ions; a reviewer wants compounds, and
+    /// until now the only way to see that two rows were one molecule was to notice it.
+    /// </summary>
+    private void GroupIons()
+    {
+        try
+        {
+            var candidates = _allRows.Select(r => new IonCandidate(
+                r.Id, r.Rt, r.Mz, r.Height,
+                r.Spot.SamplePeaks.Select(p => double.IsNaN(p.Height) ? 0 : p.Height).ToList(),
+                r.Adduct, r.Spot.IsotopeWeight)).ToList();
+            var positive = !_allRows.Any(r => r.Adduct.EndsWith("-", StringComparison.Ordinal));
+            var groups = IonIdentity.Group(candidates, positive);
+            var byId = groups.ToDictionary(g => g.Id);
+            foreach (var row in _allRows)
+            {
+                row.Group = byId.TryGetValue(row.Id, out var g) ? g : null;
+            }
+            var compounds = groups.Count(g => g.IsRepresentative);
+            GroupSummary = $"{groups.Count} ion(s) in {compounds} compound group(s)";
+        }
+        catch (Exception ex)
+        {
+            GroupSummary = "Ion grouping failed: " + ex.Message;
+        }
+    }
+
+    /// <summary>
+    /// What this run named, and when those compounds actually eluted: the pairs a library's
+    /// retention times are calibrated against. Only the confident names, and only one time per
+    /// name — the first, which is the strongest since the table arrives sorted by id.
+    /// </summary>
+    public IReadOnlyDictionary<string, double> NamesAndRetentionTimes()
+    {
+        var found = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+        foreach (var row in _allRows)
+        {
+            if (!row.IsConfident) continue;
+            var name = row.Name;
+            if (name.Length == 0 || found.ContainsKey(name)) continue;
+            found[name] = row.Rt;
+        }
+        return found;
     }
 
     /// <summary>
@@ -882,6 +953,7 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     [RelayCommand]
     private void ConfirmAllShown()
     {
+        using var step = _curation?.Begin("Confirm all shown");
         foreach (var r in RowsInOrder())
         {
             r.SetTag(PeakSpotTagKind.Misannotation, false);
@@ -895,6 +967,7 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     [RelayCommand]
     private void RejectAllShown()
     {
+        using var step = _curation?.Begin("Reject all shown");
         foreach (var r in RowsInOrder())
         {
             r.SetTag(PeakSpotTagKind.Confirmed, false);
@@ -907,9 +980,40 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     [RelayCommand]
     private void ClearAllShown()
     {
+        using var step = _curation?.Begin("Clear all shown");
         foreach (var r in RowsInOrder()) r.ClearTags();
         Summary = $"Tags removed from {IonRows.Count} feature(s).";
         AfterCuration();
+    }
+
+    /// <summary>
+    /// Takes the last decision back — one tag, or a whole Confirm all shown. What it undoes is said
+    /// in the status line, because a keystroke that silently changes two thousand rows is worse
+    /// than no keystroke at all.
+    /// </summary>
+    [RelayCommand]
+    private void Undo()
+    {
+        if (_curation is null || !_curation.CanUndo) { Summary = "Nothing to undo."; return; }
+        var what = _curation.Undo();
+        RefreshAfterUndo($"Undone: {what}.");
+    }
+
+    [RelayCommand]
+    private void Redo()
+    {
+        if (_curation is null || !_curation.CanRedo) { Summary = "Nothing to redo."; return; }
+        var what = _curation.Redo();
+        RefreshAfterUndo($"Redone: {what}.");
+    }
+
+    private void RefreshAfterUndo(string message)
+    {
+        foreach (var row in _allRows) row.Refresh();
+        CurationDirty = true;
+        AfterCuration();
+        RebuildRows();
+        Summary = message;
     }
 
     [RelayCommand]

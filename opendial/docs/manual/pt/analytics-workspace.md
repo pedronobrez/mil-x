@@ -38,6 +38,7 @@ com um clique antes.
 | **Export to OpenQuant…** | as features listadas como uma lista de componentes do OpenQuant; veja [[openquant]] |
 | **Export reviewed table…** | as features listadas com a revisão em colunas; veja [[exports]] |
 | **Open output folder** | a pasta de resultados no Finder |
+| **Run report…** | escreve a corrida — contagens, biblioteca, injeções, método, log e as figuras da tela — num arquivo HTML com as figuras em vetor embutidas; abra e imprima em PDF. Veja [[exports#O relatório da corrida]] |
 | **Split evidence** | mostra um segundo conjunto de abas de evidência ao lado do primeiro, cada um na sua aba — o espelho ao lado das estatísticas da classe, os candidatos ao lado do mapa de features. Os dois seguem a feature selecionada; desligue e o conjunto único volta a ocupar toda a largura |
 | **Save review** | grava as marcações em `<alignment>_tags.xml` — o arquivo que o MS-DIAL lê — e o resto da curadoria ao lado; um ponto no botão significa que há algo por salvar |
 
@@ -54,6 +55,8 @@ Os filtros estreitam a tabela de íons e tudo a jusante dela — o mapa de featu
 | texto livre | nome, classe (ontologia), aduto, fórmula, comentário, um id de feature exato, ou um m/z escrito com quatro decimais |
 | **m/z** de–a, **RT** de–a | a região do mapa que se está percorrendo |
 | **S/N ≥** | o sinal-ruído médio mínimo; o jeito mais rápido de pôr de lado as features mais fracas sem mexer no corte de altura da corrida |
+| **Blank % ≤** | descarta o que os brancos carregam: a altura média nas injeções do tipo Blank contra a média nas amostras. Vinte é um primeiro corte comum; um lote sem branco não é tocado |
+| **One row per compound** | esconde os adutos, isótopos, fragmentos de fonte e dímeros reunidos atrás do íon que representa cada composto |
 | anotação | **All**, **Confident**, **Suggested** (um nome de pontuação baixa ou só por m/z), **Annotated** (qualquer nome), **Unknown** |
 | classe | uma classe de lipídio ou ontologia de cada vez, que é como uma passagem classe a classe se faz |
 | estado da revisão | **All**, **Untagged**, **Reviewed**, **Not reviewed**, ou uma marcação específica |

@@ -177,6 +177,8 @@ public sealed class UiProbe
                     ["reviewed"] = analytics.ReviewedCount,
                     ["peaksEdited"] = analytics.PeaksEdited,
                     ["curationDirty"] = analytics.CurationDirty,
+                    ["groups"] = analytics.GroupSummary,
+                    ["canUndo"] = analytics.CanUndo,
                     ["filter"] = analytics.FilterText,
                     ["integrationFrom"] = analytics.IntegrationFrom,
                     ["integrationTo"] = analytics.IntegrationTo,

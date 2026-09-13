@@ -40,6 +40,14 @@ precisa.
 o Confirm ▸ desce a lista naquela ordem; as setas e o Next unreviewed seguem a mesma. Os ids das
 features são um rótulo, não um caminho pelo trabalho.
 
+## Desfazer
+
+`⌘Z` desfaz o último passo da revisão e `⌘⇧Z` refaz; o menu **Edit** traz os dois como **Undo review step** e **Redo review step**. Um passo é uma
+decisão como o revisor a tomou: uma marcação, um comentário, um nome escolhido à mão — ou um
+**Confirm all shown** inteiro sobre um filtro de duas mil features, que volta numa tecla só. A linha
+de estado diz o que foi desfeito, porque uma tecla que muda duas mil linhas em silêncio é pior que
+tecla nenhuma. Duzentos passos são guardados; salvar não os apaga.
+
 ## Revisada
 
 Uma feature conta como **revisada** quando carrega qualquer marcação, ou quando o revisor a marcou

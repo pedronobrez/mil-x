@@ -32,6 +32,44 @@ public sealed partial class SpotRowViewModel : ObservableObject
     public double Score => Spot.Score;
     public double Height => Spot.AverageHeight;
     public double SignalToNoise => Spot.SignalToNoiseAverage;
+
+    /// <summary>
+    /// How much of this feature the blanks carry: the mean height over the injections typed Blank
+    /// against the mean over the real samples, as a percentage. A hundred means the blank is as
+    /// high as the samples, which is the first thing to throw away in any untargeted run. NaN when
+    /// the batch has no blank, so a run without one is not quietly filtered on nothing.
+    /// </summary>
+    public double BlankPercent
+    {
+        get
+        {
+            double blank = 0, sample = 0;
+            int blanks = 0, samples = 0;
+            foreach (var p in Spot.SamplePeaks)
+            {
+                var height = double.IsNaN(p.Height) ? 0 : p.Height;
+                if (string.Equals(p.SampleType, "Blank", StringComparison.OrdinalIgnoreCase)) { blank += height; blanks++; }
+                else if (!string.Equals(p.SampleType, "QC", StringComparison.OrdinalIgnoreCase) &&
+                         !string.Equals(p.SampleType, "Standard", StringComparison.OrdinalIgnoreCase)) { sample += height; samples++; }
+            }
+            if (blanks == 0 || samples == 0) return double.NaN;
+            var meanSample = sample / samples;
+            if (meanSample <= 0) return blank > 0 ? 999 : double.NaN;
+            return blank / blanks / meanSample * 100;
+        }
+    }
+
+    /// <summary>
+    /// Which compound this ion belongs to, once the adducts and isotopes have been gathered. Null
+    /// until the grouping has run, and its own id when it is the ion that represents the compound.
+    /// </summary>
+    public IonGroup? Group { get; set; }
+
+    /// <summary>The group as the ion table prints it: empty for the representative, else what it is.</summary>
+    public string GroupText => Group is null || Group.IsRepresentative ? string.Empty : $"{Group.Relation} · {Group.Explanation}";
+
+    /// <summary>The same, as the ion table prints it.</summary>
+    public string BlankText => double.IsNaN(BlankPercent) ? string.Empty : BlankPercent >= 999 ? "999+" : BlankPercent.ToString("0", CultureInfo.InvariantCulture);
     public bool MsmsAssigned => Spot.MsmsAssigned;
     public IReadOnlyList<ClassHeight> ClassHeights => Spot.ClassHeights;
     /// <summary>Not an isotope of another feature: what MS-DIAL's "molecular ion" filter keeps.</summary>
@@ -141,7 +179,10 @@ public sealed partial class SpotRowViewModel : ObservableObject
     /// <summary>Tagged as something to come back to rather than accepted or rejected outright.</summary>
     public bool IsFlagged => HasTag(PeakSpotTagKind.LowQualitySpectrum) || HasTag(PeakSpotTagKind.Coelution) || HasTag(PeakSpotTagKind.Overannotation);
 
-    /// <summary>Called when the row is re-shown, so a curation made elsewhere is picked up.</summary>
+    /// <summary>
+    /// Everything this row reads from the curation store, said again: when the row is re-shown, and
+    /// after an undo, which can change any of it.
+    /// </summary>
     public void Refresh()
     {
         RaiseTagChanged();
@@ -149,5 +190,9 @@ public sealed partial class SpotRowViewModel : ObservableObject
         OnPropertyChanged(nameof(HasComment));
         OnPropertyChanged(nameof(Name));
         OnPropertyChanged(nameof(DisplayName));
+        OnPropertyChanged(nameof(Level));
+        OnPropertyChanged(nameof(IsAnnotated));
+        OnPropertyChanged(nameof(IsConfident));
+        OnPropertyChanged(nameof(IsManual));
     }
 }

@@ -31,6 +31,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         RawCache.Status += (_, s) => Avalonia.Threading.Dispatcher.UIThread.Post(() => Status = s);
         Samples = new SamplesViewModel(settings, dialogs);
         Method = new MethodViewModel(settings, dialogs);
+        // the library calibration is fitted to what this run named, so the method asks the review for it
+        Method.ObservedRetentionTimes = () => Analytics.NamesAndRetentionTimes();
         Explorer = new ExplorerViewModel(RawCache);
         Analytics = new AnalyticsViewModel(RawCache) { ProcessBatchCommand = ProcessBatchCommand };
         Statistics = new StatisticsViewModel(dialogs)
@@ -127,6 +129,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         {
             case "tag1": case "tag2": case "tag3": case "tag4": case "tag5": Analytics.ToggleTagCommand.Execute(what[3..]); break;
             case "clear": Analytics.ClearTagsCommand.Execute(null); break;
+            case "undo": Analytics.UndoCommand.Execute(null); break;
+            case "redo": Analytics.RedoCommand.Execute(null); break;
             case "confirm": Analytics.ConfirmAndNextCommand.Execute(null); break;
             case "reject": Analytics.RejectAndNextCommand.Execute(null); break;
             case "unreviewed": Analytics.NextUnreviewedCommand.Execute(null); break;
@@ -450,6 +454,38 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         {
             Status = "Import failed: " + ex.Message;
             await _messages.ShowErrorAsync("Could not import the OpenQuant batch", ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// The run written down: counts, library, injections, the method, the log and the figures the
+    /// reviewer had on screen, as one HTML file that prints to PDF. Set by the shell, which is what
+    /// can reach the charts.
+    /// </summary>
+    public Func<ReportContent>? GatherReport { get; set; }
+
+    [RelayCommand]
+    private async Task ExportRunReportAsync()
+    {
+        if (GatherReport is null || !Analytics.HasResults) { Status = "Process the batch (or open results) before writing a report."; return; }
+        var suggested = (string.IsNullOrEmpty(ProjectName) ? "run" : ProjectName) + "_report.html";
+        var path = await _dialogs.SaveFileAsync("Write the run report", suggested, "html", OutputFolder);
+        if (path is null) return;
+        try
+        {
+            Status = "Writing the report…";
+            var content = GatherReport();
+            content.Version = AppInfo.Version;
+            content.Project = string.IsNullOrEmpty(ProjectName) ? "Untitled run" : ProjectName;
+            content.OutputFolder = OutputFolder;
+            await File.WriteAllTextAsync(path, RunReport.Build(content));
+            Status = $"Report written to {path}. Open it and print to PDF from the browser.";
+            ShellService.Reveal(path);
+        }
+        catch (Exception ex)
+        {
+            Status = "The report failed: " + ex.Message;
+            await _messages.ShowErrorAsync("The report failed", ex.Message);
         }
     }
 

@@ -26,6 +26,8 @@ mostra e onde toda marcação cai.
 | **Fill %** | a fração de injeções em que o pico foi detectado em vez de preenchido |
 | **MS/MS** | `MS/MS` quando pelo menos uma injeção trazia um espectro de produto |
 | **S/N** | o sinal-ruído médio |
+| **Blank %** | a altura média nas injeções do tipo Blank contra a média nas amostras; vazio quando o lote não tem branco |
+| **Ion of** | o que esta linha é, quando não é um composto por si: o aduto, isótopo, fragmento de fonte ou dímero de outra feature, e de qual — veja [[annotation#Um composto, vários íons]] |
 | **Score** | a pontuação total de casamento da anotação reportada |
 | **Height** | a altura média do ápice |
 | **Iso** | `M` para um íon monoisotópico, `M+1`, `M+2` para uma feature que a corrida marcou como isótopo de outra; vazio quando não decidiu |

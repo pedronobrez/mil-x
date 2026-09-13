@@ -38,6 +38,11 @@
     <!-- the review: ⌘⇧ with a digit is a tag, with C/X a verdict and the next feature, with N the
          next unreviewed one, with ↓/↑ the next and previous; Ctrl+Shift the same for a keyboard
          without a command key. The shell forwards them only while the review is on screen. -->
+    <!-- the review's own undo: a bulk tagging over a filter is a decision, and decisions are taken back -->
+    <KeyBinding Gesture="Cmd+Z" Command="{Binding ReviewKeyCommand}" CommandParameter="undo" />
+    <KeyBinding Gesture="Cmd+Shift+Z" Command="{Binding ReviewKeyCommand}" CommandParameter="redo" />
+    <KeyBinding Gesture="Ctrl+Z" Command="{Binding ReviewKeyCommand}" CommandParameter="undo" />
+    <KeyBinding Gesture="Ctrl+Shift+Z" Command="{Binding ReviewKeyCommand}" CommandParameter="redo" />
     <KeyBinding Gesture="Cmd+Shift+D1" Command="{Binding ReviewKeyCommand}" CommandParameter="tag1" />
     <KeyBinding Gesture="Cmd+Shift+D2" Command="{Binding ReviewKeyCommand}" CommandParameter="tag2" />
     <KeyBinding Gesture="Cmd+Shift+D3" Command="{Binding ReviewKeyCommand}" CommandParameter="tag3" />
@@ -92,6 +97,10 @@
           <MenuItem Header="Settings…" Command="{Binding OpenSettingsCommand}" />
           <Separator />
           <MenuItem Header="Quit" Click="OnExitClick" InputGesture="Cmd+Q" />
+        </MenuItem>
+        <MenuItem Header="_Edit">
+          <MenuItem Header="Undo review step" Command="{Binding Analytics.UndoCommand}" InputGesture="Cmd+Z" />
+          <MenuItem Header="Redo review step" Command="{Binding Analytics.RedoCommand}" InputGesture="Cmd+Shift+Z" />
         </MenuItem>
         <MenuItem Header="_View">
           <MenuItem Header="Log" Command="{Binding ToggleLogCommand}" InputGesture="Cmd+L">

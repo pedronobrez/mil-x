@@ -46,6 +46,7 @@ APP_PROCESS = "OpenDIAL"
 KEY_CODES = {1: 18, 2: 19, 3: 20, 4: 21, 5: 23}
 KEY_R = 15
 KEY_A = 0
+KEY_Z = 6
 
 WORKSPACES = ["Explorer", "Analytics", "Method", "Samples", "Statistics"]
 
@@ -730,6 +731,26 @@ def main() -> int:
                     text = open(figure, encoding="utf-8").read()
                     check(text.lstrip().startswith("<svg") and "measured" in text and "reference" in text,
                           "and the mirror leaves as a figure with both halves labelled")
+
+                say("the ions of one compound are gathered, and the run writes itself down")
+                state = read_probe(probe)
+                groups = (state.get("review") or {}).get("groups", "")
+                check("compound group" in groups, f"the ion grouping ran: {groups}")
+                report = os.path.join(work, "run-report.html")
+                result = send_command(probe, {"action": "runReport", "path": report}, timeout=180)["lastCommand"]
+                text = open(report, encoding="utf-8").read()
+                check(text.lstrip().startswith("<!doctype html") and "<svg" in text and "The method" in text,
+                      f"the run report holds the method and its figures: {(result or {}).get('message')}")
+
+                say("a bulk tagging goes back in one step")
+                before = (read_probe(probe).get("review") or {}).get("confirmed", 0)
+                state = click_until(probe, "control.ConfirmAllShown", "Confirm all shown",
+                                    lambda s: (s.get("review") or {}).get("confirmed", 0) > before, 30)
+                tagged = (state.get("review") or {}).get("confirmed", 0)
+                check(tagged > before, f"{tagged} feature(s) confirmed in one go")
+                state = press_until(probe, KEY_Z, lambda s: (s.get("review") or {}).get("confirmed", 0) == before,
+                                    "Cmd+Z to take the bulk tagging back", SHORTCUT_WAIT)
+                check((state.get("review") or {}).get("confirmed", 0) == before, "and Cmd+Z put every one of them back")
 
                 say("the review keys tag the selected feature from wherever the focus is")
                 state = press_until(probe, KEY_CODES[2], lambda s: s.get("workspace") == 1, "Analytics", SHORTCUT_WAIT)

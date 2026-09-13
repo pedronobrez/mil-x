@@ -18,7 +18,7 @@
             <Button Classes="icon" Content="▼" Command="{Binding NextSpotCommand}" ToolTip.Tip="Next feature (Alt+↓)" />
             <Button Classes="tool" Content="Next unreviewed" Command="{Binding NextUnreviewedCommand}" ToolTip.Tip="Jump to the next feature with no verdict (Alt+N)" />
             <Rectangle Classes="vsep" />
-            <Button Classes="tool" Content="Confirm all shown" Command="{Binding ConfirmAllShownCommand}" ToolTip.Tip="Tag every feature the filter is showing as Confirmed" />
+            <Button x:Name="ConfirmAllShown" Classes="tool" Content="Confirm all shown" Command="{Binding ConfirmAllShownCommand}" ToolTip.Tip="Tag every feature the filter is showing as Confirmed" />
             <Button Classes="tool" Content="Reject all shown" Command="{Binding RejectAllShownCommand}" ToolTip.Tip="Tag every feature the filter is showing as Misannotation" />
             <Button Classes="tool" Content="Clear all shown" Command="{Binding ClearAllShownCommand}" />
             <Rectangle Classes="vsep" />
@@ -59,6 +59,8 @@
           <DataGridTextColumn Header="Fill %" Binding="{Binding Fill, Converter={x:Static views:Converters.Number}, ConverterParameter=F0}" Width="62" />
           <DataGridTextColumn Header="MS/MS" Binding="{Binding MsmsText}" Width="70" />
           <DataGridTextColumn Header="S/N" Binding="{Binding SignalToNoise, Converter={x:Static views:Converters.Number}, ConverterParameter=F0}" Width="60" />
+          <DataGridTextColumn Header="Blank %" Binding="{Binding BlankText}" Width="70" />
+          <DataGridTextColumn Header="Ion of" Binding="{Binding GroupText}" Width="160" />
           <DataGridTextColumn Header="Score" Binding="{Binding Score, Converter={x:Static views:Converters.Number}, ConverterParameter=F2}" Width="64" />
           <DataGridTextColumn Header="Height" Binding="{Binding Height, Converter={x:Static views:Converters.Number}, ConverterParameter=N0}" Width="90" />
           <DataGridTextColumn Header="Iso" Binding="{Binding IsotopeText}" Width="50" />

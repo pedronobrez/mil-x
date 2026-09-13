@@ -27,6 +27,25 @@ formulário quando a caixa perde o foco, com qualquer erro mostrado por baixo em
 A linha de status sob o formulário resume-o: `LC-MS · DDA · positive · library.msp · 3 parameters
 changed from defaults`.
 
+## A biblioteca
+
+Sob o grupo de identificação, um painel diz o que o `.msp` escolhido realmente traz — quantos
+registros, que adutos, que faixa de massa, e se carrega tempos de retenção e em que janela. É lido
+do próprio arquivo, em segundo plano, sempre que o caminho muda; uma biblioteca de quatrocentos mil
+registros leva um ou dois segundos.
+
+| Controle | O que faz |
+| --- | --- |
+| **Re-read** | lê o arquivo de novo, depois de ele ter sido trocado em disco |
+| **Ignore its retention times** | deixa os tempos da própria biblioteca fora da pontuação e da filtragem. É o padrão de um método novo |
+| **Calibrate to this run…** | ajusta os tempos da biblioteca aos que o resultado atual mediu para os compostos que nomeou, grava `<biblioteca>-rt-calibrated.msp` ao lado da original, aponta o método para ela e devolve a retenção à pontuação |
+
+Um aviso aparece em vermelho quando a janela de retenção da biblioteca não se sobrepõe à do método.
+É o caso comum com biblioteca pública, e pontuar com ela custa nomes em vez de comprar confiança —
+veja [[annotation#Por que tão poucas features são nomeadas]]. A calibração precisa de um resultado
+processado com pelo menos vinte nomes em comum com a biblioteca; ela informa em quantos compostos
+foi ajustada e o R² do ajuste.
+
 ## O formulário
 
 As seções, na ordem em que aparecem. Cada campo é explicado, com o seu padrão e o que faz ao

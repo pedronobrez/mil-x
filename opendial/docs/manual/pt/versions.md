@@ -11,9 +11,26 @@ A versão mostrada em **Help ▸ About OpenDIAL** e na sonda da janela é a cari
 `opendial/Directory.Build.props`. Esta página nomeia-a, e um teste falha a construção quando não
 nomeia.
 
-## 0.5.0 — setembro de 2026
+## 0.6.0 — setembro de 2026
 
 A versão atual. Segue o MS-DIAL 5.5.260817.
+
+**Novo**
+
+- **A biblioteca é lida, não suposta.** A área Method diz o que o `.msp` escolhido traz — quantos registros, que adutos, que faixa de massa e de tempo — e avisa quando os tempos de retenção dele são de outro gradiente. **Ignore its retention times** deixa-os fora da pontuação; **Calibrate to this run…** ajusta-os aos tempos que esta corrida mediu para o que nomeou, grava uma cópia calibrada ao lado da original e aponta o método para ela. Veja [[annotation#Por que tão poucas features são nomeadas]].
+- **O tempo de retenção sai da pontuação de anotação por padrão.** Quase toda biblioteca pública traz tempos do gradiente para o qual foi feita, e pontuar com eles descarta casamentos espectrais corretos: no lote de fígado foi a diferença entre 286 e 1198 nomes. Religue quando a biblioteca tiver sido medida no método que está rodando.
+- **Um composto, não vários íons.** Os adutos, isótopos, fragmentos de fonte e dímeros de um composto são reunidos atrás do íon que a corrida mediu melhor: eluem juntos, as alturas sobem e descem juntas entre as injeções, e a distância entre as massas é uma que um par de adutos dá. A tabela de íons diz o que cada linha é na coluna **Ion of**, e **One row per compound** na faixa de filtros esconde o resto.
+- **Blank %** na tabela de íons e nos filtros: a altura média nas injeções do tipo Blank contra a média nas amostras. É o primeiro corte de qualquer corrida não dirigida, e a resposta para uma célula vermelha de mapa de calor num solvente.
+- **Desfazer na revisão** (`⌘Z`, `⌘⇧Z`, e o menu Edit). Um **Confirm all shown** inteiro sobre um filtro de duas mil features volta num passo só, e a linha de estado diz o que foi desfeito.
+- **Run report…** escreve a corrida: as contagens, a biblioteca, as injeções, o método, o log e as figuras da tela, num arquivo HTML com as figuras em vetor embutidas. Abre no navegador e imprime em PDF.
+
+**Mudou**
+
+- O espelho mantém a largura quando a área de evidência está dividida: abaixo da largura em que os dois cabem, a tabela de scores se afasta.
+
+## 0.5.0 — setembro de 2026
+
+Segue o MS-DIAL 5.5.260817.
 
 **Novo**
 
