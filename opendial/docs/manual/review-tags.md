@@ -35,6 +35,10 @@ tag is on. The ion table shows the tags in short form and, in its first column, 
 **Next unreviewed** (`⌘⇧N`), which skips what is already decided, they are the whole of a fast
 pass.
 
+**Next** is next *on screen*. Sort the ion table by S/N, by score, by class, and Confirm ▸ walks
+down the list in that order; the arrows and Next unreviewed follow the same one. The feature ids
+are a label, not a path through the work.
+
 ## Reviewed
 
 A feature counts as **reviewed** when it carries any tag, or when the reviewer marked it so

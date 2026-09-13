@@ -70,11 +70,54 @@ public sealed class PathwayGraph : Control, Charts.IChartRenderable
         if (change.Property == ResultProperty) Layout();
     }
 
+    private readonly GraphView _graph = new();
+    private Point? _dragFrom;
+    private bool _dragged;
+
+    protected override void OnPointerMoved(PointerEventArgs e)
+    {
+        base.OnPointerMoved(e);
+        if (_dragFrom is not { } from) return;
+        var here = e.GetPosition(this);
+        var delta = here - from;
+        if (!_dragged && Math.Abs(delta.X) + Math.Abs(delta.Y) < 3) return;
+        _dragged = true;
+        _dragFrom = here;
+        _graph.MoveBy(delta);
+        InvalidateVisual();
+    }
+
+    protected override void OnPointerReleased(PointerReleasedEventArgs e)
+    {
+        base.OnPointerReleased(e);
+        _dragFrom = null;
+        _dragged = false;
+        e.Pointer.Capture(null);
+    }
+
+    /// <summary>The wheel goes into the map, about the pointer; a double click lays it flat again.</summary>
+    protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
+    {
+        base.OnPointerWheelChanged(e);
+        if (_graph.ZoomAbout(e.GetPosition(this), e.Delta.Y > 0 ? 1.2 : 1 / 1.2)) InvalidateVisual();
+        e.Handled = true;
+    }
+
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
+        if (e.ClickCount == 2)
+        {
+            _graph.Reset();
+            InvalidateVisual();
+            return;
+        }
+        _dragFrom = e.GetPosition(this);
+        _dragged = false;
+        e.Pointer.Capture(this);
         if (Result is null) return;
-        var p = e.GetPosition(this);
+        // the drawing is zoomed and moved under the pointer, so the pointer comes back through it
+        var p = _graph.ToDrawing(e.GetPosition(this));
         // an edge under the pointer wins; the distance to the segment, not to its line
         ReactionScore? best = null;
         var bestDistance = 7.0;
@@ -178,6 +221,7 @@ public sealed class PathwayGraph : Control, Charts.IChartRenderable
     public void RenderTo(Charts.ChartCanvas context)
     {
         Charts.ChartTheme.PaintPaper(this, context);
+        using var view = context.PushTransform(_graph.Matrix);
         _drawnEdges.Clear();
         _drawnNodes.Clear();
         var result = Result;

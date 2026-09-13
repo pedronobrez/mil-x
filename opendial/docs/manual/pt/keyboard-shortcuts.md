@@ -56,14 +56,30 @@ Os mesmos gestos em todo gráfico — cromatogramas, espectros, gráficos de dis
 | Gesto | Ação |
 | --- | --- |
 | arrastar | ampliar o eixo X para o intervalo arrastado |
-| roda | ampliar e reduzir em torno do ponteiro |
+| roda, dois dedos para cima e para baixo | ampliar e reduzir em torno do ponteiro |
+| dois dedos para o lado, ou `⇧` com a roda | caminhar pelo eixo, do jeito que todo rolador da aplicação se move |
+| `⌘` com a roda (`Ctrl` fora do Mac) | esticar o eixo de intensidade, que é como um pico de um por cento do pico-base ao lado se torna visível |
 | arrastar com o botão direito | deslocar |
-| duplo clique | ajustar tudo de novo (**Overview** no Explorer faz o mesmo) |
+| duplo clique | ajustar tudo de novo, intensidade inclusive (**Overview** no Explorer faz o mesmo) |
 | `⇧`-arrastar | selecionar um intervalo: um intervalo de tempo de retenção no Explorer, uma janela de integração num painel de pico |
 | clique | selecionar a varredura mais próxima (Explorer), a amostra (grade de picos, tendência) ou a feature (mapa de features, S-plot, loadings) |
 | pairar | uma dica com os valores sob o ponteiro |
 
-No Explorer, **Select range** faz um arrasto simples selecionar em vez de ampliar.
+No Explorer, **Select range** faz um arrasto simples selecionar em vez de ampliar. Um portátil sem
+mouse não precisa de mais nada: dois dedos para o lado andam pela corrida, dois dedos para cima e
+para baixo ampliam, e `⌘` com dois dedos levanta os picos pequenos.
+
+## Os dois grafos
+
+A rede molecular e o mapa de vias são desenhados para caber, e depois são seus para explorar.
+
+| Gesto | Ação |
+| --- | --- |
+| roda | ampliar em torno do ponteiro |
+| arrastar o fundo | mover o desenho |
+| arrastar um nó (rede) | puxá-lo para um lugar mais claro; as arestas seguem |
+| clique | selecionar a feature, ou a reação sob o ponteiro |
+| duplo clique | deixar tudo plano de novo |
 
 ## O manual
 

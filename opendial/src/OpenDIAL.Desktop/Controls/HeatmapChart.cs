@@ -18,9 +18,11 @@ public sealed record HeatmapData(
     ClusterNode? ColumnTree = null,
     string ValueName = "",
     bool Symmetric = false,
-    IReadOnlyList<int>? RowIds = null)
+    IReadOnlyList<int>? RowIds = null,
+    double[,]? Unstandardized = null,
+    string? UnstandardizedName = null)
 {
-    public static HeatmapData From(HeatmapResult r) => new(r.RowLabels, r.ColumnLabels, r.Values, r.RowGroups, r.ColumnGroups, r.RowTree, r.ColumnTree, r.ValueName, false, r.RowFeatureIds);
+    public static HeatmapData From(HeatmapResult r) => new(r.RowLabels, r.ColumnLabels, r.Values, r.RowGroups, r.ColumnGroups, r.RowTree, r.ColumnTree, r.ValueName, false, r.RowFeatureIds, r.Unstandardized, r.UnstandardizedName);
     public static HeatmapData From(CorrelationMatrix m) => new(m.Labels, m.Labels, m.Values, m.Groups, m.Groups, null, null, m.Kind + " correlation", true, m.FeatureIds);
 }
 
@@ -249,7 +251,19 @@ public sealed class HeatmapChart : Control, Charts.IChartRenderable
         {
             var c = Math.Clamp((int)((p.X - left) / _cellW), 0, cols - 1);
             var r = Math.Clamp((int)((p.Y - top) / _cellH), 0, rows - 1);
-            var lines = new[] { data.RowLabels[r], data.ColumnLabels[c], data.Values[r, c].ToString("0.###", CultureInfo.InvariantCulture) + (string.IsNullOrEmpty(data.ValueName) ? string.Empty : " " + data.ValueName) };
+            var lines = new List<string>
+            {
+                data.RowLabels[r],
+                data.ColumnLabels[c],
+                data.Values[r, c].ToString("0.###", CultureInfo.InvariantCulture) + (string.IsNullOrEmpty(data.ValueName) ? string.Empty : " " + data.ValueName),
+            };
+            // a standardised row only says how this injection compares with the rest of its own row,
+            // so the number it was standardised from goes under it: that is what tells a red cell
+            // in a blank apart from a red cell in a sample
+            if (data.Unstandardized is { } plain && r < plain.GetLength(0) && c < plain.GetLength(1))
+            {
+                lines.Add(plain[r, c].ToString("0.###", CultureInfo.InvariantCulture) + " " + (data.UnstandardizedName ?? "before standardising"));
+            }
             var texts = lines.Select(l => Text(l, 11, ink)).ToList();
             var tw = texts.Max(t => t.Width) + 14;
             var th = texts.Sum(t => t.Height) + 8;

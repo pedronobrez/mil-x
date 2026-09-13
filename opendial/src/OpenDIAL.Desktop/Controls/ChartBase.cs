@@ -201,12 +201,25 @@ public abstract class ChartBase : Control, Charts.IChartRenderable
 
     protected Rect PlotRect => new(MarginLeft, MarginTop, Math.Max(1, Bounds.Width - MarginLeft - MarginRight), Math.Max(1, Bounds.Height - MarginTop - MarginBottom));
 
+    /// <summary>
+    /// How much the intensity axis is stretched, 1 being the range that fits. A spectrum is nearly
+    /// all base peak: to see what is one per cent of it, the axis has to be pulled up.
+    /// </summary>
+    protected double YZoom = 1;
+
     public void ResetView()
     {
         ViewXMin = double.NaN;
         ViewXMax = double.NaN;
+        YZoom = 1;
         InvalidateVisual();
     }
+
+    /// <summary>The range the axis is showing, for the tests and for anything that reports the window.</summary>
+    internal (double Min, double Max) ViewWindow => CurrentXRange();
+
+    /// <summary>How far the intensity axis is stretched beyond the range that fits.</summary>
+    internal double IntensityZoom => YZoom;
 
     public void SetView(double xMin, double xMax)
     {
@@ -269,6 +282,12 @@ public abstract class ChartBase : Control, Charts.IChartRenderable
             var pad = (yMax - yMin) * 0.06;
             yMax += pad;
             if (yMin < 0) yMin -= pad;
+        }
+        if (YZoom > 1.0001)
+        {
+            // from the baseline for a chromatogram or a spectrum, from the middle for a mirror
+            if (yMin >= 0) yMax = yMin + (yMax - yMin) / YZoom;
+            else { yMax /= YZoom; yMin /= YZoom; }
         }
 
         double Tx(double x) => plot.X + (x - xMin) / (xMax - xMin) * plot.Width;
@@ -496,6 +515,19 @@ public abstract class ChartBase : Control, Charts.IChartRenderable
 
     // ------------------------------------------------------------------ interaction
 
+    /// <summary>How far one turn of the wheel, or one swipe, moves the window: a share of what is shown.</summary>
+    private const double PanStep = 0.08;
+
+    /// <summary>
+    /// The wheel, and the two fingers of a trackpad that produce the same events.
+    ///
+    /// A sideways swipe walks along the axis, and so does shift with an ordinary wheel, for the
+    /// trackpads and mice that have no sideways at all. Command — control elsewhere — reaches the
+    /// intensity axis instead, which is the only way to see a peak that is one per cent of the base
+    /// peak beside it. A plain vertical scroll still zooms the axis around the pointer, which is what
+    /// a wheel has always done here. Panning follows the direction every scroller in the application
+    /// moves in, so it feels the same whichever way the trackpad is set up.
+    /// </summary>
     protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
     {
         base.OnPointerWheelChanged(e);
@@ -504,6 +536,35 @@ public abstract class ChartBase : Control, Charts.IChartRenderable
         var (dataMin, dataMax) = DataXExtent();
         if (double.IsNaN(dataMin) || !plot.Contains(pos)) return;
         var (xMin, xMax) = CurrentXRange();
+
+        if (e.KeyModifiers.HasFlag(KeyModifiers.Meta) || e.KeyModifiers.HasFlag(KeyModifiers.Control))
+        {
+            YZoom = Math.Clamp(YZoom * (e.Delta.Y > 0 ? 1.3 : 1 / 1.3), 1, 2000);
+            e.Handled = true;
+            InvalidateVisual();
+            return;
+        }
+
+        var sideways = Math.Abs(e.Delta.X) > Math.Abs(e.Delta.Y) ? e.Delta.X
+            : e.KeyModifiers.HasFlag(KeyModifiers.Shift) ? e.Delta.Y
+            : 0;
+        if (sideways != 0)
+        {
+            var span = xMax - xMin;
+            if (span < dataMax - dataMin)
+            {
+                var by = -sideways * span * PanStep;
+                var from = Math.Max(dataMin, xMin + by);
+                var to = from + span;
+                if (to > dataMax) { to = dataMax; from = to - span; }
+                ViewXMin = from;
+                ViewXMax = to;
+                InvalidateVisual();
+            }
+            e.Handled = true;
+            return;
+        }
+
         var factor = e.Delta.Y > 0 ? 0.8 : 1.25;
         var cursorX = xMin + (pos.X - plot.X) / plot.Width * (xMax - xMin);
         var newMin = cursorX - (cursorX - xMin) * factor;

@@ -27,13 +27,31 @@ public partial class AnalyticsView : UserControl
         _watched = Vm;
         if (_watched is not null) _watched.PropertyChanged += OnLayoutPropertyChanged;
         LayoutTableColumn();
+        LayoutEvidenceColumns();
     }
 
     private void OnLayoutPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(AnalyticsViewModel.IonTableDetached)) LayoutTableColumn();
         else if (e.PropertyName == nameof(AnalyticsViewModel.IonTableDockPreview)) SizeDockPreview();
+        else if (e.PropertyName == nameof(AnalyticsViewModel.EvidenceSplit)) LayoutEvidenceColumns();
     }
+
+    /// <summary>
+    /// The second set of evidence tabs and the splitter beside it take no room until the reviewer
+    /// asks for them: a hidden control in a starred column would still hold half the width.
+    /// </summary>
+    private void LayoutEvidenceColumns()
+    {
+        var columns = EvidenceColumns.ColumnDefinitions;
+        if (columns.Count < 3) return;
+        var split = Vm?.EvidenceSplit == true;
+        columns[1].Width = new GridLength(split ? 6 : 0);
+        columns[2].Width = split ? _secondEvidenceWidth : new GridLength(0);
+        if (!split && columns[2].Width.Value > 0) _secondEvidenceWidth = columns[2].Width;
+    }
+
+    private GridLength _secondEvidenceWidth = new(1, GridUnitType.Star);
 
     /// <summary>
     /// The table's column and the splitter beside it collapse while the table is in its own window,

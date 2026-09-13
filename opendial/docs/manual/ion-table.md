@@ -43,6 +43,7 @@ header; the order comes back on the next start.
 | **▲** / **▼** | previous and next feature (`⌘⇧↑`, `⌘⇧↓`) |
 | **Next unreviewed** | the next feature with no verdict, wrapping round (`⌘⇧N`); says so when there is none left in the filter |
 | **Confirm all shown** | tags every feature the filter is showing as Confirmed, which is how a whole lipid class is accepted once its retention trend checks out |
+| **Reject all shown** | the other half of the pair: tags them all Misannotation, for the filter that turned out to be noise |
 | **Clear all shown** | removes every tag from the features shown |
 | **Open in a window** / **Dock table** | tears the table off into a window of its own, or brings it back |
 

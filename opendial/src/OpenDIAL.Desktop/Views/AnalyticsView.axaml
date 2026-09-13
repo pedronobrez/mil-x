@@ -26,6 +26,9 @@
           <Button Classes="tool" Content="Export reviewed table…" Command="{Binding $parent[Window].DataContext.ExportReviewedTableCommand}" IsEnabled="{Binding HasResults}" ToolTip.Tip="Write the features the filter is showing, with their tags, comments and hand edits as columns" />
           <Button Classes="tool" Content="Open output folder" Command="{Binding OpenOutputFolderCommand}" IsEnabled="{Binding HasResults}" />
           <Rectangle Classes="vsep" />
+          <ToggleButton x:Name="SplitEvidence" Classes="tool" Content="Split evidence" IsChecked="{Binding EvidenceSplit}" IsEnabled="{Binding HasResults}"
+                        ToolTip.Tip="Show two sets of evidence tabs side by side — the mirror beside the class statistics, say — each on its own tab" />
+          <Rectangle Classes="vsep" />
           <Button x:Name="SaveReview" Classes="tool" Command="{Binding SaveCurationCommand}" IsEnabled="{Binding HasResults}"
                   ToolTip.Tip="Write the review to &lt;alignment&gt;_tags.xml, the same file MS-DIAL reads and writes">
             <StackPanel Orientation="Horizontal" Spacing="6">
@@ -60,6 +63,8 @@
           <TextBlock Classes="label" Text="RT" Margin="6,0,0,0" />
           <TextBox Text="{Binding RtFrom}" Watermark="from" Width="62" />
           <TextBox Text="{Binding RtTo}" Watermark="to" Width="62" />
+          <TextBlock Classes="label" Text="S/N ≥" Margin="6,0,0,0" />
+          <TextBox Text="{Binding SnFrom}" Watermark="min" Width="56" ToolTip.Tip="Keep only features whose average signal-to-noise reaches this" />
           <ComboBox Classes="compact" ItemsSource="{x:Static vm:AnalyticsViewModel.AnnotationFilters}" SelectedItem="{Binding AnnotationFilter}" Width="120" Margin="6,0,0,0" ToolTip.Tip="Annotation confidence" />
           <ComboBox Classes="compact" ItemsSource="{Binding Ontologies}" SelectedItem="{Binding OntologyFilter}" Width="140" ToolTip.Tip="Lipid class / ontology" />
           <ComboBox Classes="compact" ItemsSource="{x:Static vm:AnalyticsViewModel.TagFilters}" SelectedItem="{Binding TagFilter}" Width="170" ToolTip.Tip="Review state" />
@@ -183,149 +188,20 @@
             </Border>
             <GridSplitter Grid.Row="1" Classes="horizontal" ResizeDirection="Rows" />
             <Border Grid.Row="2" Classes="panel">
-            <TabControl x:Name="ResultTabs" Classes="panel-tabs" Margin="6,0,6,6">
-              <!-- product spectrum against the library -->
-              <TabItem Header="MS/MS">
-                <Grid Margin="0,6,0,0" ColumnDefinitions="*,260">
-                  <c:SpectrumChart x:Name="Ms2Mirror" Grid.Column="0" Peaks="{Binding Ms2Peaks}" ReferencePeaks="{Binding ReferencePeaks}" PrecursorMz="{Binding Ms2Precursor}" Title="{Binding Ms2Title}" />
-                  <Border Grid.Column="1" Classes="hairline-left" Padding="12,4,4,4">
-                    <StackPanel Spacing="6">
-                      <TextBlock Classes="eyebrow" Text="MATCH SCORES" Margin="0,0,0,2" />
-                      <ItemsControl ItemsSource="{Binding ScoreRows}">
-                        <ItemsControl.ItemTemplate>
-                          <DataTemplate x:DataType="vm:ScoreRow">
-                            <DockPanel Margin="0,2">
-                              <TextBlock DockPanel.Dock="Right" Text="{Binding Value}" FontFamily="{DynamicResource OdMonoFont}" />
-                              <TextBlock Classes="muted" Text="{Binding Metric}" />
-                            </DockPanel>
-                          </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                      </ItemsControl>
-                      <TextBlock Classes="hint" TextWrapping="Wrap"
-                                 Text="Dot products, matched-peak count and mass error for every candidate are in the Candidates tab, where another one can be chosen." />
-                    </StackPanel>
-                  </Border>
-                </Grid>
-              </TabItem>
-
-              <!-- MS1 isotope envelope -->
-              <TabItem Header="Isotopes">
-                <DockPanel Margin="0,6,0,0">
-                  <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,6,4,0" TextWrapping="Wrap"
-                             Text="An isotope envelope that does not match the formula, or a monoisotopic ion that is not the base peak, usually means the feature is an isotope or an adduct of something else. Tag it Overannotation." />
-                  <c:SpectrumChart Peaks="{Binding IsotopePeaks}" PrecursorMz="{Binding Ms2Precursor}" Title="{Binding IsotopeTitle}" />
-                </DockPanel>
-              </TabItem>
-
-              <!-- the alternatives to the reported annotation -->
-              <TabItem Header="Candidates">
-                <DockPanel Margin="0,6,0,0">
-                  <Border DockPanel.Dock="Top" Classes="hairline-bottom" Padding="0,0,0,6" Margin="0,0,0,6">
-                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                      <TextBlock Classes="eyebrow" Text="SEARCH LIBRARY" Margin="0,0,4,0" VerticalAlignment="Center" />
-                      <TextBlock Classes="label" Text="MS1" VerticalAlignment="Center" />
-                      <TextBox Text="{Binding SearchMs1Tolerance}" Width="66" ToolTip.Tip="Precursor tolerance in Da" />
-                      <TextBlock Classes="label" Text="MS2" VerticalAlignment="Center" />
-                      <TextBox Text="{Binding SearchMs2Tolerance}" Width="66" ToolTip.Tip="Fragment tolerance in Da" />
-                      <CheckBox Classes="compact" Content="RT" IsChecked="{Binding SearchUseRt}" ToolTip.Tip="Also require the reference retention time to match" />
-                      <TextBox Text="{Binding SearchRtTolerance}" Width="56" IsEnabled="{Binding SearchUseRt}" ToolTip.Tip="Retention tolerance in minutes" />
-                      <Button Classes="tool strong" Content="Search" Command="{Binding SearchLibraryCommand}" IsEnabled="{Binding !IsSearching}" />
-                      <Button Classes="tool" Content="Back to the run's matches" Command="{Binding RestoreCandidatesCommand}" IsVisible="{Binding ShowingSearchResults}" />
-                      <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsSearching}" Width="80" Height="3" VerticalAlignment="Center" />
-                    </StackPanel>
-                  </Border>
-                  <Border DockPanel.Dock="Bottom" Padding="0,6,0,0">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                      <Button Classes="tool strong" Content="Use this annotation" Command="{Binding UseSelectedCandidateCommand}" ToolTip.Tip="Replace the reported name with the selected candidate" />
-                      <Button Classes="tool" Content="Back to the automatic name" Command="{Binding ResetAnnotationCommand}" />
-                      <TextBlock Classes="hint" VerticalAlignment="Center" Margin="8,0,0,0" Text="{Binding SearchHint}" TextTrimming="CharacterEllipsis" />
-                    </StackPanel>
-                  </Border>
-                  <DataGrid ItemsSource="{Binding Candidates}" SelectedItem="{Binding SelectedCandidate, Mode=TwoWay}" AutoGenerateColumns="False" IsReadOnly="True">
-                    <DataGrid.Columns>
-                      <DataGridTextColumn Header="Candidate" Binding="{Binding Name}" Width="2*" />
-                      <DataGridTextColumn Header="Total" Binding="{Binding TotalScore, StringFormat={}{0:F3}}" Width="70" />
-                      <DataGridTextColumn Header="Dot" Binding="{Binding WeightedDotProduct, StringFormat={}{0:F3}}" Width="70" />
-                      <DataGridTextColumn Header="Reverse" Binding="{Binding ReverseDotProduct, StringFormat={}{0:F3}}" Width="80" />
-                      <DataGridTextColumn Header="Matched" Binding="{Binding MatchedPeaksCount, StringFormat={}{0:F0}}" Width="80" />
-                      <DataGridTextColumn Header="Matched %" Binding="{Binding MatchedPeaksPercentage, StringFormat={}{0:F2}}" Width="90" />
-                      <DataGridTextColumn Header="Mass sim." Binding="{Binding MassSimilarity, StringFormat={}{0:F3}}" Width="90" />
-                      <DataGridCheckBoxColumn Header="Class" Binding="{Binding IsLipidClassMatch}" Width="60" />
-                      <DataGridCheckBoxColumn Header="Chains" Binding="{Binding IsLipidChainsMatch}" Width="66" />
-                      <DataGridCheckBoxColumn Header="sn" Binding="{Binding IsLipidPositionMatch}" Width="50" />
-                      <DataGridCheckBoxColumn Header="Reported" Binding="{Binding IsRepresentative}" Width="*" />
-                    </DataGrid.Columns>
-                  </DataGrid>
-                </DockPanel>
-              </TabItem>
-
-              <!-- abundance per sample, grouped by class -->
-              <TabItem Header="Abundance">
-                <DockPanel Margin="0,6,0,0">
-                  <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,6,4,0" TextWrapping="Wrap"
-                             Text="One bar per injection, coloured by class. A feature as high in the blanks as in the samples is background; one that varies wildly across the quality-control injections is not quantifiable." />
-                  <c:BarChart Items="{Binding SampleBars}" />
-                </DockPanel>
-              </TabItem>
-
-              <!-- the whole filtered set as a map, for class trends -->
-              <TabItem Header="Feature map">
-                <DockPanel Margin="0,6,0,0">
-                  <TextBlock DockPanel.Dock="Top" Classes="hint" Margin="4,0,4,6" Text="{Binding FeatureMapLabel}" />
-                  <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,6,4,0" TextWrapping="Wrap"
-                             Text="Filter to one lipid class: on a reversed-phase column its members fall on a line, retention rising with acyl carbon number and falling with each double bond. A member off that line is the first to re-examine. Click a dot to jump to it in the ion table." />
-                  <c:ScatterChart Items="{Binding FeatureMap}" SelectedItem="{Binding SelectedFeaturePoint, Mode=TwoWay}" XLabel="Retention time (min)" YLabel="m/z" />
-                </DockPanel>
-              </TabItem>
-
-              <!-- per-sample numbers -->
-              <TabItem Header="Samples">
-                <DataGrid Margin="0,6,0,0" ItemsSource="{Binding SampleRows}" SelectedItem="{Binding SelectedSampleRow, Mode=TwoWay}" AutoGenerateColumns="False" IsReadOnly="True">
-                  <DataGrid.Columns>
-                    <DataGridTextColumn Header="#" Binding="{Binding Order}" Width="40" />
-                    <DataGridTextColumn Header="Sample" Binding="{Binding Sample}" Width="180" />
-                    <DataGridTextColumn Header="Class" Binding="{Binding Class}" Width="90" />
-                    <DataGridTextColumn Header="Type" Binding="{Binding SampleType}" Width="80" />
-                    <DataGridTextColumn Header="RT (min)" Binding="{Binding Rt, Converter={x:Static views:Converters.Number}, ConverterParameter=F3}" Width="90" />
-                    <DataGridTextColumn Header="m/z" Binding="{Binding Mz, Converter={x:Static views:Converters.Number}, ConverterParameter=F4}" Width="90" />
-                    <DataGridTextColumn Header="Height" Binding="{Binding Height, Converter={x:Static views:Converters.Number}, ConverterParameter=N0}" Width="100" />
-                    <DataGridTextColumn Header="Area" Binding="{Binding Area, Converter={x:Static views:Converters.Number}, ConverterParameter=N0}" Width="100" />
-                    <DataGridTextColumn Header="S/N" Binding="{Binding SignalToNoise, Converter={x:Static views:Converters.Number}, ConverterParameter=N0}" Width="90" />
-                    <DataGridTextColumn Header="Start" Binding="{Binding RtLeft, Converter={x:Static views:Converters.Number}, ConverterParameter=F3}" Width="80" />
-                    <DataGridTextColumn Header="End" Binding="{Binding RtRight, Converter={x:Static views:Converters.Number}, ConverterParameter=F3}" Width="80" />
-                    <DataGridTextColumn Header="Gap-filled" Binding="{Binding GapFilled}" Width="*" />
-                  </DataGrid.Columns>
-                </DataGrid>
-              </TabItem>
-
-              <TabItem Header="Statistics">
-                <DataGrid Margin="0,6,0,0" ItemsSource="{Binding ClassStats}" AutoGenerateColumns="False" IsReadOnly="True">
-                  <DataGrid.Columns>
-                    <DataGridTextColumn Header="Class" Binding="{Binding Class}" Width="140" />
-                    <DataGridTextColumn Header="n" Binding="{Binding N}" Width="50" />
-                    <DataGridTextColumn Header="Mean height" Binding="{Binding Mean, StringFormat={}{0:N0}}" Width="110" />
-                    <DataGridTextColumn Header="SD" Binding="{Binding Sd, StringFormat={}{0:N0}}" Width="100" />
-                    <DataGridTextColumn Header="% CV" Binding="{Binding Cv, StringFormat={}{0:F1}}" Width="70" />
-                    <DataGridTextColumn Header="Min" Binding="{Binding Min, StringFormat={}{0:N0}}" Width="100" />
-                    <DataGridTextColumn Header="Max" Binding="{Binding Max, StringFormat={}{0:N0}}" Width="100" />
-                    <DataGridTextColumn Header="Mean area" Binding="{Binding AreaMean, StringFormat={}{0:N0}}" Width="*" />
-                  </DataGrid.Columns>
-                </DataGrid>
-              </TabItem>
-
-              <TabItem Header="Trend">
-                <DockPanel Margin="0,6,0,0">
-                  <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="6" Margin="0,0,0,6">
-                    <TextBlock Classes="label" Text="Y" />
-                    <ComboBox Classes="compact" ItemsSource="{x:Static vm:AnalyticsViewModel.MetricColumns}" SelectedItem="{Binding MetricY}" Width="110" />
-                    <TextBlock Classes="label" Text="X" Margin="10,0,4,0" />
-                    <ComboBox Classes="compact" ItemsSource="{x:Static vm:AnalyticsViewModel.MetricXColumns}" SelectedItem="{Binding MetricX}" Width="150" />
-                    <TextBlock Classes="hint" Text="Coloured by class · click a point to select the sample" VerticalAlignment="Center" Margin="10,0,0,0" />
-                  </StackPanel>
-                  <c:ScatterChart Items="{Binding MetricPoints}" SelectedItem="{Binding SelectedMetricPoint, Mode=TwoWay}" XLabel="{Binding MetricX}" YLabel="{Binding MetricY}" Connect="True" />
-                </DockPanel>
-              </TabItem>
-            </TabControl>
+            <!--
+              One set of evidence tabs, or two side by side: reading the mirror while watching the
+              class statistics is a normal thing to want, and switching tabs between them is what
+              slows a review pass down. The second column is collapsed, not merely hidden, so a
+              single pane takes the whole width (see LayoutEvidenceColumns in the code-behind).
+            -->
+            <Grid x:Name="EvidenceColumns" ColumnDefinitions="*,6,*">
+              <views:EvidenceView Grid.Column="0" SelectedTab="{Binding EvidenceTab, Mode=TwoWay}" />
+              <GridSplitter Grid.Column="1" Classes="vertical" ResizeDirection="Columns"
+                            IsVisible="{Binding EvidenceSplit}" />
+              <views:EvidenceView Grid.Column="2" x:Name="SecondEvidence"
+                                  IsVisible="{Binding EvidenceSplit}"
+                                  SelectedTab="{Binding SecondEvidenceTab, Mode=TwoWay}" />
+            </Grid>
             </Border>
           </Grid>
         </Grid>

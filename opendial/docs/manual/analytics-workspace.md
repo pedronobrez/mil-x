@@ -23,7 +23,7 @@ processed project opens on it.
 - **The identity** — the selected feature's name, id, retention time, m/z, adduct, formula, class, score and fill, with a chip for its annotation level and one reading **hand-picked** when the reviewer chose the name.
 - **The verdict** — the five tags, Confirm and Reject, and a comment box; see [[review-tags]].
 - **The peak in every sample** — the feature's chromatogram in each injection, always on screen, with the integrate strip above it; see [[evidence-panels#Peaks]] and [[reintegration]].
-- **The evidence tabs** below it — MS/MS first, then Isotopes, Candidates, Abundance, Feature map, Samples, Statistics, Trend; see [[evidence-panels]]. A divider between the two sets how much of the height each takes.
+- **The evidence tabs** below it — MS/MS first, then Isotopes, Candidates, Abundance, Feature map, Samples, Statistics, Trend; see [[evidence-panels]]. A divider between the two sets how much of the height each takes, and **Split evidence** in the toolbar puts a second set beside the first.
 
 A result opens on the three things a reviewer needs to confirm an analyte: the ion table, the peak
 in every sample, and the product spectrum against the library. Nothing has to be clicked open
@@ -38,6 +38,7 @@ first.
 | **Export to OpenQuant…** | the listed features as an OpenQuant component list; see [[openquant]] |
 | **Export reviewed table…** | the listed features with the review as columns; see [[exports]] |
 | **Open output folder** | the results folder in Finder |
+| **Split evidence** | shows a second set of evidence tabs beside the first, each on its own tab — the mirror beside the class statistics, the candidates beside the feature map. Both follow the selected feature; switch it off and the single set takes the whole width again |
 | **Save review** | writes the tags to `<alignment>_tags.xml` — the file MS-DIAL reads — and the rest of the curation beside it; a dot on the button means there is something unsaved |
 
 The summary on the right reads `2235 aligned spots across 8 sample(s) · 1804 annotated`, and after
@@ -52,6 +53,7 @@ The filters narrow the ion table and everything downstream of it — the feature
 | --- | --- |
 | free text | name, class (ontology), adduct, formula, comment, an exact feature id, or an m/z written to four decimals |
 | **m/z** from–to, **RT** from–to | the region of the map you are working through |
+| **S/N ≥** | the minimum average signal-to-noise; the quickest way to put the weakest features aside without moving the peak-height cut-off of the run |
 | annotation | **All**, **Confident**, **Suggested** (a low-score or m/z-only name), **Annotated** (any name), **Unknown** |
 | class | one lipid class or ontology at a time, which is how a class-by-class pass runs |
 | review state | **All**, **Untagged**, **Reviewed**, **Not reviewed**, or one specific tag |

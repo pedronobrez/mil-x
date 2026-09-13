@@ -43,6 +43,7 @@ ordenadas clicando no cabeçalho; a ordem volta no próximo arranque.
 | **▲** / **▼** | feature anterior e seguinte (`⌘⇧↑`, `⌘⇧↓`) |
 | **Next unreviewed** | a próxima feature sem veredito, dando a volta (`⌘⇧N`); diz quando não resta nenhuma no filtro |
 | **Confirm all shown** | marca como Confirmed toda feature que o filtro está mostrando, que é como uma classe inteira de lipídios é aceite depois de a sua tendência de retenção conferir |
+| **Reject all shown** | a outra metade do par: marca todas como Misannotation, para o filtro que se revelou ruído |
 | **Clear all shown** | remove toda marcação das features mostradas |
 | **Open in a window** / **Dock table** | destaca a tabela para uma janela própria, ou traz de volta |
 

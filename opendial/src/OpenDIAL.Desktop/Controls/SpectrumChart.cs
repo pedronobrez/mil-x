@@ -89,22 +89,24 @@ public sealed class SpectrumChart : ChartBase
         var measuredColor = AccentColor;
         var referenceColor = Categorical[0];
 
+        var measuredInk = new List<Rect>();
         if (Peaks is { Count: > 0 } peaks)
         {
-            DrawSticks(ctx, plot, tx, ty, peaks, Scale(peaks), measuredColor, xMin, xMax, mirrored: false);
+            measuredInk = DrawSticks(ctx, plot, tx, ty, peaks, Scale(peaks), measuredColor, xMin, xMax, mirrored: false);
         }
         if (ReferencePeaks is { Count: > 0 } reference)
         {
-            DrawSticks(ctx, plot, tx, ty, reference, Scale(reference), referenceColor, xMin, xMax, mirrored: true);
+            var referenceInk = DrawSticks(ctx, plot, tx, ty, reference, Scale(reference), referenceColor, xMin, xMax, mirrored: true);
             ctx.DrawLine(new Pen(AxisBrush, 1), new Point(plot.X, zero), new Point(plot.Right, zero));
-            // each label sits in the corner of its half with the least peak under it, so a base peak
-            // at the right edge — the precursor's own neighbourhood — does not get its m/z written over
+            // each label goes where its own half has nothing drawn: an edge when an edge is free, and
+            // the emptiest place along the band otherwise. Choosing by peak height alone was not
+            // enough — what collides is the m/z written above a peak, which is wider than the peak.
             var up = MakeText("measured", 10, new SolidColorBrush(measuredColor));
             var down = MakeText("reference", 10, new SolidColorBrush(referenceColor));
-            var upLeft = LeftIsEmptier(Peaks, xMin, xMax);
-            var downLeft = LeftIsEmptier(reference, xMin, xMax);
-            ctx.DrawText(up, new Point(upLeft ? plot.X + 6 : plot.Right - up.Width - 6, plot.Y + 4));
-            ctx.DrawText(down, new Point(downLeft ? plot.X + 6 : plot.Right - down.Width - 6, plot.Bottom - down.Height - 4));
+            var upY = plot.Y + 4;
+            var downY = plot.Bottom - down.Height - 4;
+            ctx.DrawText(up, new Point(LabelX(plot, up.Width, upY, upY + up.Height, measuredInk), upY));
+            ctx.DrawText(down, new Point(LabelX(plot, down.Width, downY, downY + down.Height, referenceInk), downY));
         }
 
         if (!double.IsNaN(PrecursorMz) && PrecursorMz >= xMin && PrecursorMz <= xMax)
@@ -117,24 +119,42 @@ public sealed class SpectrumChart : ChartBase
         }
     }
 
-    /// <summary>Whether the left quarter of the visible range holds lower peaks than the right one.</summary>
-    internal static bool LeftIsEmptier(IReadOnlyList<Point>? peaks, double xMin, double xMax)
+    /// <summary>
+    /// Where to start a corner label so that it sits over nothing. The band it would occupy is slid
+    /// across the plot and scored by how much drawn ink it covers; ties go to whichever edge is
+    /// nearer, so a free corner still wins and only a crowded half pushes the label inwards.
+    /// </summary>
+    internal static double LabelX(Rect plot, double width, double top, double bottom, IReadOnlyList<Rect> ink)
     {
-        if (peaks is null || peaks.Count == 0) return false;
-        var quarter = (xMax - xMin) / 4;
-        double left = 0, right = 0;
-        foreach (var p in peaks)
+        var span = Math.Max(0, plot.Width - width - 12);
+        var best = plot.X + 6;
+        var bestScore = double.NegativeInfinity;
+        for (var i = 0; i <= 24; i++)
         {
-            if (p.X < xMin || p.X > xMax) continue;
-            if (p.X <= xMin + quarter) left = Math.Max(left, p.Y);
-            else if (p.X >= xMax - quarter) right = Math.Max(right, p.Y);
+            var x = plot.X + 6 + span * i / 24.0;
+            var box = new Rect(x, top, width, bottom - top);
+            var covered = 0.0;
+            foreach (var r in ink) covered += Covered(r, box);
+            // a free edge beats a free middle: the closer to an edge, the smaller the penalty
+            var penalty = Math.Min(x - plot.X, plot.Right - (x + width)) * 0.001;
+            var score = -covered - penalty;
+            if (score > bestScore) { bestScore = score; best = x; }
         }
-        return left < right;
+        return best;
     }
 
-    private void DrawSticks(Charts.ChartCanvas ctx, Rect plot, Func<double, double> tx, Func<double, double> ty, IReadOnlyList<Point> peaks, double scale, Color color,
+    private static double Covered(Rect a, Rect b)
+    {
+        var w = Math.Min(a.Right, b.Right) - Math.Max(a.X, b.X);
+        var h = Math.Min(a.Bottom, b.Bottom) - Math.Max(a.Y, b.Y);
+        return w <= 0 || h <= 0 ? 0 : w * h;
+    }
+
+    /// <summary>Draws one half of the mirror and answers with the rectangles it drew ink into.</summary>
+    private List<Rect> DrawSticks(Charts.ChartCanvas ctx, Rect plot, Func<double, double> tx, Func<double, double> ty, IReadOnlyList<Point> peaks, double scale, Color color,
         double xMin, double xMax, bool mirrored)
     {
+        var ink = new List<Rect>();
         var pen = new Pen(new SolidColorBrush(color), Compact ? 1 : 1.2);
         var zero = ty(0);
         var visible = new List<(double X, double Y)>();
@@ -143,7 +163,10 @@ public sealed class SpectrumChart : ChartBase
             if (p.X < xMin || p.X > xMax) continue;
             var y = p.Y * scale * (mirrored ? -1 : 1);
             visible.Add((p.X, y));
-            ctx.DrawLine(pen, new Point(tx(p.X), zero), new Point(tx(p.X), ty(y)));
+            var px0 = tx(p.X);
+            var py0 = ty(y);
+            ctx.DrawLine(pen, new Point(px0, zero), new Point(px0, py0));
+            ink.Add(new Rect(px0 - 1, Math.Min(zero, py0), 2, Math.Abs(zero - py0)));
         }
 
         // labels for the most intense visible peaks, skipping overlaps
@@ -157,8 +180,10 @@ public sealed class SpectrumChart : ChartBase
             var py = mirrored ? ty(y) + 2 : ty(y) - ft.Height - 2;
             var lx = Math.Clamp(px - ft.Width / 2, plot.X, plot.Right - ft.Width);
             ctx.DrawText(ft, new Point(lx, py));
+            ink.Add(new Rect(lx, py, ft.Width, ft.Height));
             placed.Add(px);
         }
+        return ink;
     }
 
     protected override IReadOnlyList<string>? GetTooltip(Point pos, Rect plot, Func<double, double> tx, Func<double, double> ty)

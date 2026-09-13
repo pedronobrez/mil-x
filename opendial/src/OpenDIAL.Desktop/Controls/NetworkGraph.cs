@@ -59,23 +59,110 @@ public sealed class NetworkGraph : Control, Charts.IChartRenderable
         if (change.Property == NetworkProperty) Layout();
     }
 
-    protected override void OnPointerPressed(PointerPressedEventArgs e)
+    private readonly GraphView _graph = new();
+    private Point? _dragFrom;
+    private int _draggedNode = -1;
+    private bool _dragged;
+
+    /// <summary>
+    /// The layout is computed in a space of its own; this is how it lands on the panel. The drawing
+    /// and the pointer have to agree on it, and for a long time they did not: clicks were tested
+    /// against the layout's own coordinates, so on any panel but one the size of the layout a node
+    /// could not be hit at all.
+    /// </summary>
+    private (Func<Point, Point> Map, double Scale) Fit()
     {
-        base.OnPointerPressed(e);
+        if (_positions.Count == 0) return (p => p, 1);
+        var minX = _positions.Values.Min(p => p.X);
+        var maxX = _positions.Values.Max(p => p.X);
+        var minY = _positions.Values.Min(p => p.Y);
+        var maxY = _positions.Values.Max(p => p.Y);
+        const double margin = 24;
+        var scaleX = (Bounds.Width - margin * 2) / Math.Max(1e-6, maxX - minX);
+        var scaleY = (Bounds.Height - margin * 2) / Math.Max(1e-6, maxY - minY);
+        var scale = Math.Max(1e-6, Math.Min(scaleX, scaleY));
+        return (p => new Point(margin + (p.X - minX) * scale, margin + (p.Y - minY) * scale), scale);
+    }
+
+    /// <summary>The node under a point of the panel, or null.</summary>
+    private NetworkNode? NodeAt(Point onScreen)
+    {
         var network = Network;
-        if (network is null || _positions.Count == 0) return;
-        var p = e.GetPosition(this);
+        if (network is null || _positions.Count == 0) return null;
+        var (Map, _) = Fit();
+        var p = _graph.ToDrawing(onScreen);
         NetworkNode? best = null;
         var bestDistance = 14.0;
         foreach (var node in network.Nodes)
         {
             if (!_positions.TryGetValue(node.FeatureId, out var pos)) continue;
-            var d = Math.Sqrt((pos.X - p.X) * (pos.X - p.X) + (pos.Y - p.Y) * (pos.Y - p.Y));
+            var at = Map(pos);
+            var d = Math.Sqrt((at.X - p.X) * (at.X - p.X) + (at.Y - p.Y) * (at.Y - p.Y));
             if (d < bestDistance) { bestDistance = d; best = node; }
         }
-        if (best is null) return;
-        SelectedFeatureId = best.FeatureId;
-        RaiseEvent(new NetworkNodeEventArgs(NodeClickedEvent, best));
+        return best;
+    }
+
+    protected override void OnPointerPressed(PointerPressedEventArgs e)
+    {
+        base.OnPointerPressed(e);
+        var here = e.GetPosition(this);
+        if (e.ClickCount == 2)
+        {
+            _graph.Reset();
+            InvalidateVisual();
+            return;
+        }
+        _dragFrom = here;
+        _dragged = false;
+        _draggedNode = NodeAt(here)?.FeatureId ?? -1;
+        e.Pointer.Capture(this);
+    }
+
+    protected override void OnPointerMoved(PointerEventArgs e)
+    {
+        base.OnPointerMoved(e);
+        if (_dragFrom is not { } from) return;
+        var here = e.GetPosition(this);
+        var delta = here - from;
+        if (!_dragged && Math.Abs(delta.X) + Math.Abs(delta.Y) < 3) return;
+        _dragged = true;
+        _dragFrom = here;
+        if (_draggedNode >= 0 && _positions.TryGetValue(_draggedNode, out var was))
+        {
+            // a node is dragged in the layout's own space, so the edges follow it
+            var (_, scale) = Fit();
+            var move = _graph.ToDrawing(delta);
+            _positions[_draggedNode] = new Point(was.X + move.X / scale, was.Y + move.Y / scale);
+        }
+        else
+        {
+            _graph.MoveBy(delta);
+        }
+        InvalidateVisual();
+    }
+
+    protected override void OnPointerReleased(PointerReleasedEventArgs e)
+    {
+        base.OnPointerReleased(e);
+        var wasDragging = _dragFrom is not null;
+        var moved = _dragged;
+        _dragFrom = null;
+        _draggedNode = -1;
+        _dragged = false;
+        e.Pointer.Capture(null);
+        if (!wasDragging || moved) return;
+        // a click that did not drag selects, as it always did
+        if (NodeAt(e.GetPosition(this)) is not { } node) return;
+        SelectedFeatureId = node.FeatureId;
+        RaiseEvent(new NetworkNodeEventArgs(NodeClickedEvent, node));
+    }
+
+    protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
+    {
+        base.OnPointerWheelChanged(e);
+        if (_graph.ZoomAbout(e.GetPosition(this), e.Delta.Y > 0 ? 1.2 : 1 / 1.2)) InvalidateVisual();
+        e.Handled = true;
     }
 
     /// <summary>Spring embedder, deterministic: same input, same picture.</summary>
@@ -172,15 +259,8 @@ public sealed class NetworkGraph : Control, Charts.IChartRenderable
         }
         if (_positions.Count == 0) Layout();
 
-        var minX = _positions.Values.Min(p => p.X);
-        var maxX = _positions.Values.Max(p => p.X);
-        var minY = _positions.Values.Min(p => p.Y);
-        var maxY = _positions.Values.Max(p => p.Y);
-        const double margin = 24;
-        var scaleX = (width - margin * 2) / Math.Max(1e-6, maxX - minX);
-        var scaleY = (height - margin * 2) / Math.Max(1e-6, maxY - minY);
-        var scale = Math.Min(scaleX, scaleY);
-        Point Map(Point p) => new(margin + (p.X - minX) * scale, margin + (p.Y - minY) * scale);
+        var (Map, _) = Fit();
+        using var _view = context.PushTransform(_graph.Matrix);
 
         // an edge has to read against the panel: the muted ink, thicker the more alike the spectra
         var edgeColour = ChartPalette.Muted(Dark);

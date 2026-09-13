@@ -181,6 +181,15 @@ feature down the side; the trees are the dendrograms. Clicking a row opens the f
 table. The colour scale, the labels, the trees and the values are in the chart's options — see
 [[chart-export]].
 
+**A red cell in a blank is not an abundance.** A standardised row says one thing only: how this
+injection compares with the rest of that row. A feature that is barely there in every injection
+still has a reddest cell, and it lands wherever the noise happened to be highest — often a solvent
+blank, where a gap-filled integral of nothing can sit a little above the samples. Hover any cell
+and the tooltip gives the number the colour was standardised from, under the z-score; that is what
+separates a red cell that means something from a red cell that means the row is empty. To see the
+rows as abundances instead, turn **Standardise rows** off — and expect the few abundant features to
+take the whole scale.
+
 ## K-means
 
 The injections partitioned into *k* groups by their whole profiles, without being told their

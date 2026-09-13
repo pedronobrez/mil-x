@@ -84,18 +84,47 @@ public class DockSnapTests
     }
 }
 
-/// <summary>The mirror's corner labels go to whichever side of the plot has the lower peaks under them.</summary>
+/// <summary>
+/// The mirror's corner labels go where the half they belong to has nothing drawn. What collides is
+/// not the peak but the m/z written above it, which is several times wider.
+/// </summary>
 public class SpectrumLabelTests
 {
+    private static readonly Rect Plot = new(50, 20, 500, 200);
+    private const double Width = 56;   // "measured" at ten point
+
+    private static double Place(params Rect[] ink) =>
+        OpenDIAL.Desktop.Controls.SpectrumChart.LabelX(Plot, Width, Plot.Y + 4, Plot.Y + 16, ink);
+
     [Fact]
-    public void The_label_takes_the_emptier_side()
+    public void An_empty_half_keeps_the_label_in_the_left_corner()
     {
-        var basePeakAtTheRightEdge = new[] { new Point(100, 5), new Point(313, 60), new Point(579, 100) };
-        Assert.True(OpenDIAL.Desktop.Controls.SpectrumChart.LeftIsEmptier(basePeakAtTheRightEdge, 50, 620));
-        var basePeakAtTheLeftEdge = new[] { new Point(60, 100), new Point(313, 60), new Point(579, 10) };
-        Assert.False(OpenDIAL.Desktop.Controls.SpectrumChart.LeftIsEmptier(basePeakAtTheLeftEdge, 50, 620));
-        // nothing at either edge: the right corner, where the label always was
-        Assert.False(OpenDIAL.Desktop.Controls.SpectrumChart.LeftIsEmptier(new[] { new Point(300, 100) }, 50, 620));
-        Assert.False(OpenDIAL.Desktop.Controls.SpectrumChart.LeftIsEmptier(null, 50, 620));
+        Assert.Equal(Plot.X + 6, Place(), 1);
+    }
+
+    [Fact]
+    public void A_label_in_the_left_corner_pushes_it_to_the_right_one()
+    {
+        // the m/z of a tall peak near the left edge, written above its apex
+        var mz = new Rect(62, 22, 46, 12);
+        var x = Place(mz);
+        Assert.Equal(Plot.Right - Width - 6, x, 1);
+    }
+
+    [Fact]
+    public void Both_corners_taken_puts_it_where_the_band_is_empty()
+    {
+        var left = new Rect(56, 22, 60, 12);
+        var right = new Rect(470, 22, 70, 12);
+        var x = Place(left, right);
+        Assert.True(x > left.Right && x + Width < right.X, $"the label at {x} overlaps {left} or {right}");
+    }
+
+    [Fact]
+    public void A_full_band_still_answers_with_a_place_inside_the_plot()
+    {
+        var everywhere = new Rect(Plot.X, 22, Plot.Width, 12);
+        var x = Place(everywhere);
+        Assert.InRange(x, Plot.X, Plot.Right - Width);
     }
 }

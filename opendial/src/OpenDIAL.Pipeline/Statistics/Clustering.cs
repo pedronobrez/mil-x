@@ -14,7 +14,13 @@ public sealed record HeatmapResult(
     double[,] Values,
     ClusterNode? RowTree,
     ClusterNode? ColumnTree,
-    string ValueName);
+    string ValueName,
+    // the same cells before the rows were standardised, and what those numbers are. A standardised
+    // row says only how a cell compares with the rest of its own row: a feature that is noise
+    // everywhere still has a reddest cell, and without the value behind it the picture invites the
+    // reader to believe it means abundance.
+    double[,]? Unstandardized = null,
+    string? UnstandardizedName = null);
 
 /// <summary>One k-means solution: which cluster each injection fell in, and how compact it is.</summary>
 public sealed record KMeansResult(int K, IReadOnlyList<int> Assignment, IReadOnlyList<string> Labels, IReadOnlyList<string> Groups, double WithinSumOfSquares);
@@ -130,6 +136,7 @@ public static class Clustering
         var n = table.SampleCount;
         var m = features.Count;
         var values = new double[m, n];
+        var plain = new double[m, n];
         for (var r = 0; r < m; r++)
         {
             var column = table.Column(features[r]);
@@ -139,6 +146,7 @@ public static class Clustering
             for (var c = 0; c < n; c++)
             {
                 var v = double.IsNaN(column[c]) ? mean : column[c];
+                plain[r, c] = v;
                 values[r, c] = standardizeRows ? (sd > 0 ? (v - mean) / sd : 0) : v;
             }
         }
@@ -171,9 +179,13 @@ public static class Clustering
             columnOrder = columnTree!.Leaves().Select(l => l.Index).ToList();
         }
         var ordered = new double[m, n];
+        var orderedPlain = new double[m, n];
         for (var r = 0; r < m; r++)
             for (var c = 0; c < n; c++)
+            {
                 ordered[r, c] = values[rowOrder[r], columnOrder[c]];
+                orderedPlain[r, c] = plain[rowOrder[r], columnOrder[c]];
+            }
         return new HeatmapResult(
             rowOrder.Select(r => rowLabels[r]).ToList(),
             rowOrder.Select(r => rowGroups[r]).ToList(),
@@ -181,7 +193,9 @@ public static class Clustering
             columnOrder.Select(c => columnLabels[c]).ToList(),
             columnOrder.Select(c => columnGroups[c]).ToList(),
             ordered, rowTree, columnTree,
-            standardizeRows ? "z-score of " + table.ValueName : table.ValueName);
+            standardizeRows ? "z-score of " + table.ValueName : table.ValueName,
+            standardizeRows ? orderedPlain : null,
+            standardizeRows ? table.ValueName : null);
     }
 
     /// <summary>

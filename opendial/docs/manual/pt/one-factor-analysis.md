@@ -185,6 +185,15 @@ feature ao longo do lado; as árvores são os dendrogramas. Clicar numa linha ab
 tabela de íons. A escala de cores, os rótulos, as árvores e os valores estão nas opções do gráfico
 — veja [[chart-export]].
 
+**Uma célula vermelha num branco não é uma abundância.** Uma linha padronizada diz uma coisa só:
+como esta injeção se compara com o resto daquela linha. Uma feature que quase não existe em injeção
+nenhuma ainda tem a sua célula mais vermelha, e ela cai onde o ruído por acaso foi mais alto — muitas
+vezes num branco de solvente, onde uma integral de nada, preenchida por falta de pico, fica um pouco
+acima das amostras. Paire sobre qualquer célula e a dica dá o número a partir do qual a cor foi
+padronizada, embaixo do z-score; é isso que separa um vermelho que significa alguma coisa de um
+vermelho que significa que a linha está vazia. Para ver as linhas como abundâncias, desligue
+**Standardise rows** — e espere que as poucas features abundantes tomem a escala inteira.
+
 ## K-means
 
 As injeções partidas em *k* grupos pelos seus perfis inteiros, sem que as suas classes sejam ditas

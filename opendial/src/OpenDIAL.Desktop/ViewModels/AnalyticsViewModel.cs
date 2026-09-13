@@ -126,6 +126,7 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     [ObservableProperty] private string _mzTo = string.Empty;
     [ObservableProperty] private string _rtFrom = string.Empty;
     [ObservableProperty] private string _rtTo = string.Empty;
+    [ObservableProperty] private string _snFrom = string.Empty;
     [ObservableProperty] private bool _msmsOnly;
     [ObservableProperty] private bool _molecularIonOnly;
     [ObservableProperty] private bool _manuallyModifiedOnly;
@@ -139,6 +140,11 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     [ObservableProperty] private bool _curationDirty;
     [ObservableProperty] private bool _peaksEdited;
     /// <summary>The ion table is showing in its own window rather than beside the evidence.</summary>
+    /// <summary>The evidence area shows two sets of tabs side by side, each on its own tab.</summary>
+    [ObservableProperty] private bool _evidenceSplit;
+    [ObservableProperty] private int _evidenceTab;
+    [ObservableProperty] private int _secondEvidenceTab = 6;   // Statistics, the usual companion to the mirror
+
     [ObservableProperty] private bool _ionTableDetached;
     /// <summary>The torn-off window is being dragged over the place the table docks into; the place is shown.</summary>
     [ObservableProperty] private bool _ionTableDockPreview;
@@ -339,6 +345,7 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     partial void OnMzToChanged(string value) => RebuildRows();
     partial void OnRtFromChanged(string value) => RebuildRows();
     partial void OnRtToChanged(string value) => RebuildRows();
+    partial void OnSnFromChanged(string value) => RebuildRows();
     partial void OnMsmsOnlyChanged(bool value) => RebuildRows();
     partial void OnMolecularIonOnlyChanged(bool value) => RebuildRows();
     partial void OnManuallyModifiedOnlyChanged(bool value) => RebuildRows();
@@ -361,6 +368,7 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
         var mzHi = ParseBound(MzTo);
         var rtLo = ParseBound(RtFrom);
         var rtHi = ParseBound(RtTo);
+        var snLo = ParseBound(SnFrom);
 
         bool Matches(SpotRowViewModel r)
         {
@@ -368,6 +376,7 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
             if (mzHi is not null && r.Mz > mzHi) return false;
             if (rtLo is not null && r.Rt < rtLo) return false;
             if (rtHi is not null && r.Rt > rtHi) return false;
+            if (snLo is not null && r.SignalToNoise < snLo) return false;
             if (MsmsOnly && !r.MsmsAssigned) return false;
             if (MolecularIonOnly && !r.IsMolecularIon) return false;
             if (ManuallyModifiedOnly && !r.IsManuallyEdited) return false;
@@ -792,34 +801,60 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
         NextSpot();
     }
 
+    /// <summary>
+    /// The rows as the table is showing them, which is not the order they were built in: the reviewer
+    /// sorts by S/N, by score, by class, and then expects Confirm ▸ to walk down the screen. The view
+    /// hands this over; with no view — the headless tests, a script — it is the collection's own order.
+    /// </summary>
+    internal Func<IReadOnlyList<SpotRowViewModel>>? RowsAsShown { get; set; }
+
+    private IReadOnlyList<SpotRowViewModel> RowsInOrder()
+    {
+        var shown = RowsAsShown?.Invoke();
+        // the view's order is only trusted while it holds the same rows as the filter
+        return shown is { Count: > 0 } && shown.Count == IonRows.Count ? shown : IonRows;
+    }
+
     [RelayCommand]
     private void NextSpot()
     {
-        if (IonRows.Count == 0) return;
-        var i = SelectedRow is null ? -1 : IonRows.IndexOf(SelectedRow);
-        SelectedRow = IonRows[Math.Min(IonRows.Count - 1, i + 1)];
+        var rows = RowsInOrder();
+        if (rows.Count == 0) return;
+        var i = SelectedRow is null ? -1 : IndexOf(rows, SelectedRow);
+        SelectedRow = rows[Math.Min(rows.Count - 1, i + 1)];
     }
 
     [RelayCommand]
     private void PreviousSpot()
     {
-        if (IonRows.Count == 0) return;
-        var i = SelectedRow is null ? IonRows.Count : IonRows.IndexOf(SelectedRow);
-        SelectedRow = IonRows[Math.Max(0, i - 1)];
+        var rows = RowsInOrder();
+        if (rows.Count == 0) return;
+        var i = SelectedRow is null ? rows.Count : IndexOf(rows, SelectedRow);
+        SelectedRow = rows[Math.Max(0, i - 1)];
     }
 
     /// <summary>Jumps to the next feature nobody has looked at, skipping what is already decided.</summary>
     [RelayCommand]
     private void NextUnreviewed()
     {
-        if (IonRows.Count == 0) return;
-        var start = SelectedRow is null ? -1 : IonRows.IndexOf(SelectedRow);
-        for (var k = 1; k <= IonRows.Count; k++)
+        var rows = RowsInOrder();
+        if (rows.Count == 0) return;
+        var start = SelectedRow is null ? -1 : IndexOf(rows, SelectedRow);
+        for (var k = 1; k <= rows.Count; k++)
         {
-            var row = IonRows[(start + k + IonRows.Count) % IonRows.Count];
+            var row = rows[(start + k + rows.Count) % rows.Count];
             if (!row.Reviewed) { SelectedRow = row; return; }
         }
         Summary = "Every feature in the current filter has been reviewed.";
+    }
+
+    private static int IndexOf(IReadOnlyList<SpotRowViewModel> rows, SpotRowViewModel row)
+    {
+        for (var i = 0; i < rows.Count; i++)
+        {
+            if (ReferenceEquals(rows[i], row)) return i;
+        }
+        return -1;
     }
 
     /// <summary>Replaces the automatic annotation with the candidate the reviewer picked.</summary>
@@ -847,7 +882,7 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     [RelayCommand]
     private void ConfirmAllShown()
     {
-        foreach (var r in IonRows)
+        foreach (var r in RowsInOrder())
         {
             r.SetTag(PeakSpotTagKind.Misannotation, false);
             r.SetTag(PeakSpotTagKind.Confirmed, true);
@@ -856,10 +891,23 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
         AfterCuration();
     }
 
+    /// <summary>The other half of the pair: a class that turned out to be noise is rejected in one go.</summary>
+    [RelayCommand]
+    private void RejectAllShown()
+    {
+        foreach (var r in RowsInOrder())
+        {
+            r.SetTag(PeakSpotTagKind.Confirmed, false);
+            r.SetTag(PeakSpotTagKind.Misannotation, true);
+        }
+        Summary = $"{IonRows.Count} feature(s) tagged Misannotation.";
+        AfterCuration();
+    }
+
     [RelayCommand]
     private void ClearAllShown()
     {
-        foreach (var r in IonRows) r.ClearTags();
+        foreach (var r in RowsInOrder()) r.ClearTags();
         Summary = $"Tags removed from {IonRows.Count} feature(s).";
         AfterCuration();
     }

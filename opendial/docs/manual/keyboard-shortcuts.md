@@ -56,14 +56,30 @@ The same gestures in every chart — chromatograms, spectra, scatter plots:
 | Gesture | Action |
 | --- | --- |
 | drag | zoom the X axis to the dragged range |
-| wheel | zoom in and out around the pointer |
+| wheel, two fingers up and down | zoom in and out around the pointer |
+| two fingers sideways, or `⇧` with the wheel | walk along the axis, the way every scroller in the application moves |
+| `⌘` with the wheel (`Ctrl` elsewhere) | stretch the intensity axis, which is how a peak that is one per cent of the base peak beside it becomes visible |
 | right-drag | pan |
-| double-click | fit everything again (**Overview** in the Explorer does the same) |
+| double-click | fit everything again, intensity included (**Overview** in the Explorer does the same) |
 | `⇧`-drag | select a range: a retention-time range in the Explorer, an integration window in a peak panel |
 | click | select the nearest scan (Explorer), sample (peak grid, trend) or feature (feature map, S-plot, loadings) |
 | hover | a tooltip with the values under the pointer |
 
-In the Explorer, **Select range** makes a plain drag select instead of zoom.
+In the Explorer, **Select range** makes a plain drag select instead of zoom. A laptop with no mouse
+needs nothing else: two fingers sideways move along the run, two fingers up and down zoom, and
+`⌘` with two fingers brings the small peaks up.
+
+## The two graphs
+
+The molecular network and the pathway map are drawn to fit, and then are yours to go into.
+
+| Gesture | Action |
+| --- | --- |
+| wheel | zoom about the pointer |
+| drag the background | move the drawing |
+| drag a node (network) | pull it somewhere clearer; its edges follow |
+| click | select the feature, or the reaction under the pointer |
+| double-click | lay it flat again |
 
 ## The manual
 

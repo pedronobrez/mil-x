@@ -36,6 +36,10 @@ sinalizada para voltar.
 unreviewed** (`⌘⇧N`), que salta o que já está decidido, são tudo o que uma passagem rápida
 precisa.
 
+**Seguinte** é a seguinte *na tela*. Ordene a tabela de íons por S/N, por pontuação, por classe, e
+o Confirm ▸ desce a lista naquela ordem; as setas e o Next unreviewed seguem a mesma. Os ids das
+features são um rótulo, não um caminho pelo trabalho.
+
 ## Revisada
 
 Uma feature conta como **revisada** quando carrega qualquer marcação, ou quando o revisor a marcou

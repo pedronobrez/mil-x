@@ -23,7 +23,7 @@ as duas. `⌘2` mostra-a, e um projeto processado abre nela.
 - **A identidade** — o nome, id, tempo de retenção, m/z, aduto, fórmula, classe, pontuação e preenchimento da feature selecionada, com uma etiqueta para o seu nível de anotação e outra que diz **hand-picked** quando o revisor escolheu o nome.
 - **O veredito** — as cinco marcações, Confirm e Reject, e uma caixa de comentário; veja [[review-tags]].
 - **O pico em toda amostra** — o cromatograma da feature em cada injeção, sempre na tela, com a faixa de integração acima; veja [[evidence-panels#Peaks]] e [[reintegration]].
-- **As abas de evidência** abaixo dele — MS/MS primeiro, depois Isotopes, Candidates, Abundance, Feature map, Samples, Statistics, Trend; veja [[evidence-panels]]. Um divisor entre os dois define quanto da altura cada um ocupa.
+- **As abas de evidência** abaixo dele — MS/MS primeiro, depois Isotopes, Candidates, Abundance, Feature map, Samples, Statistics, Trend; veja [[evidence-panels]]. Um divisor entre os dois define quanto da altura cada um ocupa, e **Split evidence** na barra de ferramentas põe um segundo conjunto ao lado do primeiro.
 
 Um resultado abre nas três coisas de que um revisor precisa para confirmar um analito: a tabela de
 íons, o pico em toda amostra e o espectro de produto contra a biblioteca. Nada precisa ser aberto
@@ -38,6 +38,7 @@ com um clique antes.
 | **Export to OpenQuant…** | as features listadas como uma lista de componentes do OpenQuant; veja [[openquant]] |
 | **Export reviewed table…** | as features listadas com a revisão em colunas; veja [[exports]] |
 | **Open output folder** | a pasta de resultados no Finder |
+| **Split evidence** | mostra um segundo conjunto de abas de evidência ao lado do primeiro, cada um na sua aba — o espelho ao lado das estatísticas da classe, os candidatos ao lado do mapa de features. Os dois seguem a feature selecionada; desligue e o conjunto único volta a ocupar toda a largura |
 | **Save review** | grava as marcações em `<alignment>_tags.xml` — o arquivo que o MS-DIAL lê — e o resto da curadoria ao lado; um ponto no botão significa que há algo por salvar |
 
 O resumo à direita diz `2235 aligned spots across 8 sample(s) · 1804 annotated`, e, depois de uma
@@ -52,6 +53,7 @@ Os filtros estreitam a tabela de íons e tudo a jusante dela — o mapa de featu
 | --- | --- |
 | texto livre | nome, classe (ontologia), aduto, fórmula, comentário, um id de feature exato, ou um m/z escrito com quatro decimais |
 | **m/z** de–a, **RT** de–a | a região do mapa que se está percorrendo |
+| **S/N ≥** | o sinal-ruído médio mínimo; o jeito mais rápido de pôr de lado as features mais fracas sem mexer no corte de altura da corrida |
 | anotação | **All**, **Confident**, **Suggested** (um nome de pontuação baixa ou só por m/z), **Annotated** (qualquer nome), **Unknown** |
 | classe | uma classe de lipídio ou ontologia de cada vez, que é como uma passagem classe a classe se faz |
 | estado da revisão | **All**, **Untagged**, **Reviewed**, **Not reviewed**, ou uma marcação específica |

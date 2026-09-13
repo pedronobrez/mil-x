@@ -19,6 +19,7 @@
             <Button Classes="tool" Content="Next unreviewed" Command="{Binding NextUnreviewedCommand}" ToolTip.Tip="Jump to the next feature with no verdict (Alt+N)" />
             <Rectangle Classes="vsep" />
             <Button Classes="tool" Content="Confirm all shown" Command="{Binding ConfirmAllShownCommand}" ToolTip.Tip="Tag every feature the filter is showing as Confirmed" />
+            <Button Classes="tool" Content="Reject all shown" Command="{Binding RejectAllShownCommand}" ToolTip.Tip="Tag every feature the filter is showing as Misannotation" />
             <Button Classes="tool" Content="Clear all shown" Command="{Binding ClearAllShownCommand}" />
             <Rectangle Classes="vsep" />
             <Button x:Name="ToggleIonTableWindow" Classes="tool" Command="{Binding ToggleIonTableWindowCommand}"
