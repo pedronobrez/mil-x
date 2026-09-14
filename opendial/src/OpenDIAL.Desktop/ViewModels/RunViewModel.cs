@@ -45,6 +45,8 @@ public sealed partial class RunViewModel : ViewModelBase
         LastError = null;
         LastResult = null;
         LogLines.Clear();
+        NativeReads = 0;
+        Conversions = 0;
         StatusText = "Running…";
 
         var progress = new UiProgress(this);
@@ -83,8 +85,19 @@ public sealed partial class RunViewModel : ViewModelBase
         }
     }
 
+    /// <summary>
+    /// How many files the raw-file plugins opened themselves, and how many went through the vendor
+    /// bridge. Counted as the lines arrive rather than read back out of the log: the log is a rolling
+    /// window of the last few thousand lines, and a run of eight minutes pushes its own beginning out
+    /// of it — which is how a run that read every .wiff natively came to report that it had read none.
+    /// </summary>
+    [ObservableProperty] private int _nativeReads;
+    [ObservableProperty] private int _conversions;
+
     private void Append(string line)
     {
+        if (line.Contains("read natively", StringComparison.Ordinal)) NativeReads++;
+        else if (line.Contains("Converting vendor format", StringComparison.Ordinal)) Conversions++;
         LogLines.Add($"{DateTime.Now:HH:mm:ss}  {line}");
         if (LogLines.Count > MaxLogLines)
         {

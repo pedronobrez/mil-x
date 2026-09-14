@@ -162,10 +162,10 @@ public sealed class UiProbe
                     ["file"] = vm.Run.CurrentFile,
                     ["error"] = vm.Run.LastError,
                     ["log"] = vm.Run.LogLines.TakeLast(12).ToList(),
-                    // how many files the raw-file plugin opened itself, which is the one fact about
-                    // the bundle the log tail cannot keep once the run is long
-                    ["nativeReads"] = vm.Run.LogLines.Count(l => l.Contains("read natively", StringComparison.Ordinal)),
-                    ["conversions"] = vm.Run.LogLines.Count(l => l.Contains("Converting vendor format", StringComparison.Ordinal)),
+                    // counted as the run goes, not scanned out of the log: the log keeps only its
+                    // last few thousand lines, and a long run loses its own beginning
+                    ["nativeReads"] = vm.Run.NativeReads,
+                    ["conversions"] = vm.Run.Conversions,
                 },
                 ["review"] = new Dictionary<string, object?>
                 {
