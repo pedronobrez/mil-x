@@ -28,6 +28,10 @@ A versão atual. Segue o MS-DIAL 5.5.260817.
 
 - O espelho mantém a largura quando a área de evidência está dividida: abaixo da largura em que os dois cabem, a tabela de scores se afasta.
 
+**Corrigido**
+
+- Uma corrida de oito arquivos informava que não lera nenhum deles nativamente, enquanto o próprio log mostrava o leitor SCIEX em todos. A contagem era varrida do log da corrida, que guarda só as últimas milhares de linhas, e oito minutos de progresso de alinhamento empurraram o começo da corrida para fora dele. Agora a corrida conta enquanto as linhas chegam.
+
 ## 0.5.0 — setembro de 2026
 
 Segue o MS-DIAL 5.5.260817.

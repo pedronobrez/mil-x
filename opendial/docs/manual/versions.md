@@ -27,6 +27,10 @@ The current version. It tracks MS-DIAL 5.5.260817.
 
 - The mirror keeps the width when the evidence area is split: below a pane width where both fit, the match scores step aside.
 
+**Fixed**
+
+- A run of eight files reported that it had read none of them natively, while its own log showed the SCIEX reader on every one. The count was scanned out of the run log, which keeps only its last few thousand lines, and eight minutes of alignment progress pushed the beginning of the run out of it. The run counts as the lines arrive now.
+
 ## 0.5.0 — September 2026
 
 It tracks MS-DIAL 5.5.260817.
