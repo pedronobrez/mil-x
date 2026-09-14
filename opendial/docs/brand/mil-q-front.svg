@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img">
+  <defs>
+    <clipPath id="body"><path d="M32 13 C41 13 47.5 18.5 47.5 26.5 C47.5 34 45 40.5 41 44.5 C38 47.5 35 49 32 49 C29 49 26 47.5 23 44.5 C19 40.5 16.5 34 16.5 26.5 C16.5 18.5 23 13 32 13 Z"/></clipPath>
+    <mask id="knock" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">
+      <rect width="64" height="64" fill="#fff"/>
+      <ellipse cx="23" cy="19" rx="8" ry="5.5" transform="rotate(-20 23 19)" fill="#000" clip-path="url(#body)"/>
+      <circle cx="25.5" cy="29" r="2.3" fill="#000"/>
+      <circle cx="38.5" cy="29" r="2.3" fill="#000"/>
+      <rect x="24.5" y="37" width="15" height="10" rx="5" fill="#000"/>
+      <ellipse cx="28.7" cy="41.5" rx="1.4" ry="1.9" fill="#fff"/>
+      <ellipse cx="35.3" cy="41.5" rx="1.4" ry="1.9" fill="#fff"/>
+    </mask>
+  </defs>
+  <g transform="translate(32,32) scale(0.74) translate(-32,-32)">
+    <g mask="url(#knock)" fill="#10685C">
+      <ellipse cx="13" cy="26" rx="8.5" ry="5" transform="rotate(-20 13 26)"/>
+      <ellipse cx="51" cy="26" rx="8.5" ry="5" transform="rotate(20 51 26)"/>
+      <path d="M25 15 C21 10 17 9 14 11 C18 12 21 14 23.5 17.5 Z"/>
+      <path d="M39 15 C43 10 47 9 50 11 C46 12 43 14 40.5 17.5 Z"/>
+      <path d="M32 13 C41 13 47.5 18.5 47.5 26.5 C47.5 34 45 40.5 41 44.5 C38 47.5 35 49 32 49 C29 49 26 47.5 23 44.5 C19 40.5 16.5 34 16.5 26.5 C16.5 18.5 23 13 32 13 Z"/>
+    </g>
+  </g>
+  <circle cx="32" cy="32" r="29.5" fill="none" stroke="#10685C" stroke-width="3"/>
+</svg>
