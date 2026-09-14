@@ -510,6 +510,23 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         }
     }
 
+    /// <summary>
+    /// Links the same batch run in the other polarity. The compounds are paired on the neutral
+    /// molecule, so a phospholipid seen in positive and an acid seen in negative stop being two
+    /// projects joined by hand in a spreadsheet.
+    /// </summary>
+    [RelayCommand]
+    private async Task LinkPolarityAsync()
+    {
+        if (!Analytics.HasResults) { Status = "Open a result before linking the other polarity."; return; }
+        if (Analytics.HasPolarityLink) { Analytics.UnlinkPolarity(); Status = "The other polarity is no longer linked."; return; }
+        var files = await _dialogs.PickFilesAsync("Alignment of the other polarity", new[] { "*.arf2" }, allowMultiple: false, OutputFolder);
+        var path = files?.FirstOrDefault();
+        if (path is null) return;
+        Status = "Pairing the polarities…";
+        Status = await Analytics.LinkPolarityAsync(path);
+    }
+
     [RelayCommand]
     private async Task ExportOpenQuantAsync()
     {

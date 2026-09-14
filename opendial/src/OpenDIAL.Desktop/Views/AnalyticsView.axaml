@@ -31,6 +31,10 @@
           <ToggleButton x:Name="SplitEvidence" Classes="tool" Content="Split evidence" IsChecked="{Binding EvidenceSplit}" IsEnabled="{Binding HasResults}"
                         ToolTip.Tip="Show two sets of evidence tabs side by side — the mirror beside the class statistics, say — each on its own tab" />
           <Rectangle Classes="vsep" />
+          <Button x:Name="LinkPolarity" Classes="tool" Command="{Binding $parent[Window].DataContext.LinkPolarityCommand}" IsEnabled="{Binding HasResults}"
+                  Content="{Binding HasPolarityLink, Converter={x:Static views:Converters.PolarityLinkLabel}}"
+                  ToolTip.Tip="Pair this result with the same batch run in the other polarity: the compounds are matched on the neutral molecule, so what only ionises the other way stops being a separate project" />
+          <Rectangle Classes="vsep" />
           <Button x:Name="SaveReview" Classes="tool" Command="{Binding SaveCurationCommand}" IsEnabled="{Binding HasResults}"
                   ToolTip.Tip="Write the review to &lt;alignment&gt;_tags.xml, the same file MS-DIAL reads and writes">
             <StackPanel Orientation="Horizontal" Spacing="6">
@@ -38,6 +42,9 @@
               <Ellipse Width="7" Height="7" Fill="{DynamicResource OdAccent}" VerticalAlignment="Center" IsVisible="{Binding CurationDirty}" />
             </StackPanel>
           </Button>
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" IsVisible="{Binding HasPolarityLink}" Margin="8,0,0,0">
+          <Border Classes="chip" ToolTip.Tip="{Binding PolaritySummary}"><TextBlock Text="± both polarities" /></Border>
         </StackPanel>
         <TextBlock Classes="muted" Text="{Binding Summary}" VerticalAlignment="Center" Margin="12,0,4,0" TextAlignment="Right" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Summary}" />
       </DockPanel>
@@ -72,6 +79,8 @@
           <ComboBox Classes="compact" ItemsSource="{x:Static vm:AnalyticsViewModel.AnnotationFilters}" SelectedItem="{Binding AnnotationFilter}" Width="120" Margin="6,0,0,0" ToolTip.Tip="Annotation confidence" />
           <ComboBox Classes="compact" ItemsSource="{Binding Ontologies}" SelectedItem="{Binding OntologyFilter}" Width="140" ToolTip.Tip="Lipid class / ontology" />
           <ComboBox Classes="compact" ItemsSource="{x:Static vm:AnalyticsViewModel.TagFilters}" SelectedItem="{Binding TagFilter}" Width="170" ToolTip.Tip="Review state" />
+          <ComboBox Classes="compact" ItemsSource="{x:Static vm:AnalyticsViewModel.PolarityFilters}" SelectedItem="{Binding PolarityFilter}" Width="150"
+                    IsEnabled="{Binding HasPolarityLink}" ToolTip.Tip="Whether the compound was also seen in the other polarity of this batch" />
           <CheckBox Classes="compact" Content="MS/MS only" IsChecked="{Binding MsmsOnly}" Margin="4,0,0,0" />
           <CheckBox Classes="compact" Content="Molecular ion" IsChecked="{Binding MolecularIonOnly}" ToolTip.Tip="Drop the features the run marked as isotopes of another" />
           <CheckBox Classes="compact" Content="One row per compound" IsChecked="{Binding RepresentativesOnly}" ToolTip.Tip="Hide the adducts, isotopes, in-source fragments and dimers gathered behind the ion that represents each compound" />

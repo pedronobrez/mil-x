@@ -22,12 +22,16 @@ every tag lands on.
 | **Annotation** | the name — the reviewer's when one was hand-picked, otherwise the run's; `Unknown  m/z 760.5851` when there is none |
 | **Level** | confident, suggested, m/z only, or blank; see [[concepts#Annotation levels]] |
 | **Adduct** | `[M+H]+`, `[M+Na]+`, … |
+| **Neutral** | the neutral molecule behind the ion, from its adduct; blank when the adduct is one the table does not know. It is what identifies a compound rather than an ion — see [[polarity-merge]] |
+| **Pol** | `±` when both polarities of the batch saw this compound, `+` or `−` when only this run did; blank until a polarity is linked |
 | **Class** | the ontology MS-DIAL gave the compound, which for a lipid is its class |
 | **Fill %** | the share of injections in which the peak was detected rather than gap-filled |
 | **MS/MS** | `MS/MS` when at least one injection carried a product spectrum |
 | **S/N** | the mean signal-to-noise |
 | **Blank %** | the mean height in the injections typed Blank against the mean in the samples; empty when the batch has no blank |
 | **Ion of** | what this row is, when it is not a compound of its own: the adduct, isotope, in-source fragment or dimer of another feature, and of which — see [[annotation#One compound, several ions]] |
+| **Other polarity** | what the other run of the batch saw here: its name, m/z, retention time and the correlation between the two height profiles |
+| **Quantify** | which polarity carries the number for this compound — the one that measured it better |
 | **Score** | the total match score of the reported annotation |
 | **Height** | the mean apex height |
 | **Iso** | `M` for a monoisotopic ion, `M+1`, `M+2` for a feature the run marked as an isotope of another; blank when it did not decide |

@@ -178,6 +178,10 @@ public sealed class UiProbe
                     ["peaksEdited"] = analytics.PeaksEdited,
                     ["curationDirty"] = analytics.CurationDirty,
                     ["groups"] = analytics.GroupSummary,
+                    ["polarityLinked"] = analytics.HasPolarityLink,
+                    ["polarity"] = analytics.PolaritySummary,
+                    ["polarityFilter"] = analytics.PolarityFilter,
+                    ["seenInBoth"] = analytics.IonRows.Count(r => r.SeenInBoth),
                     ["canUndo"] = analytics.CanUndo,
                     ["filter"] = analytics.FilterText,
                     ["integrationFrom"] = analytics.IntegrationFrom,
@@ -196,6 +200,10 @@ public sealed class UiProbe
                     ["fill"] = Math.Round(selected.Fill, 1),
                     ["manuallyQuantified"] = selected.Spot.IsManuallyQuantified,
                     ["tags"] = selected.TagText,
+                    ["neutral"] = selected.NeutralText,
+                    ["polarity"] = selected.PolarityText,
+                    ["otherPolarity"] = selected.PartnerText,
+                    ["quantify"] = selected.QuantifyText,
                     ["samples"] = selected.Spot.SamplePeaks.Select(p => new Dictionary<string, object?>
                     {
                         ["file"] = p.FileName,

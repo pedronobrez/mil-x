@@ -22,12 +22,16 @@ mostra e onde toda marcação cai.
 | **Annotation** | o nome — o do revisor quando um foi escolhido à mão, senão o da corrida; `Unknown  m/z 760.5851` quando não há nenhum |
 | **Level** | confident, suggested, m/z only, ou vazio; veja [[concepts#Níveis de anotação]] |
 | **Adduct** | `[M+H]+`, `[M+Na]+`, … |
+| **Neutral** | a molécula neutra por trás do íon, a partir do seu aduto; vazio quando o aduto é um que a tabela não conhece. É ela que identifica um composto, e não um íon — veja [[polarity-merge]] |
+| **Pol** | `±` quando as duas polaridades do lote viram este composto, `+` ou `−` quando só esta corrida viu; vazio até uma polaridade ser vinculada |
 | **Class** | a ontologia que o MS-DIAL deu ao composto, que para um lipídio é a sua classe |
 | **Fill %** | a fração de injeções em que o pico foi detectado em vez de preenchido |
 | **MS/MS** | `MS/MS` quando pelo menos uma injeção trazia um espectro de produto |
 | **S/N** | o sinal-ruído médio |
 | **Blank %** | a altura média nas injeções do tipo Blank contra a média nas amostras; vazio quando o lote não tem branco |
 | **Ion of** | o que esta linha é, quando não é um composto por si: o aduto, isótopo, fragmento de fonte ou dímero de outra feature, e de qual — veja [[annotation#Um composto, vários íons]] |
+| **Other polarity** | o que a outra corrida do lote viu aqui: o seu nome, m/z, tempo de retenção e a correlação entre os dois perfis de altura |
+| **Quantify** | qual polaridade carrega o número deste composto — a que o mediu melhor |
 | **Score** | a pontuação total de casamento da anotação reportada |
 | **Height** | a altura média do ápice |
 | **Iso** | `M` para um íon monoisotópico, `M+1`, `M+2` para uma feature que a corrida marcou como isótopo de outra; vazio quando não decidiu |

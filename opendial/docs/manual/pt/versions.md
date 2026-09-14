@@ -11,9 +11,28 @@ A versão mostrada em **Help ▸ About OpenDIAL** e na sonda da janela é a cari
 `opendial/Directory.Build.props`. Esta página nomeia-a, e um teste falha a construção quando não
 nomeia.
 
-## 0.6.0 — setembro de 2026
+## 0.7.0 — setembro de 2026
 
 A versão atual. Segue o MS-DIAL 5.5.260817.
+
+**Novo**
+
+- **As duas polaridades de um lote, reconciliadas.** **Link polarity…** na barra da revisão
+  emparelha o resultado na tela com o mesmo lote corrido do outro modo. Os compostos são casados
+  pela molécula neutra — a mesma molécula é `[M+H]+` aqui e `[M-H]-` lá — dentro de 0,01 Da, dentro
+  de 0,1 minuto, e só quando os seus perfis de altura ao longo das injeções concordam, o que é um
+  sinal forte porque as duas corridas são as mesmas amostras. A tabela de íons ganha **Neutral**,
+  **Pol**, **Other polarity** e **Quantify**, e a barra de filtros uma caixa de polaridade. As
+  alturas nunca são somadas entre as polaridades: o lado que mediu melhor um composto quantifica-o
+  e o outro confirma-o. O emparelhamento é gravado ao lado do alinhamento como
+  `_polarity-pairs.json` e um resultado vinculado abre vinculado. Veja [[polarity-merge]].
+- **A massa neutra na tabela de íons**, preenchida a partir do aduto haja ou não polaridade
+  vinculada. A tabela de adutos de onde vem conhece os íons de carga dupla e os dímeros, não só os
+  de carga simples.
+
+## 0.6.0 — setembro de 2026
+
+Segue o MS-DIAL 5.5.260817.
 
 **Novo**
 

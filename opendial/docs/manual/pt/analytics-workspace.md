@@ -39,6 +39,7 @@ com um clique antes.
 | **Export reviewed table…** | as features listadas com a revisão em colunas; veja [[exports]] |
 | **Open output folder** | a pasta de resultados no Finder |
 | **Run report…** | escreve a corrida — contagens, biblioteca, injeções, método, log e as figuras da tela — num arquivo HTML com as figuras em vetor embutidas; abra e imprima em PDF. Veja [[exports#O relatório da corrida]] |
+| **Link polarity…** / **Unlink polarity** | emparelha este resultado com o mesmo lote corrido na outra polaridade, composto a composto, ou esquece o emparelhamento; veja [[polarity-merge]] |
 | **Split evidence** | mostra um segundo conjunto de abas de evidência ao lado do primeiro, cada um na sua aba — o espelho ao lado das estatísticas da classe, os candidatos ao lado do mapa de features. Os dois seguem a feature selecionada; desligue e o conjunto único volta a ocupar toda a largura |
 | **Save review** | grava as marcações em `<alignment>_tags.xml` — o arquivo que o MS-DIAL lê — e o resto da curadoria ao lado; um ponto no botão significa que há algo por salvar |
 
@@ -60,6 +61,7 @@ Os filtros estreitam a tabela de íons e tudo a jusante dela — o mapa de featu
 | anotação | **All**, **Confident**, **Suggested** (um nome de pontuação baixa ou só por m/z), **Annotated** (qualquer nome), **Unknown** |
 | classe | uma classe de lipídio ou ontologia de cada vez, que é como uma passagem classe a classe se faz |
 | estado da revisão | **All**, **Untagged**, **Reviewed**, **Not reviewed**, ou uma marcação específica |
+| polaridade | **All**, **Seen in both** ou **Only in this polarity**; ativa depois de vincular uma polaridade — veja [[polarity-merge]] |
 | **MS/MS only** | descarta as features anotadas só pela massa |
 | **Molecular ion** | descarta as features que a corrida marcou como isótopo de outra |
 | **Hand-edited** | só o que um revisor alterou, na anotação ou na integração |

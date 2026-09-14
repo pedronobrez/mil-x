@@ -17,6 +17,9 @@ public static class Converters
     /// <summary>Label of the tear-off button, which reads as the action it will take.</summary>
     public static readonly IValueConverter DetachLabel = new FuncValueConverter<bool, string>(v => v ? "Dock table" : "Open in a window");
 
+    /// <summary>Label of the polarity button, which reads as the action it will take.</summary>
+    public static readonly IValueConverter PolarityLinkLabel = new FuncValueConverter<bool, string>(v => v ? "Unlink polarity" : "Link polarity…");
+
     public static readonly IValueConverter IsNotNull = new FuncValueConverter<object?, bool>(v => v is not null);
     public static readonly IValueConverter IsNull = new FuncValueConverter<object?, bool>(v => v is null);
     public static readonly IValueConverter NotEmpty = new FuncValueConverter<string?, bool>(v => !string.IsNullOrEmpty(v));

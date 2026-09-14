@@ -10,9 +10,28 @@ summary: What each version of OpenDIAL brought; the notes are updated with every
 The version shown in **Help ▸ About OpenDIAL** and in the window's probe is the one stamped in
 `opendial/Directory.Build.props`. This page names it, and a test fails the build when it does not.
 
-## 0.6.0 — September 2026
+## 0.7.0 — September 2026
 
 The current version. It tracks MS-DIAL 5.5.260817.
+
+**New**
+
+- **The two polarities of one batch, reconciled.** **Link polarity…** in the review toolbar pairs
+  the result on screen with the same batch run the other way. Compounds are matched on the neutral
+  molecule — the same molecule is `[M+H]+` here and `[M-H]-` there — within 0.01 Da, within 0.1
+  minute, and only when their height profiles across the injections agree, which is a strong signal
+  because the two runs are the same samples. The ion table gains **Neutral**, **Pol**, **Other
+  polarity** and **Quantify**, and the filter band a polarity box. Heights are never added across
+  the polarities: the side that measured a compound better quantifies it and the other confirms it.
+  The pairing is written beside the alignment as `_polarity-pairs.json` and a linked result opens
+  linked. See [[polarity-merge]].
+- **The neutral mass in the ion table**, filled in from the adduct whether or not a polarity is
+  linked. The adduct table it comes from knows the doubly charged ions and the dimers, not only the
+  singly charged ones.
+
+## 0.6.0 — September 2026
+
+Tracks MS-DIAL 5.5.260817.
 
 **New**
 

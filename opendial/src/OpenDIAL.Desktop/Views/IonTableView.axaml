@@ -55,12 +55,16 @@
           <DataGridTextColumn Header="Annotation" Binding="{Binding DisplayName}" Width="240" MinWidth="150" />
           <DataGridTextColumn Header="Level" Binding="{Binding Level}" Width="80" />
           <DataGridTextColumn Header="Adduct" Binding="{Binding Adduct}" Width="90" />
+          <DataGridTextColumn Header="Neutral" Binding="{Binding NeutralText}" Width="90" />
+          <DataGridTextColumn Header="Pol" Binding="{Binding PolarityText}" Width="42" />
           <DataGridTextColumn Header="Class" Binding="{Binding Ontology}" Width="100" />
           <DataGridTextColumn Header="Fill %" Binding="{Binding Fill, Converter={x:Static views:Converters.Number}, ConverterParameter=F0}" Width="62" />
           <DataGridTextColumn Header="MS/MS" Binding="{Binding MsmsText}" Width="70" />
           <DataGridTextColumn Header="S/N" Binding="{Binding SignalToNoise, Converter={x:Static views:Converters.Number}, ConverterParameter=F0}" Width="60" />
           <DataGridTextColumn Header="Blank %" Binding="{Binding BlankText}" Width="70" />
           <DataGridTextColumn Header="Ion of" Binding="{Binding GroupText}" Width="160" />
+          <DataGridTextColumn Header="Other polarity" Binding="{Binding PartnerText}" Width="190" />
+          <DataGridTextColumn Header="Quantify" Binding="{Binding QuantifyText}" Width="80" />
           <DataGridTextColumn Header="Score" Binding="{Binding Score, Converter={x:Static views:Converters.Number}, ConverterParameter=F2}" Width="64" />
           <DataGridTextColumn Header="Height" Binding="{Binding Height, Converter={x:Static views:Converters.Number}, ConverterParameter=N0}" Width="90" />
           <DataGridTextColumn Header="Iso" Binding="{Binding IsotopeText}" Width="50" />

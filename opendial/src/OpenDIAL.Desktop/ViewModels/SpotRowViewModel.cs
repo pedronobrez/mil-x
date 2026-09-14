@@ -6,6 +6,18 @@ using OpenDIAL.Pipeline.Results;
 namespace OpenDIAL.Desktop.ViewModels;
 
 /// <summary>
+/// What the polarity pairing knows about one feature: which polarity this run is, and the compound
+/// the other polarity saw, when it saw it at all.
+/// </summary>
+public sealed record PolarityState(
+    bool OwnIsPositive,
+    PolarityPair? Pair,
+    double PartnerMz,
+    double PartnerRt,
+    double PartnerSignalToNoise,
+    string PartnerName);
+
+/// <summary>
 /// One row of the ion table: an aligned feature plus what the reviewer has decided about it.
 /// The decision lives in the <see cref="CurationStore"/> so it survives the session and is
 /// readable by MS-DIAL; this class is the observable face of it.
@@ -57,6 +69,66 @@ public sealed partial class SpotRowViewModel : ObservableObject
             if (meanSample <= 0) return blank > 0 ? 999 : double.NaN;
             return blank / blanks / meanSample * 100;
         }
+    }
+
+    /// <summary>
+    /// The neutral molecule behind this ion, from the adduct the run assigned it. NaN when the
+    /// adduct is one the adduct table does not know, which is the honest answer rather than a
+    /// protonated guess: it is the neutral mass that identifies a compound across the polarities.
+    /// </summary>
+    public double NeutralMass => PolarityLink.TryNeutral(Mz, Adduct, out var neutral) ? neutral : double.NaN;
+
+    public string NeutralText => double.IsNaN(NeutralMass) ? string.Empty : NeutralMass.ToString("F4", CultureInfo.InvariantCulture);
+
+    /// <summary>What the other polarity of this batch saw here; null until a polarity is linked.</summary>
+    public PolarityState? Polarity { get; set; }
+
+    /// <summary>True when the same compound was found in both polarities of the batch.</summary>
+    public bool SeenInBoth => Polarity?.Pair is not null;
+
+    /// <summary>The polarity column: ± when both runs saw it, otherwise the one that did.</summary>
+    public string PolarityText => Polarity is null ? string.Empty
+        : Polarity.Pair is not null ? "\u00b1"
+        : Polarity.OwnIsPositive ? "+" : "\u2212";
+
+    /// <summary>The partner, as the ion table prints it: what it was there, and how well it agrees.</summary>
+    public string PartnerText
+    {
+        get
+        {
+            if (Polarity?.Pair is not { } pair) return string.Empty;
+            var name = Polarity.PartnerName.Length > 0 && !Polarity.PartnerName.StartsWith("Unknown", StringComparison.OrdinalIgnoreCase)
+                ? Polarity.PartnerName + "  "
+                : string.Empty;
+            var correlation = double.IsNaN(pair.Correlation) ? string.Empty : $" \u00b7 r {pair.Correlation:0.00}";
+            return $"{name}{Polarity.PartnerMz.ToString("F4", CultureInfo.InvariantCulture)} @ {Polarity.PartnerRt.ToString("F2", CultureInfo.InvariantCulture)}{correlation}";
+        }
+    }
+
+    /// <summary>Why the pairing believes these two are one compound.</summary>
+    public string PartnerExplanation => Polarity?.Pair?.Explanation ?? string.Empty;
+
+    /// <summary>
+    /// Which polarity quantifies this compound: the one that measured it better. Heights are never
+    /// added across the polarities, so one side carries the number and the other confirms it.
+    /// </summary>
+    public string QuantifyText => Polarity?.Pair is not { } pair ? string.Empty
+        : pair.Quantify == PolarityChoice.Positive ? "positive" : "negative";
+
+    /// <summary>True when this row is the side the compound is quantified from.</summary>
+    public bool QuantifiesHere => Polarity?.Pair is { } pair &&
+        (pair.Quantify == PolarityChoice.Positive) == Polarity.OwnIsPositive;
+
+    /// <summary>Said again after a polarity is linked or unlinked.</summary>
+    public void RaisePolarityChanged()
+    {
+        OnPropertyChanged(nameof(Polarity));
+        OnPropertyChanged(nameof(SeenInBoth));
+        OnPropertyChanged(nameof(PolarityText));
+        OnPropertyChanged(nameof(PartnerText));
+        OnPropertyChanged(nameof(PartnerExplanation));
+        OnPropertyChanged(nameof(QuantifyText));
+        OnPropertyChanged(nameof(QuantifiesHere));
     }
 
     /// <summary>

@@ -105,7 +105,7 @@ public partial class MainWindow : Window
         var content = new Services.ReportContent();
         if (_vm is null) return content;
         var analytics = _vm.Analytics;
-        content.Counts = new[]
+        var counts = new List<Services.ReportRow>
         {
             new Services.ReportRow("Features", analytics.IonRows.Count.ToString("N0")),
             new Services.ReportRow("Annotated", analytics.AnnotatedCount.ToString("N0")),
@@ -115,6 +115,9 @@ public partial class MainWindow : Window
             new Services.ReportRow("Injections", _vm.Samples.Samples.Count.ToString("N0")),
             new Services.ReportRow("Ion groups", analytics.GroupSummary),
         };
+        // a result read against the other polarity is a different result, and the report must say so
+        if (analytics.HasPolarityLink) counts.Add(new Services.ReportRow("Both polarities", analytics.PolaritySummary));
+        content.Counts = counts;
         content.Library = new[]
         {
             new Services.ReportRow("File", _vm.Method.Parameters.MspFilePath),
@@ -402,6 +405,16 @@ public partial class MainWindow : Window
                 }
                 throw new ArgumentException($"no feature of the {_vm.Analytics.IonRows.Count} listed is {what} (tried {tried})");
             }
+            case "linkPolarity":
+            {
+                // the alignment of the other polarity, as the button's file picker would give it
+                var sentence = await _vm.Analytics.LinkPolarityAsync(Path());
+                if (!_vm.Analytics.HasPolarityLink) throw new InvalidOperationException(sentence);
+                return sentence;
+            }
+            case "unlinkPolarity":
+                _vm.Analytics.UnlinkPolarity();
+                return "unlinked";
             case "runReport":
             {
                 if (_vm.GatherReport is null) throw new InvalidOperationException("the report is not wired");

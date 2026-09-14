@@ -110,6 +110,7 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     public ObservableCollection<SpotRowViewModel> IonRows { get; } = new();
     public static string[] TagFilters { get; } = { "All", "Untagged", "Reviewed", "Not reviewed", "Confirmed", "Low quality spectrum", "Misannotation", "Coelution (mixed spectra)", "Overannotation" };
     public static string[] AnnotationFilters { get; } = { "All", "Confident", "Suggested", "Annotated", "Unknown" };
+    public static string[] PolarityFilters { get; } = { "All", "Seen in both", "Only in this polarity" };
     public ObservableCollection<string> Ontologies { get; } = new();
     public IReadOnlyList<PeakSpotTagKind> TagKinds { get; } = PeakSpotTagKindExtensions.All;
 
@@ -271,6 +272,11 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
         Candidates = Array.Empty<AnnotationCandidate>();
         IsotopePeaks = Array.Empty<Point>();
         HasResults = false;
+        _polarityLink = null;
+        _linkedAlignmentPath = null;
+        HasPolarityLink = false;
+        PolaritySummary = string.Empty;
+        PolarityFilter = "All";
         Summary = "No results loaded. Process the batch or open a project.";
         SampleRows = Array.Empty<SampleResultRow>();
         ClassStats = Array.Empty<ClassStatRow>();
@@ -312,6 +318,7 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
             OntologyFilter = "All";
             RebuildRows();
             SelectedRow = IonRows.FirstOrDefault();
+            await RestorePolarityLinkAsync(session.AlignmentFile.FilePath);
         }
         catch (Exception ex)
         {
@@ -355,6 +362,7 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     partial void OnAnnotationFilterChanged(string value) => RebuildRows();
     partial void OnTagFilterChanged(string value) => RebuildRows();
     partial void OnOntologyFilterChanged(string value) => RebuildRows();
+    partial void OnPolarityFilterChanged(string value) => RebuildRows();
 
     private static double? ParseBound(string s) =>
         double.TryParse(s?.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var v) ? v : null;
@@ -385,6 +393,11 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
             // blank reports no percentage, and the filter then keeps everything rather than nothing
             if (blankHi is not null && !double.IsNaN(r.BlankPercent) && r.BlankPercent > blankHi) return false;
             if (RepresentativesOnly && r.Group is { IsRepresentative: false }) return false;
+            switch (PolarityFilter)
+            {
+                case "Seen in both" when !r.SeenInBoth: return false;
+                case "Only in this polarity" when r.SeenInBoth: return false;
+            }
             if (MsmsOnly && !r.MsmsAssigned) return false;
             if (MolecularIonOnly && !r.IsMolecularIon) return false;
             if (ManuallyModifiedOnly && !r.IsManuallyEdited) return false;
@@ -851,6 +864,179 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
         catch (Exception ex)
         {
             GroupSummary = "Ion grouping failed: " + ex.Message;
+        }
+    }
+
+    // ---- the other polarity ---------------------------------------------------------------------
+    // A phospholipid answers in positive and a free fatty acid in negative, so the two runs of one
+    // batch are two halves of the same picture. The positive result stays the spine of the review;
+    // linking the negative one puts the other half beside it, compound by compound.
+
+    private PolarityLinkResult? _polarityLink;
+    private string? _linkedAlignmentPath;
+
+    [ObservableProperty] private string _polarityFilter = "All";
+    [ObservableProperty] private bool _hasPolarityLink;
+    [ObservableProperty] private string _polaritySummary = string.Empty;
+
+    /// <summary>The alignment of the other polarity, once one is linked.</summary>
+    public string? LinkedAlignmentPath => _linkedAlignmentPath;
+
+    /// <summary>The pairing itself, for the report and for a script.</summary>
+    public PolarityLinkResult? PolarityPairs => _polarityLink;
+
+    /// <summary>The alignment result as it is on disk: the bean carries the ".arf" stem, the file is ".arf2".</summary>
+    private static string OnDisk(string alignmentPath)
+    {
+        if (File.Exists(alignmentPath)) return Path.GetFullPath(alignmentPath);
+        return File.Exists(alignmentPath + "2") ? Path.GetFullPath(alignmentPath + "2") : Path.GetFullPath(alignmentPath);
+    }
+
+    private static bool Same(string a, string b) =>
+        string.Equals(Path.GetFullPath(a), Path.GetFullPath(b), StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>True when this run is the positive one, as its adducts say.</summary>
+    private bool ThisRunIsPositive => !_allRows.Any(r => r.Adduct.EndsWith("-", StringComparison.Ordinal));
+
+    /// <summary>
+    /// Reconciles this result with the same batch run in the other polarity: the compounds are
+    /// paired on the neutral molecule, and the pairing is written beside the alignment so it is
+    /// there again next time the result is opened.
+    /// </summary>
+    public async Task<string> LinkPolarityAsync(string alignmentPath, PolarityLinkOptions? options = null, bool save = true)
+    {
+        if (string.IsNullOrWhiteSpace(alignmentPath) || !File.Exists(alignmentPath)) return $"{alignmentPath} was not found.";
+        try
+        {
+            var other = await ResultLoader.LoadAlignmentFromFileAsync(alignmentPath);
+            var sentence = LinkPolarity(other, options);
+            if (!HasPolarityLink) return sentence;
+            _linkedAlignmentPath = Path.GetFullPath(alignmentPath);
+
+            if (save && _session?.AlignmentFile is not null)
+            {
+                options ??= new PolarityLinkOptions();
+                var ours = OnDisk(_session.AlignmentFile.FilePath);
+                var here = ThisRunIsPositive;
+                var positiveAlignment = here ? ours : _linkedAlignmentPath;
+                var negativeAlignment = here ? _linkedAlignmentPath : ours;
+                PolarityPairFile.Save(PolarityPairFile.FileFor(positiveAlignment), _polarityLink!, positiveAlignment, negativeAlignment, options);
+            }
+            return sentence;
+        }
+        catch (Exception ex)
+        {
+            UnlinkPolarity();
+            return "The polarities could not be linked: " + ex.Message;
+        }
+    }
+
+    /// <summary>
+    /// The pairing itself, against an alignment already in memory. Separate from the file so the
+    /// decision — which run is which polarity, what pairs with what — can be exercised without one.
+    /// </summary>
+    public string LinkPolarity(AlignmentTable other, PolarityLinkOptions? options = null)
+    {
+        if (_allRows.Count == 0) return "Open a result before linking the other polarity.";
+        if (other.Spots.Count == 0) return "That alignment has no features.";
+        options ??= new PolarityLinkOptions();
+
+        var here = ThisRunIsPositive;
+        var there = !other.Spots.Any(s => s.Adduct.EndsWith("-", StringComparison.Ordinal));
+        if (here == there)
+        {
+            return $"Both results look like the {(here ? "positive" : "negative")} mode; link the run of the other polarity.";
+        }
+
+        var mine = new AlignmentTable(_samples, _spots, "session");
+        var result = here
+            ? PolarityLink.Link(mine, other, options)
+            : PolarityLink.Link(other, mine, options);
+
+        Attach(result, other, here);
+        _polarityLink = result;
+        HasPolarityLink = true;
+        PolaritySummary = result.Sentence();
+        RebuildRows();
+        return PolaritySummary;
+    }
+
+    /// <summary>Puts the pairing on the rows it belongs to, with enough of the partner to print.</summary>
+    private void Attach(PolarityLinkResult result, AlignmentTable other, bool thisRunIsPositive)
+    {
+        var partner = other.Spots.ToDictionary(s => s.Id);
+        var byMine = new Dictionary<int, PolarityPair>();
+        foreach (var pair in result.Pairs)
+        {
+            byMine[thisRunIsPositive ? pair.PositiveId : pair.NegativeId] = pair;
+        }
+        foreach (var row in _allRows)
+        {
+            if (byMine.TryGetValue(row.Id, out var pair) &&
+                partner.TryGetValue(thisRunIsPositive ? pair.NegativeId : pair.PositiveId, out var spot))
+            {
+                row.Polarity = new PolarityState(thisRunIsPositive, pair, spot.Mz, spot.Rt, spot.SignalToNoiseAverage, spot.Name);
+            }
+            else
+            {
+                row.Polarity = new PolarityState(thisRunIsPositive, null, double.NaN, double.NaN, double.NaN, string.Empty);
+            }
+            row.RaisePolarityChanged();
+        }
+    }
+
+    /// <summary>Forgets the other polarity; the sidecar on disk is left where it is.</summary>
+    public void UnlinkPolarity()
+    {
+        _polarityLink = null;
+        _linkedAlignmentPath = null;
+        HasPolarityLink = false;
+        PolaritySummary = string.Empty;
+        PolarityFilter = "All";
+        foreach (var row in _allRows)
+        {
+            row.Polarity = null;
+            row.RaisePolarityChanged();
+        }
+        RebuildRows();
+    }
+
+    /// <summary>
+    /// Picks up a pairing made earlier for this alignment, so a linked result opens linked. The
+    /// pairing is made again from the two alignments rather than trusted from the file: the ids in
+    /// it mean nothing if either result has been processed again since.
+    /// </summary>
+    private async Task RestorePolarityLinkAsync(string alignmentPath)
+    {
+        try
+        {
+            var ours = OnDisk(alignmentPath);
+            var document = PolarityPairFile.Load(PolarityPairFile.FileFor(ours));
+            // the sidecar is named after the positive alignment, which is the other run when this
+            // one is the negative: look through the ones in the folder for the pair we belong to
+            if (document is null)
+            {
+                foreach (var candidate in Directory.EnumerateFiles(Path.GetDirectoryName(ours) ?? ".", "*_polarity-pairs.json"))
+                {
+                    var read = PolarityPairFile.Load(candidate);
+                    if (read is null) continue;
+                    if (Same(read.PositiveAlignment, ours) || Same(read.NegativeAlignment, ours)) { document = read; break; }
+                }
+            }
+            if (document is null) return;
+            var other = Same(document.PositiveAlignment, ours) ? document.NegativeAlignment : document.PositiveAlignment;
+            if (!File.Exists(other)) return;
+            await LinkPolarityAsync(other, new PolarityLinkOptions
+            {
+                RtTolerance = document.RtTolerance,
+                MassTolerance = document.MassTolerance,
+                MinimumCorrelation = document.MinimumCorrelation,
+                MinimumScore = document.MinimumScore,
+            }, save: false);
+        }
+        catch (Exception)
+        {
+            // a pairing that cannot be restored is not a reason to fail opening the result
         }
     }
 

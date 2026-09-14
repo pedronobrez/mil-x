@@ -279,6 +279,24 @@ public static class ResultLoader
         => LoadAlignmentTableAsync(alignmentFile, files, null, ct);
 
     /// <summary>
+    /// Reads an alignment result from its file alone, with no project around it: what the other
+    /// polarity of a batch is, seen from this one. MS-DIAL names the bean without the trailing
+    /// digit and adds it back when it reads, so the path given here is the ".arf2" on disk.
+    /// </summary>
+    public static Task<AlignmentTable> LoadAlignmentFromFileAsync(string arf2Path, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(arf2Path) || !File.Exists(arf2Path)) throw new FileNotFoundException("alignment result not found", arf2Path);
+        var beanName = Path.GetFileName(arf2Path);
+        if (beanName.EndsWith(".arf2", StringComparison.OrdinalIgnoreCase)) beanName = beanName[..^1];
+        var bean = new AlignmentFileBean
+        {
+            FilePath = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(arf2Path))!, beanName),
+            FileName = Path.GetFileNameWithoutExtension(arf2Path),
+        };
+        return LoadAlignmentTableAsync(bean, Array.Empty<AnalysisFileBean>(), ct);
+    }
+
+    /// <summary>
     /// Reads the alignment result into table rows. Pass <paramref name="loaded"/> to rebuild the rows
     /// from a container already in memory, which is what a hand edit needs: the edits live in that
     /// object and re-reading the files would throw them away.
