@@ -90,6 +90,34 @@ Heights are **never added across the polarities**. The ionisation efficiencies a
 the sum of a positive height and a negative height is not a quantity of anything. One side carries
 the number and the other confirms the identification.
 
+## One project, one run
+
+A batch acquired both ways does not need two projects. The Samples workspace has a **Polarity**
+column, guessed from each file's name — `…_pos`, `…-NEG` — and editable where the guess is wrong.
+A marker has to be a word of its own: `regeneration.wiff` is not negative.
+
+When the batch holds both, **Process batch** runs twice: the positive injections into
+`positive/` under the output folder, the negative into `negative/`, each with its own ion mode.
+The two results are then paired automatically, and the workspace opens on the positive run with
+the link already made. A batch that is all one polarity runs exactly as it always did.
+
+## The statistics see compounds, not ions
+
+With a polarity linked, every model — the PCA, the clustering, the heat map, the volcano, the
+tests — is computed on the two runs reconciled: a compound both polarities saw appears **once**,
+with the numbers of the run that measured it better, on the injections both runs share. What only
+one polarity saw comes across as it is.
+
+This is not tidiness. A matrix where half the rows are copies of the other half fits every model on
+a lie: the clustering finds the copies, the principal components spend themselves on them, and the
+false-discovery correction is applied to a feature count that is not real.
+
+An injection the pairing could not match reads as *not measured* rather than zero — the difference
+between no number and a number that says nothing is there.
+
+The statistics summary says what it is working on: `2,140 compound(s) across 8 injection(s) · 1,806
+measured in both polarities · 231 positive only · 103 negative only`.
+
 ## Where the pairing is kept
 
 Beside the alignment, as `<positive alignment>_polarity-pairs.json` — plain JSON, in the same habit

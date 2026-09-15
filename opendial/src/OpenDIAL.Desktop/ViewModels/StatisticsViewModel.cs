@@ -191,14 +191,14 @@ public sealed partial class StatisticsViewModel : ViewModelBase
         Summary = "No results loaded. Process the batch or open a project.";
     }
 
-    public void Load(ResultSession session, IReadOnlyList<AlignmentSpotRow> spots, IReadOnlyList<SampleInfo> samples, CurationStore? curation = null)
+    public void Load(ResultSession session, IReadOnlyList<AlignmentSpotRow> spots, IReadOnlyList<SampleInfo> samples, CurationStore? curation = null, string? note = null)
     {
         _session = session;
         _spots = spots;
         _samples = samples;
         HasResults = spots.Count > 0 && samples.Count > 1;
         Summary = HasResults
-            ? $"{spots.Count} features across {samples.Count} injections."
+            ? note ?? $"{spots.Count} features across {samples.Count} injections."
             : samples.Count <= 1 ? "Multivariate views need more than one injection." : "No aligned features.";
         if (!HasResults) return;
         // loading the analysis builds the dataset and raises DataChanged, which computes the rest

@@ -40,6 +40,7 @@ adicionadas, que arquivos foram ignorados por não suportados, um `.wiff` que n�
 | **Type** | Sample, Blank, QC ou Standard — veja [[concepts#O lote]] |
 | **Class** | o grupo que as estatísticas comparam; texto livre, `1` até que você o defina |
 | **Acquisition** | DDA, SWATH ou AIF — como o MS/MS foi adquirido; veja [[processing#Tipos de aquisição]] |
+| **Polarity** | Positive ou Negative, adivinhada pelo nome do arquivo e editável. Um lote com as duas é processado como duas corridas e os resultados são emparelhados — veja [[polarity-merge]] |
 | **Order** | a ordem de injeção, editável, para a correção de deriva |
 | **Batch** | a sequência em que a injeção foi corrida, para a correção de deriva |
 | **Factor** | o segundo fator de um desenho de dois fatores — o ponto no tempo, a dieta, o genótipo — texto livre, com a mesma grafia em toda injeção de um nível; lido pela página **Two factors** da área Statistics. Deixe vazio num desenho de um fator |

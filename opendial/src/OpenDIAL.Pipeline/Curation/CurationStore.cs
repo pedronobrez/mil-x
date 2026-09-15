@@ -62,6 +62,16 @@ public sealed class CurationStore
         Path.Combine(Path.GetDirectoryName(alignmentFilePath) ?? string.Empty,
                      Path.GetFileNameWithoutExtension(alignmentFilePath) + "_curation.json");
 
+    /// <summary>
+    /// A review that belongs to no file: a merged view of two alignments has ids that exist in
+    /// neither of them, so its tags have nowhere to be written and must not be. Saving one is a
+    /// no-op rather than an error, so the callers that save on the way out need no special case.
+    /// </summary>
+    public static CurationStore InMemory() => new(string.Empty, string.Empty);
+
+    /// <summary>True when this review is a merged view rather than one alignment's own.</summary>
+    public bool IsInMemory => TagFilePath.Length == 0;
+
     public static CurationStore Load(string alignmentFilePath) {
         var store = new CurationStore(TagFileFor(alignmentFilePath), SidecarFileFor(alignmentFilePath));
         store.ReadTags();
@@ -251,6 +261,7 @@ public sealed class CurationStore
 
     /// <summary>Writes both files. The tag file keeps MS-DIAL's schema exactly.</summary>
     public void Save() {
+        if (IsInMemory) { IsDirty = false; return; }
         WriteTags();
         WriteSidecar();
         IsDirty = false;

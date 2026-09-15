@@ -185,6 +185,8 @@ public sealed class UiProbe
                     ["hasPartner"] = analytics.HasPartner,
                     ["partner"] = analytics.PartnerDetail,
                     ["partnerPeaks"] = analytics.PartnerMirrorPeaks?.Count ?? 0,
+                    ["merged"] = analytics.MergedPolarities?.Sentence(),
+                    ["mergedCompounds"] = analytics.MergedPolarities?.Spots.Count ?? 0,
                     ["seenInBoth"] = analytics.IonRows.Count(r => r.SeenInBoth),
                     ["canUndo"] = analytics.CanUndo,
                     ["filter"] = analytics.FilterText,

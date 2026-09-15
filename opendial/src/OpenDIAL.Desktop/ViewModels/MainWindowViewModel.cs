@@ -41,7 +41,9 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             RequestShowFeature = id => { SelectedWorkspace = 1; Analytics.SelectFeature(id); },
         };
         Analytics.CurationChanged += (_, _) => Statistics.Analysis.ReviewIsNewer = true;
-        Statistics.Analysis.ReloadRequested += (_, _) => { if (Results is not null) Statistics.Load(Results, Analytics.AllSpots, WithFactors(Analytics.Samples), Analytics.Curation); };
+        Statistics.Analysis.ReloadRequested += (_, _) => LoadStatistics();
+        // linking a polarity changes what the statistics are computed on, so they are rebuilt
+        Analytics.PolarityLinkChanged += (_, _) => LoadStatistics();
         Run = new RunViewModel();
         Samples.Changed += (_, _) => { if (!_loading) IsDirty = true; };
         Method.Changed += (_, _) => { if (!_loading) IsDirty = true; Samples.DefaultAcquisition = Method.Parameters.AcquisitionType; };
@@ -620,6 +622,48 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 
     public bool CanProcess => Samples.HasSamples && !Run.IsRunning;
 
+    private PipelineRequest BuildRequest(string outputFolder, IonPolarity polarity)
+    {
+        var parameters = Method.Parameters.Model.Clone();
+        parameters.IonMode = polarity;
+        var request = new PipelineRequest
+        {
+            OutputFolder = outputFolder,
+            Mode = Method.Mode,
+            Parameters = parameters,
+            SaveProject = true,
+            VendorConversion = new MsconvertVendorConversionService(Settings.Current.VendorConversion),
+        };
+        var everything = Samples.Samples.Select(s => s.Polarity).Distinct().Count() < 2;
+        foreach (var s in Samples.Samples)
+        {
+            if (everything || s.Polarity == polarity) request.InputFiles.Add(s.ToModel());
+        }
+        return request;
+    }
+
+    private void ReportRunFailure()
+    {
+        Status = Run.LastError is null ? "Run cancelled." : "Run failed: " + Run.LastError;
+        if (Run.LastError is not null) ShowLog = true;
+    }
+
+    /// <summary>
+    /// Feeds the statistics. With a polarity linked they are computed on the two runs reconciled —
+    /// a compound both saw counted once, from the run that measured it better — because a matrix
+    /// where half the rows are copies of the other half fits every model on a lie.
+    /// </summary>
+    private void LoadStatistics()
+    {
+        if (Results is null) return;
+        if (Analytics.MergedPolarities is { } merged)
+        {
+            Statistics.Load(Results, merged.Spots, WithFactors(merged.Samples), merged.Curation, merged.Sentence());
+            return;
+        }
+        Statistics.Load(Results, Analytics.AllSpots, WithFactors(Analytics.Samples), Analytics.Curation);
+    }
+
     [RelayCommand]
     private async Task ProcessBatchAsync()
     {
@@ -637,32 +681,47 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             SelectedWorkspace = 2;
             return;
         }
-        var request = new PipelineRequest
-        {
-            OutputFolder = OutputFolder,
-            Mode = Method.Mode,
-            Parameters = Method.Parameters.Model.Clone(),
-            SaveProject = true,
-            VendorConversion = new MsconvertVendorConversionService(Settings.Current.VendorConversion),
-        };
-        foreach (var s in Samples.Samples) request.InputFiles.Add(s.ToModel());
-
+        // an alignment only means anything within one polarity, so a batch with both is two runs
+        var polarities = Samples.Samples.Where(s => s.Included).Select(s => s.Polarity).Distinct().OrderBy(p => p).ToList();
         ShowProgressBand = true;
-        Status = "Processing…";
         SelectedWorkspace = 1;
-        var result = await Run.RunAsync(request);
-        if (result is null)
+
+        PipelineResult? result;
+        if (polarities.Count < 2)
         {
-            Status = Run.LastError is null ? "Run cancelled." : "Run failed: " + Run.LastError;
-            if (Run.LastError is not null) ShowLog = true;
-            return;
+            Status = "Processing…";
+            result = await Run.RunAsync(BuildRequest(OutputFolder, polarities.FirstOrDefault()));
+            if (result is null) { ReportRunFailure(); return; }
+            Results = ResultSession.From(result);
+            RawCache.Clear();
+            Explorer.Load(Samples.Samples.ToList(), Results);
+            await Analytics.LoadAsync(Results);
+            LoadStatistics();
+            Status = $"Run finished in {result.Elapsed:mm\\:ss} — {result.ExportedFiles.Count} files exported to {result.OutputFolder}";
         }
-        Results = ResultSession.From(result);
-        RawCache.Clear();
-        Explorer.Load(Samples.Samples.ToList(), Results);
-        await Analytics.LoadAsync(Results);
-        Statistics.Load(Results, Analytics.AllSpots, WithFactors(Analytics.Samples), Analytics.Curation);
-        Status = $"Run finished in {result.Elapsed:mm\\:ss} — {result.ExportedFiles.Count} files exported to {result.OutputFolder}";
+        else
+        {
+            Status = "Processing the positive injections…";
+            var positive = await Run.RunAsync(BuildRequest(Path.Combine(OutputFolder, "positive"), IonPolarity.Positive));
+            if (positive is null) { ReportRunFailure(); return; }
+
+            Status = "Processing the negative injections…";
+            var negative = await Run.RunAsync(BuildRequest(Path.Combine(OutputFolder, "negative"), IonPolarity.Negative));
+            if (negative is null) { ReportRunFailure(); return; }
+
+            result = positive;
+            Results = ResultSession.From(positive);
+            RawCache.Clear();
+            Explorer.Load(Samples.Samples.Where(s => s.Polarity == IonPolarity.Positive).ToList(), Results);
+            await Analytics.LoadAsync(Results);
+
+            var elapsed = positive.Elapsed + negative.Elapsed;
+            var linked = negative.AlignmentFile is null
+                ? "the negative run produced no alignment to pair with"
+                : await Analytics.LinkPolarityAsync(negative.AlignmentFile.FilePath);
+            LoadStatistics();
+            Status = $"Both polarities finished in {elapsed:mm\\:ss} — {linked}";
+        }
         if (!string.IsNullOrEmpty(ProjectPath))
         {
             await SaveProjectAsync();

@@ -91,6 +91,34 @@ As alturas **nunca são somadas entre as polaridades**. As eficiências de ioniz
 então a soma de uma altura positiva com uma negativa não é a quantidade de nada. Um lado carrega o
 número e o outro confirma a identificação.
 
+## Um projeto, uma corrida
+
+Um lote adquirido das duas formas não precisa de dois projetos. A área Samples tem uma coluna
+**Polarity**, adivinhada pelo nome de cada arquivo — `…_pos`, `…-NEG` — e editável onde o palpite
+erra. O marcador tem de ser palavra inteira: `regeneration.wiff` não é negativo.
+
+Quando o lote tem as duas, **Process batch** corre duas vezes: as injeções positivas para
+`positive/` dentro da pasta de saída, as negativas para `negative/`, cada uma com o seu modo de
+íon. Os dois resultados são então emparelhados sozinhos, e a área abre na corrida positiva com o
+vínculo já feito. Um lote de uma polaridade só corre exatamente como sempre correu.
+
+## A estatística passa a ver compostos, não íons
+
+Com uma polaridade vinculada, todo modelo — o PCA, o agrupamento, o mapa de calor, o vulcão, os
+testes — é calculado sobre as duas corridas conciliadas: um composto que as duas polaridades viram
+aparece **uma vez**, com os números da corrida que o mediu melhor, nas injeções que as duas
+compartilham. O que só uma polaridade viu vem como está.
+
+Isto não é arrumação. Uma matriz em que metade das linhas são cópias da outra metade ajusta todo
+modelo sobre uma mentira: o agrupamento encontra as cópias, os componentes principais se gastam
+nelas, e a correção de falsas descobertas é aplicada a uma contagem de features que não é real.
+
+Uma injeção que o emparelhamento não conseguiu casar lê como *não medida*, e não como zero — a
+diferença entre nenhum número e um número que diz que ali não há nada.
+
+O resumo da estatística diz sobre o que está trabalhando: `2.140 compound(s) across 8 injection(s)
+· 1.806 measured in both polarities · 231 positive only · 103 negative only`.
+
 ## Onde o emparelhamento fica
 
 Ao lado do alinhamento, como `<alinhamento positivo>_polarity-pairs.json` — JSON simples, no mesmo

@@ -247,6 +247,9 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     /// <summary>Raised after any change to the review, so the analysis can say its confirmed set is older than the review.</summary>
     public event EventHandler? CurationChanged;
 
+    /// <summary>Raised when the other polarity is linked or forgotten: the statistics change under it.</summary>
+    public event EventHandler? PolarityLinkChanged;
+
     /// <summary>Set by the shell; the toolbar's Process batch button routes here.</summary>
     public IAsyncRelayCommand? ProcessBatchCommand { get; set; }
 
@@ -277,6 +280,8 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
         _linkedBean = null;
         _linkedCuration = null;
         _linkedSpots = new Dictionary<int, AlignmentSpotRow>();
+        _linkedTable = null;
+        MergedPolarities = null;
         ClearPartnerSpectrum();
         HasPolarityLink = false;
         PolaritySummary = string.Empty;
@@ -881,6 +886,13 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     private AlignmentFileBean? _linkedBean;
     private CurationStore? _linkedCuration;
     private IReadOnlyDictionary<int, AlignmentSpotRow> _linkedSpots = new Dictionary<int, AlignmentSpotRow>();
+    private AlignmentTable? _linkedTable;
+
+    /// <summary>
+    /// The two runs as one table for the statistics: a compound both polarities saw counted once,
+    /// taken from the run that measured it better. Null until a polarity is linked.
+    /// </summary>
+    public MergedMatrix? MergedPolarities { get; private set; }
 
     /// <summary>The index of the evidence tab that shows the other polarity's spectrum.</summary>
     public const int OtherPolarityTab = 8;
@@ -923,7 +935,10 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     /// </summary>
     public async Task<string> LinkPolarityAsync(string alignmentPath, PolarityLinkOptions? options = null, bool save = true)
     {
-        if (string.IsNullOrWhiteSpace(alignmentPath) || !File.Exists(alignmentPath)) return $"{alignmentPath} was not found.";
+        // callers hand this either the ".arf2" on disk or the ".arf" stem MS-DIAL names the bean by
+        if (string.IsNullOrWhiteSpace(alignmentPath)) return "No alignment to link.";
+        alignmentPath = OnDisk(alignmentPath);
+        if (!File.Exists(alignmentPath)) return $"{alignmentPath} was not found.";
         try
         {
             var other = await ResultLoader.LoadAlignmentFromFileAsync(alignmentPath);
@@ -934,6 +949,8 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
             // the other run's spectra and its review, so a pair can be read and judged as one compound
             _linkedBean = bean;
             _linkedCuration = CurationStore.Load(bean.FilePath);
+            RebuildMergedPolarities();
+            PolarityLinkChanged?.Invoke(this, EventArgs.Empty);
             SecondEvidenceTab = OtherPolarityTab;
             if (SelectedRow is not null) SpectrumReady = LoadSpectrumAsync(SelectedRow.Spot);
 
@@ -979,9 +996,15 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
 
         Attach(result, other, here);
         _polarityLink = result;
+        _linkedTable = other;
+        var mineTable = new AlignmentTable(_samples, _spots, "session");
+        MergedPolarities = here
+            ? PolarityMerge.Build(mineTable, other, result, _curation, _linkedCuration)
+            : PolarityMerge.Build(other, mineTable, result, _linkedCuration, _curation);
         HasPolarityLink = true;
         PolaritySummary = result.Sentence();
         RebuildRows();
+        PolarityLinkChanged?.Invoke(this, EventArgs.Empty);
         return PolaritySummary;
     }
 
@@ -1020,9 +1043,24 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
         if (HasPolarityLink)
         {
             _linkedCuration = partnerCuration;
+            RebuildMergedPolarities();
             SecondEvidenceTab = OtherPolarityTab;
         }
         return sentence;
+    }
+
+    /// <summary>
+    /// The merged table again, so the statistics see the review as it is now. Building it is a pass
+    /// over the two feature lists and costs nothing next to what the models do with it.
+    /// </summary>
+    private void RebuildMergedPolarities()
+    {
+        if (_linkedTable is null || _polarityLink is null) return;
+        var here = ThisRunIsPositive;
+        var mine = new AlignmentTable(_samples, _spots, "session");
+        MergedPolarities = here
+            ? PolarityMerge.Build(mine, _linkedTable, _polarityLink, _curation, _linkedCuration)
+            : PolarityMerge.Build(_linkedTable, mine, _polarityLink, _linkedCuration, _curation);
     }
 
     /// <summary>Forgets the other polarity; the sidecar on disk is left where it is.</summary>
@@ -1033,6 +1071,8 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
         _linkedBean = null;
         _linkedCuration = null;
         _linkedSpots = new Dictionary<int, AlignmentSpotRow>();
+        _linkedTable = null;
+        MergedPolarities = null;
         ClearPartnerSpectrum();
         HasPolarityLink = false;
         PolaritySummary = string.Empty;
@@ -1043,6 +1083,7 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
             row.RaisePolarityChanged();
         }
         RebuildRows();
+        PolarityLinkChanged?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>
@@ -1283,6 +1324,7 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     private void AfterCuration()
     {
         MirrorCurationToPartner();
+        RebuildMergedPolarities();
         RefreshCounts();
         CurationChanged?.Invoke(this, EventArgs.Empty);
         // a tag filter is a moving target while tagging: re-apply it so the list stays honest

@@ -62,6 +62,14 @@
               </DataTemplate>
             </DataGridTemplateColumn.CellTemplate>
           </DataGridTemplateColumn>
+          <DataGridTemplateColumn Header="Polarity" Width="104">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:InputFileViewModel">
+                <ComboBox Classes="compact" ItemsSource="{x:Static vm:InputFileViewModel.Polarities}" SelectedItem="{Binding Polarity, Mode=TwoWay}" Margin="3,1"
+                          ToolTip.Tip="Guessed from the file name and editable. A batch with both polarities is processed as two runs and the results are paired." />
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
           <DataGridTextColumn Header="Order" Binding="{Binding AnalyticalOrder}" Width="70" />
           <DataGridTextColumn Header="Batch" Binding="{Binding Batch}" Width="70" />
           <DataGridTextColumn Header="Factor" Binding="{Binding Factor}" Width="90" />

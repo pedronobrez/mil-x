@@ -10,9 +10,24 @@ summary: What each version of OpenDIAL brought; the notes are updated with every
 The version shown in **Help ▸ About OpenDIAL** and in the window's probe is the one stamped in
 `opendial/Directory.Build.props`. This page names it, and a test fails the build when it does not.
 
-## 0.8.0 — September 2026
+## 0.9.0 — September 2026
 
 The current version. It tracks MS-DIAL 5.5.260817.
+
+**New**
+
+- **One project for a batch acquired both ways.** The Samples workspace has a **Polarity** column,
+  guessed from each file's name and editable. When a batch holds both, **Process batch** runs twice
+  — positive into `positive/`, negative into `negative/`, each with its own ion mode — and pairs
+  the two results by itself. A batch that is all one polarity runs exactly as it did.
+- **The statistics see compounds instead of ions.** With a polarity linked, every model is computed
+  on the two runs reconciled: a compound both saw appears once, with the numbers of the run that
+  measured it better, on the injections both share. A matrix where half the rows are copies of the
+  other half fits every model on a lie. See [[polarity-merge]].
+
+## 0.8.0 — September 2026
+
+Tracks MS-DIAL 5.5.260817.
 
 **New**
 

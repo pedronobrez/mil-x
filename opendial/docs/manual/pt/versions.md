@@ -11,9 +11,26 @@ A versão mostrada em **Help ▸ About OpenDIAL** e na sonda da janela é a cari
 `opendial/Directory.Build.props`. Esta página nomeia-a, e um teste falha a construção quando não
 nomeia.
 
-## 0.8.0 — setembro de 2026
+## 0.9.0 — setembro de 2026
 
 A versão atual. Segue o MS-DIAL 5.5.260817.
+
+**Novo**
+
+- **Um projeto para um lote adquirido das duas formas.** A área Samples tem uma coluna
+  **Polarity**, adivinhada pelo nome de cada arquivo e editável. Quando o lote tem as duas,
+  **Process batch** corre duas vezes — positivas para `positive/`, negativas para `negative/`,
+  cada uma com o seu modo de íon — e emparelha os dois resultados sozinho. Um lote de uma
+  polaridade só corre exatamente como corria.
+- **A estatística passa a ver compostos em vez de íons.** Com uma polaridade vinculada, todo modelo
+  é calculado sobre as duas corridas conciliadas: um composto que as duas viram aparece uma vez,
+  com os números da corrida que o mediu melhor, nas injeções que as duas compartilham. Uma matriz
+  em que metade das linhas são cópias da outra metade ajusta todo modelo sobre uma mentira. Veja
+  [[polarity-merge]].
+
+## 0.8.0 — setembro de 2026
+
+Segue o MS-DIAL 5.5.260817.
 
 **Novo**
 

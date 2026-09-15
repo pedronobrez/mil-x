@@ -12,6 +12,8 @@ public sealed class ProjectSample
     public string Class { get; set; } = "1";
     public SampleType SampleType { get; set; } = SampleType.Sample;
     public AcquisitionMode Acquisition { get; set; } = AcquisitionMode.DDA;
+    /// <summary>The polarity this injection was acquired in; a batch with both is run twice.</summary>
+    public IonPolarity Polarity { get; set; } = IonPolarity.Positive;
     public int AnalyticalOrder { get; set; } = 1;
     public int Batch { get; set; } = 1;
     /// <summary>The second factor of a two-factor design (time point, diet, genotype); empty when there is none.</summary>
@@ -86,6 +88,7 @@ public sealed class OpenDialProject
                 Class = s.Class,
                 SampleType = s.SampleType,
                 Acquisition = s.Acquisition,
+                Polarity = s.Polarity,
                 AnalyticalOrder = s.AnalyticalOrder,
                 Batch = s.Batch,
                 Factor = s.Factor,

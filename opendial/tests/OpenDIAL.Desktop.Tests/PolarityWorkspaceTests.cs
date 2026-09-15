@@ -5,6 +5,7 @@ using OpenDIAL.Desktop.Services;
 using OpenDIAL.Desktop.ViewModels;
 using OpenDIAL.Desktop.Views;
 using OpenDIAL.Pipeline.Curation;
+using OpenDIAL.Pipeline.Model;
 using OpenDIAL.Pipeline.Results;
 using Xunit;
 
@@ -192,6 +193,50 @@ public class PolarityWorkspaceTests
     }
 
     [AvaloniaFact]
+    public void Linking_builds_the_matrix_the_statistics_are_computed_on()
+    {
+        var (vm, _) = NewAnalytics();
+        Assert.Null(vm.MergedPolarities);
+
+        var raised = 0;
+        vm.PolarityLinkChanged += (_, _) => raised++;
+        vm.LinkPolarity(NegativeRun());
+
+        var merged = vm.MergedPolarities;
+        Assert.NotNull(merged);
+        Assert.Equal(1, raised);
+        // two features here, two there, one of them the same compound: three rows, not four
+        Assert.Equal(3, merged!.Spots.Count);
+        Assert.Equal(1, merged.FromBoth);
+        Assert.Equal(1, merged.FromPositiveOnly);
+        Assert.Equal(1, merged.FromNegativeOnly);
+
+        vm.UnlinkPolarity();
+        Assert.Null(vm.MergedPolarities);
+        Assert.Equal(2, raised);
+    }
+
+    [AvaloniaFact]
+    public void The_matrix_follows_the_review_as_it_is_made()
+    {
+        var folder = Path.Combine(Path.GetTempPath(), "opendial-merge-ui-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        try
+        {
+            var vm = new AnalyticsViewModel(new RawDataCache());
+            vm.LoadForTest(PositiveRows(), SamplesForCuration(), CurationStore.Load(Path.Combine(folder, "AlignResult-1.arf")));
+            vm.LinkPolarityForTest(NegativeRun(), CurationStore.Load(Path.Combine(folder, "AlignResult-2.arf")));
+            Assert.False(vm.MergedPolarities!.Curation.HasTag(1, PeakSpotTagKind.Confirmed));
+
+            vm.SelectedRow = vm.IonRows.Single(r => r.Id == 1);
+            vm.ConfirmAndNextCommand.Execute(null);
+
+            Assert.True(vm.MergedPolarities!.Curation.HasTag(1, PeakSpotTagKind.Confirmed));
+        }
+        finally { Directory.Delete(folder, true); }
+    }
+
+    [AvaloniaFact]
     public void The_evidence_gains_a_tab_for_the_other_polarity()
     {
         var (vm, _) = NewAnalytics();
@@ -320,4 +365,22 @@ public class PolarityCurationTests
         }
         finally { Directory.Delete(folder, true); }
     }
+}
+
+/// <summary>
+/// The polarity a file name admits to. Almost every acquisition carries it, and a guess that is
+/// right most of the time and shown in an editable column beats making the analyst set forty rows.
+/// </summary>
+public class PolarityFromNameTests
+{
+    [Theory]
+    [InlineData("260406-Teste-51-I_neg.wiff", IonPolarity.Negative)]
+    [InlineData("liver_01_NEG.wiff", IonPolarity.Negative)]
+    [InlineData("sample-negative-03.mzML", IonPolarity.Negative)]
+    [InlineData("liver_01_pos.wiff", IonPolarity.Positive)]
+    [InlineData("260406-Teste-51-I.wiff", IonPolarity.Positive)]
+    [InlineData("negev_basin_01.mzML", IonPolarity.Positive)]     // "neg" inside a word is not a polarity
+    [InlineData("regeneration_02.wiff", IonPolarity.Positive)]
+    public void The_name_is_read_for_a_polarity_marker(string fileName, IonPolarity expected) =>
+        Assert.Equal(expected, InputFileViewModel.PolarityFromName(fileName));
 }

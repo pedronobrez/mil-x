@@ -24,6 +24,13 @@ public sealed class InputFile
 
     public AcquisitionMode Acquisition { get; set; } = AcquisitionMode.DDA;
 
+    /// <summary>
+    /// Which polarity this injection was acquired in. A batch is usually all one, and then this
+    /// changes nothing; a batch with both is processed as two runs, because an alignment only
+    /// means anything within one polarity.
+    /// </summary>
+    public IonPolarity Polarity { get; set; } = IonPolarity.Positive;
+
     /// <summary>1-based injection order.</summary>
     public int AnalyticalOrder { get; set; } = 1;
 

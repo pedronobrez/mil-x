@@ -39,6 +39,7 @@ unsupported, a `.wiff` that could not be opened.
 | **Type** | Sample, Blank, QC or Standard — see [[concepts#The batch]] |
 | **Class** | the group the statistics compare; free text, `1` until you set it |
 | **Acquisition** | DDA, SWATH or AIF — how the MS/MS was acquired; see [[processing#Acquisition types]] |
+| **Polarity** | Positive or Negative, guessed from the file name and editable. A batch with both is processed as two runs and the results are paired — see [[polarity-merge]] |
 | **Order** | the injection order, editable, for the drift correction |
 | **Batch** | the sequence the injection was run in, for the drift correction |
 | **Factor** | the second factor of a two-factor design — the time point, the diet, the genotype — free text, the same spelling on every injection of a level; read by the Statistics workspace's **Two factors** page. Leave it empty for a one-factor design |

@@ -10,6 +10,7 @@ public sealed partial class InputFileViewModel : ViewModelBase
 {
     public static SampleType[] SampleTypes { get; } = Enum.GetValues<SampleType>();
     public static AcquisitionMode[] AcquisitionModes { get; } = Enum.GetValues<AcquisitionMode>();
+    public static IonPolarity[] Polarities { get; } = Enum.GetValues<IonPolarity>();
 
     public InputFileViewModel(string path, int order, AcquisitionMode acquisition, int sampleIndex = 0, string? sampleName = null)
     {
@@ -29,6 +30,7 @@ public sealed partial class InputFileViewModel : ViewModelBase
             ? (isWiff ? (ReadsNatively ? "wiff · native" : "wiff · msconvert") : $"{ext.TrimStart('.')} · msconvert")
             : ext == ".mzml" ? "mzML" : ext.TrimStart('.').ToUpperInvariant();
         BadgeIsWarning = IsVendorFormat && !ReadsNatively;
+        _polarity = PolarityFromName(FileName);
         if (isWiff) WiffSupport.Register(path, sampleIndex);
     }
 
@@ -50,6 +52,8 @@ public sealed partial class InputFileViewModel : ViewModelBase
     [ObservableProperty] private string _class;
     [ObservableProperty] private SampleType _sampleType = SampleType.Sample;
     [ObservableProperty] private AcquisitionMode _acquisition;
+    /// <summary>The polarity this injection was acquired in, guessed from its name and editable.</summary>
+    [ObservableProperty] private IonPolarity _polarity = IonPolarity.Positive;
     [ObservableProperty] private int _analyticalOrder;
     [ObservableProperty] private int _batch = 1;
     /// <summary>The second factor of a two-factor design; empty when the design has one.</summary>
@@ -94,12 +98,28 @@ public sealed partial class InputFileViewModel : ViewModelBase
         return new[] { new InputFileViewModel(path, firstOrder, acquisition) };
     }
 
+    /// <summary>
+    /// The polarity a file name admits to. Almost every acquisition carries it — "…_pos.wiff",
+    /// "…-NEG.d" — and a guess that is right most of the time and visible in a column beats making
+    /// the analyst set forty rows by hand. It only ever guesses; the column is editable.
+    /// </summary>
+    internal static IonPolarity PolarityFromName(string fileName)
+    {
+        var text = System.IO.Path.GetFileNameWithoutExtension(fileName ?? string.Empty).ToLowerInvariant();
+        foreach (var marker in new[] { "negative", "neg" })
+        {
+            if (System.Text.RegularExpressions.Regex.IsMatch(text, $@"(?<![a-z0-9]){marker}(?![a-z0-9])")) return IonPolarity.Negative;
+        }
+        return IonPolarity.Positive;
+    }
+
     public InputFile ToModel() => new(Path)
     {
         Name = string.IsNullOrWhiteSpace(Name) ? System.IO.Path.GetFileNameWithoutExtension(FileName) : Name.Trim(),
         Class = string.IsNullOrWhiteSpace(Class) ? "1" : Class.Trim(),
         SampleType = SampleType,
         Acquisition = Acquisition,
+        Polarity = Polarity,
         AnalyticalOrder = AnalyticalOrder,
         Batch = Batch,
         Included = Included,
@@ -112,6 +132,7 @@ public sealed partial class InputFileViewModel : ViewModelBase
         Class = Class,
         SampleType = SampleType,
         Acquisition = Acquisition,
+        Polarity = Polarity,
         AnalyticalOrder = AnalyticalOrder,
         Batch = Batch,
         Factor = Factor,
@@ -126,6 +147,7 @@ public sealed partial class InputFileViewModel : ViewModelBase
         Name = s.Name,
         Class = s.Class,
         SampleType = s.SampleType,
+        Polarity = s.Polarity,
         Batch = s.Batch,
         Factor = s.Factor ?? string.Empty,
         Dilution = s.Dilution,
