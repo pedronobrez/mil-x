@@ -11,7 +11,7 @@ So this launches the real bundle through LaunchServices, the way a person does, 
 what the window says it is showing. It reads that from the probe file the application writes when
 OPENDIAL_UI_PROBE names one, rather than guessing from pixels.
 
-Two modes, which can be combined:
+Two modes. They drive different projects, so run them as two passes rather than together:
 
     opendial/scripts/smoke-ui.py --project ~/…/Project-2609071200.mdproject
         opens a processed project and checks the shell: title, ion table, shortcuts, a click.
@@ -405,6 +405,11 @@ def main() -> int:
     if args.process and not os.path.isdir(args.process):
         say(f"FAIL: no folder at {args.process}")
         return 1
+    if args.project and args.process:
+        # only one project can be launched into, and --process writes its own: asking for both
+        # silently checked the wrong one and then waited out the open timeout on it
+        say("FAIL: --project and --process drive two different projects; run them as two passes")
+        return 2
     if not args.project and not args.process:
         say("note: neither --project nor --process given; only the empty window is checked")
 
