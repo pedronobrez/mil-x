@@ -40,6 +40,7 @@ com um clique antes.
 | **Open output folder** | a pasta de resultados no Finder |
 | **Run report…** | escreve a corrida — contagens, biblioteca, injeções, método, log e as figuras da tela — num arquivo HTML com as figuras em vetor embutidas; abra e imprima em PDF. Veja [[exports#O relatório da corrida]] |
 | **Link polarity…** / **Unlink polarity** | emparelha este resultado com o mesmo lote corrido na outra polaridade, composto a composto, ou esquece o emparelhamento; veja [[polarity-merge]] |
+| **Tag both polarities** | leva a revisão através de um par vinculado: um composto, um veredito, desfazer incluído; veja [[polarity-merge]] |
 | **Split evidence** | mostra um segundo conjunto de abas de evidência ao lado do primeiro, cada um na sua aba — o espelho ao lado das estatísticas da classe, os candidatos ao lado do mapa de features. Os dois seguem a feature selecionada; desligue e o conjunto único volta a ocupar toda a largura |
 | **Save review** | grava as marcações em `<alignment>_tags.xml` — o arquivo que o MS-DIAL lê — e o resto da curadoria ao lado; um ponto no botão significa que há algo por salvar |
 

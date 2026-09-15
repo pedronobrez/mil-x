@@ -10,9 +10,25 @@ summary: What each version of OpenDIAL brought; the notes are updated with every
 The version shown in **Help ▸ About OpenDIAL** and in the window's probe is the one stamped in
 `opendial/Directory.Build.props`. This page names it, and a test fails the build when it does not.
 
-## 0.7.0 — September 2026
+## 0.8.0 — September 2026
 
 The current version. It tracks MS-DIAL 5.5.260817.
+
+**New**
+
+- **Both polarities of a compound, side by side.** A new evidence tab, **Other polarity**, mirrors
+  this run's product spectrum against the other run's for the same compound, with the partner's
+  name, m/z, adduct, retention time, signal-to-noise and the correlation between the two height
+  profiles beneath it. With **Split evidence** on, MS/MS on the left and Other polarity on the
+  right is the layout linking a polarity is for — and the second column now selects it on its own.
+- **One compound, one verdict.** **Tag both polarities**, on by default once a polarity is linked,
+  carries the review across the pair: confirming a compound here confirms it in the other run, and
+  undo takes it back in both. Both reviews are written by **Save review**, each to its own
+  `_tags.xml`. See [[polarity-merge]].
+
+## 0.7.0 — September 2026
+
+Tracks MS-DIAL 5.5.260817.
 
 **New**
 

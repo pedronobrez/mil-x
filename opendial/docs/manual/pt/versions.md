@@ -11,9 +11,26 @@ A versão mostrada em **Help ▸ About OpenDIAL** e na sonda da janela é a cari
 `opendial/Directory.Build.props`. Esta página nomeia-a, e um teste falha a construção quando não
 nomeia.
 
-## 0.7.0 — setembro de 2026
+## 0.8.0 — setembro de 2026
 
 A versão atual. Segue o MS-DIAL 5.5.260817.
+
+**Novo**
+
+- **As duas polaridades de um composto, lado a lado.** Uma nova aba de evidência, **Other
+  polarity**, espelha o espectro de produto desta corrida contra o da outra para o mesmo composto,
+  com o nome do parceiro, o m/z, o aduto, o tempo de retenção, o sinal-ruído e a correlação entre
+  os dois perfis de altura logo abaixo. Com **Split evidence** ligado, MS/MS à esquerda e Other
+  polarity à direita é o arranjo para o qual se vincula uma polaridade — e a segunda coluna agora
+  a seleciona sozinha.
+- **Um composto, um veredito.** **Tag both polarities**, ligado por padrão assim que uma
+  polaridade é vinculada, leva a revisão através do par: confirmar um composto aqui confirma-o na
+  outra corrida, e o desfazer toma de volta nas duas. As duas revisões são gravadas por **Save
+  review**, cada uma no seu `_tags.xml`. Veja [[polarity-merge]].
+
+## 0.7.0 — setembro de 2026
+
+Segue o MS-DIAL 5.5.260817.
 
 **Novo**
 

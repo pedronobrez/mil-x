@@ -34,6 +34,8 @@
           <Button x:Name="LinkPolarity" Classes="tool" Command="{Binding $parent[Window].DataContext.LinkPolarityCommand}" IsEnabled="{Binding HasResults}"
                   Content="{Binding HasPolarityLink, Converter={x:Static views:Converters.PolarityLinkLabel}}"
                   ToolTip.Tip="Pair this result with the same batch run in the other polarity: the compounds are matched on the neutral molecule, so what only ionises the other way stops being a separate project" />
+          <CheckBox x:Name="TagBoth" Classes="compact" Content="Tag both polarities" IsChecked="{Binding TagBothPolarities}" IsEnabled="{Binding HasPolarityLink}" Margin="4,0,0,0"
+                    ToolTip.Tip="A compound both runs saw is one compound: confirming it here confirms it there, and taking the decision back takes it back in both" />
           <Rectangle Classes="vsep" />
           <Button x:Name="SaveReview" Classes="tool" Command="{Binding SaveCurationCommand}" IsEnabled="{Binding HasResults}"
                   ToolTip.Tip="Write the review to &lt;alignment&gt;_tags.xml, the same file MS-DIAL reads and writes">

@@ -48,6 +48,40 @@ Four columns, described with the others in [[ion-table#The columns]]:
 The **polarity** box in the filter band narrows the table to **Seen in both** or **Only in this
 polarity**. It is enabled only once a polarity is linked.
 
+## Reading both spectra at once
+
+The evidence tabs gain **Other polarity**: this run's product spectrum above, the other run's
+below, for the same compound. Turn on **Split evidence** and the workspace puts MS/MS on the left
+and Other polarity on the right — which is what linking a polarity is for. The second column
+selects that tab on its own the first time a polarity is linked.
+
+The two halves are **not** expected to match peak for peak: a protonated molecule and a
+deprotonated one fall apart differently, so this is not a score and nothing is computed from it.
+What agrees is the neutral mass, the retention time and the way the heights rise and fall across
+the injections — and what you get on screen is the same molecule fragmented twice, which is a
+different order of confidence from one spectrum alone.
+
+Under the mirror is the partner's line: its name in that run, its m/z and adduct, its retention
+time, its signal-to-noise, the correlation between the two height profiles, the neutral mass, and
+which run quantifies the compound.
+
+## One compound, one verdict
+
+**Tag both polarities** in the toolbar, on by default once a polarity is linked, carries the review
+across the pair: confirming a compound here confirms it in the other run, and rejecting it rejects
+it there. Features only one polarity saw are left alone.
+
+Undo works across both. Taking a decision back here takes it back there, in the same keystroke,
+because what travels is the whole tag state of a paired feature rather than each edit — so the two
+reviews cannot drift apart.
+
+Both reviews are written by **Save review**: this run's to its own `_tags.xml`, the other run's to
+its own, each still readable by MS-DIAL.
+
+Switch the toggle off to review the two polarities independently. Note what the default means: a
+tag the other run already carried on a paired feature is replaced by this one, because the pair is
+one compound and one compound has one verdict.
+
 ## Which side quantifies
 
 The one that measured the compound better, by signal-to-noise, with the height as the tie-break.

@@ -16,6 +16,18 @@ namespace OpenDIAL.Desktop.Tests;
 /// </summary>
 public class PolarityWorkspaceTests
 {
+    internal static IReadOnlyList<SampleInfo> SamplesForCuration() => Samples();
+
+    internal static AlignmentSpotRow[] PositiveRows()
+    {
+        var samples = Samples();
+        return new[]
+        {
+            Row(1, "PC 34:1", 760.5851, 5.00, "[M+H]+", Rising, 20, samples),
+            Row(2, "Unknown", 501.2573, 3.00, "[M+H]+", Flat, 30, samples),
+        };
+    }
+
     private static IReadOnlyList<SampleInfo> Samples() => new[]
     {
         new SampleInfo(0, "liver_01_pos", "liver", "Sample", 1),
@@ -51,6 +63,12 @@ public class PolarityWorkspaceTests
 
     private static (AnalyticsViewModel Vm, string Folder) NewAnalytics()
     {
+        var (vm, folder, _) = NewAnalyticsWithStore();
+        return (vm, folder);
+    }
+
+    private static (AnalyticsViewModel Vm, string Folder, CurationStore Store) NewAnalyticsWithStore()
+    {
         var folder = Path.Combine(Path.GetTempPath(), "opendial-polarity-ui-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(folder);
         var vm = new AnalyticsViewModel(new RawDataCache());
@@ -61,10 +79,14 @@ public class PolarityWorkspaceTests
             Row(1, "PC 34:1", 760.5851, 5.00, "[M+H]+", Rising, 20, samples),
             Row(2, "Unknown", 501.2573, 3.00, "[M+H]+", Flat, 30, samples),
         }, samples, store);
-        return (vm, folder);
+        return (vm, folder, store);
     }
 
-    private static AlignmentTable NegativeRun()
+    /// <summary>The review of the run on the other side of the link.</summary>
+    private static CurationStore PartnerStore(string folder) =>
+        CurationStore.Load(Path.Combine(folder, "AlignResult-2.arf"));
+
+    internal static AlignmentTable NegativeRun()
     {
         var samples = NegativeSamples();
         return new AlignmentTable(samples, new[]
@@ -170,6 +192,22 @@ public class PolarityWorkspaceTests
     }
 
     [AvaloniaFact]
+    public void The_evidence_gains_a_tab_for_the_other_polarity()
+    {
+        var (vm, _) = NewAnalytics();
+        var window = new Window { Width = 1100, Height = 800, Content = new EvidenceView { DataContext = vm } };
+        window.Show();
+        window.UpdateLayout();
+
+        var tabs = window.GetVisualDescendants().OfType<TabControl>().First();
+        var headers = tabs.Items.OfType<TabItem>().Select(t => t.Header?.ToString()).ToList();
+        Assert.Equal("Other polarity", headers[^1]);
+        // the index the workspace puts in the second column when a polarity is linked
+        Assert.Equal(AnalyticsViewModel.OtherPolarityTab, headers.Count - 1);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public void The_pairing_is_written_beside_the_alignment_and_read_back()
     {
         var (vm, folder) = NewAnalytics();
@@ -183,5 +221,103 @@ public class PolarityWorkspaceTests
         Assert.Single(read!.Result.Pairs);
         Assert.Equal(PolarityChoice.Negative, read.Result.Pairs[0].Quantify);
         Directory.Delete(folder, true);
+    }
+}
+
+/// <summary>
+/// The verdict carried across the pair. A compound both polarities saw is one compound, so
+/// confirming it in the run on screen confirms it in the other — and taking the decision back
+/// takes it back in both.
+/// </summary>
+public class PolarityCurationTests
+{
+    private static (AnalyticsViewModel Vm, CurationStore Partner, string Folder) Linked()
+    {
+        var folder = Path.Combine(Path.GetTempPath(), "opendial-polarity-cur-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        var vm = new AnalyticsViewModel(new RawDataCache());
+        var samples = PolarityWorkspaceTests.SamplesForCuration();
+        vm.LoadForTest(PolarityWorkspaceTests.PositiveRows(), samples, CurationStore.Load(Path.Combine(folder, "AlignResult-1.arf")));
+        var partner = CurationStore.Load(Path.Combine(folder, "AlignResult-2.arf"));
+        vm.LinkPolarityForTest(PolarityWorkspaceTests.NegativeRun(), partner);
+        return (vm, partner, folder);
+    }
+
+    [AvaloniaFact]
+    public void Confirming_a_paired_feature_confirms_it_in_the_other_polarity()
+    {
+        var (vm, partner, folder) = Linked();
+        try
+        {
+            vm.SelectedRow = vm.IonRows.Single(r => r.Id == 1);   // the paired one
+            vm.ConfirmAndNextCommand.Execute(null);
+
+            Assert.True(partner.HasTag(11, PeakSpotTagKind.Confirmed));
+            Assert.False(partner.HasTag(12, PeakSpotTagKind.Confirmed));   // the unpaired one is untouched
+        }
+        finally { Directory.Delete(folder, true); }
+    }
+
+    [AvaloniaFact]
+    public void Taking_the_decision_back_takes_it_back_in_both()
+    {
+        var (vm, partner, folder) = Linked();
+        try
+        {
+            vm.SelectedRow = vm.IonRows.Single(r => r.Id == 1);
+            vm.ConfirmAndNextCommand.Execute(null);
+            Assert.True(partner.HasTag(11, PeakSpotTagKind.Confirmed));
+
+            vm.UndoCommand.Execute(null);
+            Assert.False(vm.IonRows.Single(r => r.Id == 1).IsConfirmed);
+            Assert.False(partner.HasTag(11, PeakSpotTagKind.Confirmed));
+        }
+        finally { Directory.Delete(folder, true); }
+    }
+
+    [AvaloniaFact]
+    public void A_feature_only_this_polarity_saw_carries_nothing_across()
+    {
+        var (vm, partner, folder) = Linked();
+        try
+        {
+            vm.SelectedRow = vm.IonRows.Single(r => r.Id == 2);   // positive only
+            vm.ToggleTagCommand.Execute("1");
+
+            Assert.True(vm.IonRows.Single(r => r.Id == 2).IsConfirmed);
+            Assert.Empty(partner.TagsOf(11));
+            Assert.Empty(partner.TagsOf(12));
+        }
+        finally { Directory.Delete(folder, true); }
+    }
+
+    [AvaloniaFact]
+    public void Switching_the_propagation_off_leaves_the_other_review_alone()
+    {
+        var (vm, partner, folder) = Linked();
+        try
+        {
+            vm.TagBothPolarities = false;
+            vm.SelectedRow = vm.IonRows.Single(r => r.Id == 1);
+            vm.ConfirmAndNextCommand.Execute(null);
+
+            Assert.True(vm.IonRows.Single(r => r.Id == 1).IsConfirmed);
+            Assert.Empty(partner.TagsOf(11));
+        }
+        finally { Directory.Delete(folder, true); }
+    }
+
+    [AvaloniaFact]
+    public void Unlinking_stops_the_verdict_travelling()
+    {
+        var (vm, partner, folder) = Linked();
+        try
+        {
+            vm.UnlinkPolarity();
+            vm.SelectedRow = vm.IonRows.Single(r => r.Id == 1);
+            vm.ConfirmAndNextCommand.Execute(null);
+            Assert.Empty(partner.TagsOf(11));
+        }
+        finally { Directory.Delete(folder, true); }
     }
 }

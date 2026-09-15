@@ -2,7 +2,7 @@
 title: The evidence panels
 section: Reviewing
 order: 22
-summary: The peak grid that is always on screen and the eight tabs below it — MS/MS, Isotopes, Candidates, Abundance, Feature map, Samples, Statistics, Trend — and the question each one answers.
+summary: The peak grid that is always on screen and the nine tabs below it — MS/MS, Isotopes, Candidates, Abundance, Feature map, Samples, Statistics, Trend, Other polarity — and the question each one answers.
 ---
 
 # The evidence panels
@@ -118,3 +118,17 @@ Any per-injection metric against another, coloured by class, points joined in or
 Height, Area, RT, m/z or S/N; **X** is the analytical order or any of the same. Height against
 order is the drift check for one feature; the drift correction in the [[statistics-workspace]] is
 the same check for all of them. Clicking a point selects the injection.
+
+## Other polarity
+
+The same compound as the other run of the batch measured it: this run's product spectrum above,
+the other run's below. Empty until a polarity is linked from the toolbar and a feature both runs
+saw is selected.
+
+The two halves are not a match to be scored — a protonated molecule and a deprotonated one
+fragment differently. What agrees is the neutral mass, the retention time and the height profile
+across the injections, and the line under the mirror says all three, with the partner's name, m/z,
+adduct, signal-to-noise and which run quantifies the compound. See [[polarity-merge]].
+
+With **Split evidence** on, MS/MS on the left and this tab on the right is the layout linking a
+polarity is for; the second column selects it on its own the first time.

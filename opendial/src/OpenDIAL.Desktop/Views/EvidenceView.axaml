@@ -159,5 +159,24 @@
         <c:ScatterChart Items="{Binding MetricPoints}" SelectedItem="{Binding SelectedMetricPoint, Mode=TwoWay}" XLabel="{Binding MetricX}" YLabel="{Binding MetricY}" Connect="True" />
       </DockPanel>
     </TabItem>
+    <!-- the same compound as the other polarity of the batch measured it -->
+    <TabItem Header="Other polarity">
+      <Panel Margin="0,6,0,0">
+        <DockPanel IsVisible="{Binding HasPartner}">
+          <Border DockPanel.Dock="Bottom" Classes="hairline-top" Padding="4,8,4,0" Margin="0,6,0,0">
+            <StackPanel Spacing="4">
+              <TextBlock Classes="hint" Text="{Binding PartnerDetail}" TextWrapping="Wrap" />
+              <TextBlock Classes="hint" TextWrapping="Wrap"
+                         Text="The two halves are not expected to match peak for peak — a protonated molecule and a deprotonated one fall apart differently. What agrees is the neutral mass, the retention time and the way the heights rise and fall across the injections." />
+            </StackPanel>
+          </Border>
+          <c:SpectrumChart x:Name="PolarityMirror" Peaks="{Binding PartnerPeaks}" ReferencePeaks="{Binding PartnerMirrorPeaks}"
+                           PrecursorMz="{Binding PartnerPrecursor}" Title="{Binding PartnerTitle}" />
+        </DockPanel>
+        <TextBlock Classes="faint" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="420"
+                   IsVisible="{Binding !HasPartner}"
+                   Text="Nothing here yet. Link the same batch run in the other polarity from the toolbar, and select a feature both runs saw." />
+      </Panel>
+    </TabItem>
   </TabControl>
 </UserControl>

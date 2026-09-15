@@ -2,7 +2,7 @@
 title: Os painéis de evidência
 section: Reviewing
 order: 22
-summary: A grade de picos que está sempre na tela e as oito abas abaixo dela — MS/MS, Isotopes, Candidates, Abundance, Feature map, Samples, Statistics, Trend — e a pergunta que cada uma responde.
+summary: A grade de picos sempre na tela e as nove abas abaixo dela — MS/MS, Isotopes, Candidates, Abundance, Feature map, Samples, Statistics, Trend, Other polarity — e a pergunta que cada uma responde.
 ---
 
 # Os painéis de evidência
@@ -121,3 +121,17 @@ Qualquer métrica por injeção contra outra, colorida por classe, pontos ligado
 Height, Area, RT, m/z ou S/N; **X** é a ordem analítica ou qualquer das mesmas. Altura contra
 ordem é a verificação de deriva para uma feature; a correção de deriva na [[statistics-workspace]]
 é a mesma verificação para todas elas. Clicar num ponto seleciona a injeção.
+
+## Other polarity
+
+O mesmo composto como a outra corrida do lote o mediu: o espectro de produto desta corrida em cima,
+o da outra embaixo. Vazia até que uma polaridade seja vinculada pela barra e uma feature que as
+duas corridas viram seja selecionada.
+
+As duas metades não são um casamento a ser pontuado — uma molécula protonada e uma desprotonada se
+fragmentam de formas diferentes. O que concorda é a massa neutra, o tempo de retenção e o perfil de
+altura ao longo das injeções, e a linha sob o espelho diz os três, com o nome do parceiro, o m/z, o
+aduto, o sinal-ruído e qual corrida quantifica o composto. Veja [[polarity-merge]].
+
+Com **Split evidence** ligado, MS/MS à esquerda e esta aba à direita é o arranjo para o qual se
+vincula uma polaridade; a segunda coluna a seleciona sozinha na primeira vez.

@@ -274,6 +274,10 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
         HasResults = false;
         _polarityLink = null;
         _linkedAlignmentPath = null;
+        _linkedBean = null;
+        _linkedCuration = null;
+        _linkedSpots = new Dictionary<int, AlignmentSpotRow>();
+        ClearPartnerSpectrum();
         HasPolarityLink = false;
         PolaritySummary = string.Empty;
         PolarityFilter = "All";
@@ -874,6 +878,20 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
 
     private PolarityLinkResult? _polarityLink;
     private string? _linkedAlignmentPath;
+    private AlignmentFileBean? _linkedBean;
+    private CurationStore? _linkedCuration;
+    private IReadOnlyDictionary<int, AlignmentSpotRow> _linkedSpots = new Dictionary<int, AlignmentSpotRow>();
+
+    /// <summary>The index of the evidence tab that shows the other polarity's spectrum.</summary>
+    public const int OtherPolarityTab = 8;
+
+    [ObservableProperty] private bool _tagBothPolarities = true;
+    [ObservableProperty] private bool _hasPartner;
+    [ObservableProperty] private IReadOnlyList<Point> _partnerPeaks = Array.Empty<Point>();
+    [ObservableProperty] private IReadOnlyList<Point>? _partnerMirrorPeaks;
+    [ObservableProperty] private double _partnerPrecursor;
+    [ObservableProperty] private string _partnerTitle = string.Empty;
+    [ObservableProperty] private string _partnerDetail = string.Empty;
 
     [ObservableProperty] private string _polarityFilter = "All";
     [ObservableProperty] private bool _hasPolarityLink;
@@ -909,9 +927,15 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
         try
         {
             var other = await ResultLoader.LoadAlignmentFromFileAsync(alignmentPath);
+            var bean = ResultLoader.BeanFor(alignmentPath);
             var sentence = LinkPolarity(other, options);
             if (!HasPolarityLink) return sentence;
             _linkedAlignmentPath = Path.GetFullPath(alignmentPath);
+            // the other run's spectra and its review, so a pair can be read and judged as one compound
+            _linkedBean = bean;
+            _linkedCuration = CurationStore.Load(bean.FilePath);
+            SecondEvidenceTab = OtherPolarityTab;
+            if (SelectedRow is not null) SpectrumReady = LoadSpectrumAsync(SelectedRow.Spot);
 
             if (save && _session?.AlignmentFile is not null)
             {
@@ -965,6 +989,7 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     private void Attach(PolarityLinkResult result, AlignmentTable other, bool thisRunIsPositive)
     {
         var partner = other.Spots.ToDictionary(s => s.Id);
+        _linkedSpots = partner;
         var byMine = new Dictionary<int, PolarityPair>();
         foreach (var pair in result.Pairs)
         {
@@ -985,11 +1010,30 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
         }
     }
 
+    /// <summary>
+    /// Links a polarity that is already in memory, with the review that belongs to it. The headless
+    /// interface tests use this: they are about the pairing and the tagging, not about reading files.
+    /// </summary>
+    internal string LinkPolarityForTest(AlignmentTable other, CurationStore partnerCuration, PolarityLinkOptions? options = null)
+    {
+        var sentence = LinkPolarity(other, options);
+        if (HasPolarityLink)
+        {
+            _linkedCuration = partnerCuration;
+            SecondEvidenceTab = OtherPolarityTab;
+        }
+        return sentence;
+    }
+
     /// <summary>Forgets the other polarity; the sidecar on disk is left where it is.</summary>
     public void UnlinkPolarity()
     {
         _polarityLink = null;
         _linkedAlignmentPath = null;
+        _linkedBean = null;
+        _linkedCuration = null;
+        _linkedSpots = new Dictionary<int, AlignmentSpotRow>();
+        ClearPartnerSpectrum();
         HasPolarityLink = false;
         PolaritySummary = string.Empty;
         PolarityFilter = "All";
@@ -1211,6 +1255,11 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
             _curation.Save();
             CurationDirty = false;
             var message = $"Review saved to {Path.GetFileName(_curation.TagFilePath)} (MS-DIAL reads this file too).";
+            if (_linkedCuration is { IsDirty: true })
+            {
+                _linkedCuration.Save();
+                message += $" The other polarity's review went to {Path.GetFileName(_linkedCuration.TagFilePath)}.";
+            }
             if (PeaksEdited && _container is not null && _session?.AlignmentFile is not null)
             {
                 PeakEditor.Save(_container, _session.AlignmentFile);
@@ -1233,6 +1282,7 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
 
     private void AfterCuration()
     {
+        MirrorCurationToPartner();
         RefreshCounts();
         CurationChanged?.Invoke(this, EventArgs.Empty);
         // a tag filter is a moving target while tagging: re-apply it so the list stays honest
@@ -1373,10 +1423,87 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
             Ms2Peaks = ms2 is null ? Array.Empty<Point>() : ms2.Peaks.Select(p => new Point(p.Mz, p.Intensity)).ToList();
             ReferencePeaks = reference;
             Ms2Title = ms2 is null ? "No representative MS/MS" : "Representative MS/MS · " + ms2.Label + (reference is null ? string.Empty : " · mirror: library reference");
+            await LoadPartnerSpectrumAsync(spot, Ms2Peaks);
         }
         catch (Exception ex)
         {
             Ms2Title = "MS/MS unavailable: " + ex.Message;
+        }
+    }
+
+    private void ClearPartnerSpectrum()
+    {
+        HasPartner = false;
+        PartnerPeaks = Array.Empty<Point>();
+        PartnerMirrorPeaks = null;
+        PartnerTitle = string.Empty;
+        PartnerDetail = string.Empty;
+    }
+
+    /// <summary>
+    /// The same compound as the other polarity measured it, mirrored under this run's spectrum.
+    ///
+    /// The two halves are not expected to match peak for peak — a protonated molecule and a
+    /// deprotonated one fall apart differently — so this is not a score. It is the thing a reviewer
+    /// wants on screen when deciding whether an identification is real: the same molecule,
+    /// fragmented twice, at the same retention time.
+    /// </summary>
+    private async Task LoadPartnerSpectrumAsync(AlignmentSpotRow spot, IReadOnlyList<Point> ownPeaks)
+    {
+        ClearPartnerSpectrum();
+        var row = _allRows.FirstOrDefault(r => r.Id == spot.Id);
+        if (row?.Polarity?.Pair is not { } pair || _linkedBean is null) return;
+        var partnerId = row.Polarity.OwnIsPositive ? pair.NegativeId : pair.PositiveId;
+        if (!_linkedSpots.TryGetValue(partnerId, out var partner)) return;
+
+        var here = row.Polarity.OwnIsPositive ? "positive" : "negative";
+        var there = row.Polarity.OwnIsPositive ? "negative" : "positive";
+        try
+        {
+            var ms2 = await Task.Run(() => ResultLoader.LoadAlignmentMs2(_linkedBean, partner));
+            if (SelectedSpot != spot) return;
+            HasPartner = true;
+            PartnerPrecursor = partner.Mz;
+            PartnerPeaks = ownPeaks;
+            PartnerMirrorPeaks = ms2 is null ? null : ms2.Peaks.Select(p => new Point(p.Mz, p.Intensity)).ToList();
+            PartnerTitle = ms2 is null
+                ? $"#{partner.Id} in the {there} run carries no MS/MS"
+                : $"This run ({here}) above · #{partner.Id} in the {there} run below";
+            var name = partner.IsAnnotated ? partner.Name : "no name in that run";
+            var correlation = double.IsNaN(pair.Correlation) ? "no shared injections" : $"r {pair.Correlation:0.00}";
+            PartnerDetail =
+                $"{name} · m/z {partner.Mz.ToString("F4", CultureInfo.InvariantCulture)} {partner.Adduct} · " +
+                $"RT {partner.Rt.ToString("F2", CultureInfo.InvariantCulture)} min · S/N {partner.SignalToNoiseAverage:F0} · " +
+                $"{correlation} · neutral {pair.NeutralMass.ToString("F4", CultureInfo.InvariantCulture)} · " +
+                $"quantified from the {(pair.Quantify == PolarityChoice.Positive ? "positive" : "negative")} run";
+        }
+        catch (Exception ex)
+        {
+            HasPartner = true;
+            PartnerTitle = "The other polarity's MS/MS could not be read: " + ex.Message;
+        }
+    }
+
+    /// <summary>
+    /// Carries the verdict across the pair. A compound seen in both polarities is one compound, so
+    /// confirming it in one run confirms it in the other; the tags of every paired feature are
+    /// copied to their partner after each change. Copying the whole state rather than each edit is
+    /// what makes undo work across the two reviews without a second undo stack: taking a decision
+    /// back here re-copies the state that was restored.
+    /// </summary>
+    private void MirrorCurationToPartner()
+    {
+        if (!TagBothPolarities || _linkedCuration is null || _curation is null) return;
+        foreach (var row in _allRows)
+        {
+            if (row.Polarity?.Pair is not { } pair) continue;
+            var partnerId = row.Polarity.OwnIsPositive ? pair.NegativeId : pair.PositiveId;
+            var mine = _curation.TagsOf(row.Id);
+            var theirs = _linkedCuration.TagsOf(partnerId);
+            if (mine.Count == 0 && theirs.Count == 0) continue;
+            if (mine.Count == theirs.Count && !mine.Except(theirs).Any()) continue;
+            _linkedCuration.ClearTags(partnerId);
+            foreach (var tag in mine) _linkedCuration.SetTag(partnerId, tag, true);
         }
     }
 

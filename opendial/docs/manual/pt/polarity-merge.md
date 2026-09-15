@@ -49,6 +49,40 @@ Quatro colunas, descritas com as outras em [[ion-table#As colunas]]:
 A caixa de **polaridade** na barra de filtros estreita a tabela para **Seen in both** ou **Only in
 this polarity**. Só fica ativa depois de uma polaridade ser vinculada.
 
+## Ler os dois espectros de uma vez
+
+As abas de evidência ganham **Other polarity**: o espectro de produto desta corrida em cima, o da
+outra embaixo, do mesmo composto. Ligue **Split evidence** e a área põe MS/MS à esquerda e Other
+polarity à direita — que é para isso que se vincula uma polaridade. A segunda coluna seleciona essa
+aba sozinha na primeira vez que uma polaridade é vinculada.
+
+As duas metades **não** têm de coincidir pico a pico: uma molécula protonada e uma desprotonada se
+partem de formas diferentes, então isto não é uma pontuação e nada é calculado a partir disso. O
+que concorda é a massa neutra, o tempo de retenção e o modo como as alturas sobem e descem ao longo
+das injeções — e o que fica na tela é a mesma molécula fragmentada duas vezes, que é outra ordem de
+confiança em relação a um espectro sozinho.
+
+Sob o espelho fica a linha do parceiro: o nome que ele tem naquela corrida, o m/z e o aduto, o
+tempo de retenção, a relação sinal-ruído, a correlação entre os dois perfis de altura, a massa
+neutra, e qual corrida quantifica o composto.
+
+## Um composto, um veredito
+
+**Tag both polarities** na barra, ligado por padrão assim que uma polaridade é vinculada, leva a
+revisão através do par: confirmar um composto aqui confirma-o na outra corrida, e rejeitar rejeita
+lá também. As features que só uma polaridade viu ficam intocadas.
+
+O desfazer atravessa as duas. Tomar uma decisão de volta aqui toma-a de volta lá, no mesmo
+atalho, porque o que viaja é o estado inteiro de marcações de uma feature pareada, e não cada
+edição — então as duas revisões não conseguem divergir.
+
+As duas revisões são gravadas por **Save review**: a desta corrida no seu `_tags.xml`, a da outra
+no dela, cada uma ainda legível pelo MS-DIAL.
+
+Desligue o interruptor para revisar as duas polaridades de forma independente. Note o que o padrão
+significa: uma marcação que a outra corrida já tinha numa feature pareada é substituída por esta,
+porque o par é um composto e um composto tem um veredito.
+
 ## Qual lado quantifica
 
 O que mediu melhor o composto, por relação sinal-ruído, com a altura como desempate.

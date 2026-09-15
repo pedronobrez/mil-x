@@ -283,17 +283,24 @@ public static class ResultLoader
     /// polarity of a batch is, seen from this one. MS-DIAL names the bean without the trailing
     /// digit and adds it back when it reads, so the path given here is the ".arf2" on disk.
     /// </summary>
-    public static Task<AlignmentTable> LoadAlignmentFromFileAsync(string arf2Path, CancellationToken ct = default)
+    public static Task<AlignmentTable> LoadAlignmentFromFileAsync(string arf2Path, CancellationToken ct = default) =>
+        LoadAlignmentTableAsync(BeanFor(arf2Path), Array.Empty<AnalysisFileBean>(), ct);
+
+    /// <summary>
+    /// The bean that names an alignment result on disk. It is worth having on its own because
+    /// everything else about a result — its spectra, its review — is addressed through the bean,
+    /// not the path.
+    /// </summary>
+    public static AlignmentFileBean BeanFor(string arf2Path)
     {
         if (string.IsNullOrWhiteSpace(arf2Path) || !File.Exists(arf2Path)) throw new FileNotFoundException("alignment result not found", arf2Path);
         var beanName = Path.GetFileName(arf2Path);
         if (beanName.EndsWith(".arf2", StringComparison.OrdinalIgnoreCase)) beanName = beanName[..^1];
-        var bean = new AlignmentFileBean
+        return new AlignmentFileBean
         {
             FilePath = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(arf2Path))!, beanName),
             FileName = Path.GetFileNameWithoutExtension(arf2Path),
         };
-        return LoadAlignmentTableAsync(bean, Array.Empty<AnalysisFileBean>(), ct);
     }
 
     /// <summary>

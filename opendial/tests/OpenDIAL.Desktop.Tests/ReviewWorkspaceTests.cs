@@ -212,7 +212,7 @@ public class ReviewWorkspaceTests
 
         var tabs = view.GetVisualDescendants().OfType<TabControl>().FirstOrDefault(t => t.Name == "ResultTabs");
         Assert.NotNull(tabs);
-        Assert.Equal(8, tabs!.Items.Count);   // MS/MS, isotopes, candidates, abundance, map, samples, statistics, trend
+        Assert.Equal(9, tabs!.Items.Count);   // MS/MS, isotopes, candidates, abundance, map, samples, statistics, trend, other polarity
         Assert.Equal(0, tabs.SelectedIndex);   // the spectrum is the one showing when a result opens
         // and the peak grid is not a tab: it sits above them, on screen from the start
         var grid = view.GetVisualDescendants().OfType<ItemsControl>().FirstOrDefault(c => c.ItemsSource == vm.Panels);
