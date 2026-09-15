@@ -277,6 +277,9 @@ def read_probe(path: str) -> dict:
     raise Failed(f"no readable probe at {path}")
 
 
+STDERR_PATH = ""
+
+
 def wait_for(path: str, predicate, what: str, timeout: float, report=None) -> dict:
     """Waits for the window to report something, and says what it was still saying if it never did."""
     deadline = time.time() + timeout
@@ -294,8 +297,23 @@ def wait_for(path: str, predicate, what: str, timeout: float, report=None) -> di
             report(last)
             next_report = time.time() + 15
         time.sleep(0.5)
+    crash = _crashed()
+    if crash:
+        raise Failed(f"the application died instead of reporting itself, waiting for {what}.\n"
+                     f"Its own stderr says:\n\n{crash}")
     raise Failed(f"timed out after {timeout:.0f} s waiting for {what}; the window was reporting "
                  f"{json.dumps({k: v for k, v in last.items() if k not in ('controls',)}, indent=2)}")
+
+
+def _crashed() -> str:
+    """The first few lines of the application's stderr, when it wrote any."""
+    try:
+        text = open(STDERR_PATH).read().strip() if STDERR_PATH else ""
+    except OSError:
+        return ""
+    if not text:
+        return ""
+    return "\n".join(text.splitlines()[:6])
 
 
 def send_command(probe: str, command: dict, timeout: float = 120) -> dict:
@@ -421,6 +439,8 @@ def main() -> int:
     probe = os.path.join(work, "probe.json")
     out_log = os.path.join(work, "stdout.log")
     err_log = os.path.join(work, "stderr.log")
+    global STDERR_PATH
+    STDERR_PATH = err_log
     settings = os.path.join(work, "settings")
     shots = args.shots or os.path.join(work, "shots")
     os.makedirs(shots, exist_ok=True)
