@@ -63,6 +63,15 @@ reconstrói o lote a partir dele quando não há `.odproj`. É o único arquivo 
 dentro de si, e por isso um projeto aberto desta forma consegue buscar na sua biblioteca sem o
 arquivo MSP estar na máquina.
 
+**Um projeto pode mudar de lugar.** Os caminhos dentro dele são absolutos — onde o conjunto de
+dados e os arquivos brutos estavam quando ele foi gravado — e não significam nada em outra máquina:
+um nome de usuário diferente já basta, e um caminho do Windows nem sequer é um caminho no macOS ou
+no Linux. Quando o caminho gravado não existe, o OpenDIAL procura o conjunto de dados pelo nome ao
+lado do arquivo de projeto, um nível acima, e nas pastas vizinhas, que é onde uma corrida copiada o
+guarda. Assim uma pasta de resultados entregue num pendrive abre, e uma copiada de uma máquina
+Windows também. O que ele não acha é um conjunto de dados deixado para trás: copie a pasta inteira,
+não só o `.mdproject`.
+
 ## A pasta de resultados
 
 Tudo o que uma corrida grava, numa pasta. `<sample>` é o nome da amostra, `<stamp>` um carimbo de

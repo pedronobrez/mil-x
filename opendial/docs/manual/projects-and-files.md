@@ -63,6 +63,14 @@ the batch from it when there is no `.odproj`. It is the one file that carries th
 it, which is why a project opened this way can search its library without the MSP file being on
 the machine.
 
+**A project can be moved.** The paths inside it are absolute — where its dataset and its raw files
+were when it was written — and those mean nothing on another machine: a different user name is
+enough, and a Windows path is not a path at all on macOS or Linux. When the stored path is missing,
+OpenDIAL looks for the dataset by name beside the project file, one level up, and in the folders
+next to it, which is where a copied run keeps it. So a results folder handed over on a memory stick
+opens, and one copied from a Windows machine opens too. What it cannot find is a dataset left
+behind: copy the whole folder, not only the `.mdproject`.
+
 ## The results folder
 
 Everything a run writes, in one folder. `<sample>` is the sample name, `<stamp>` a time stamp of
