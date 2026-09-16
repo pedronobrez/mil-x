@@ -34,7 +34,7 @@ statistics columns.
 
 ## The OpenQuant component list
 
-**Export to OpenQuant…** turns the listed features into an OpenQuant component CSV — precursor,
+**Export to MIL-Q…** turns the listed features into an OpenQuant component CSV — precursor,
 strongest fragment, retention window — so a discovery list becomes a targeted method in one step.
 The options and the columns are in [[openquant]].
 

@@ -9,7 +9,7 @@
       <StackPanel Orientation="Horizontal" Spacing="2">
         <Button Classes="tool strong" Content="Add data files…" Command="{Binding AddFilesCommand}" />
         <Button Classes="tool" Content="Add folder…" Command="{Binding AddFolderCommand}" />
-        <Button Classes="tool" Content="Import OpenQuant batch…" Command="{Binding $parent[Window].DataContext.ImportOpenQuantBatchCommand}" ToolTip.Tip="Add the samples of an OpenQuant project (.oqproj) with their type, group, dilution and comment" />
+        <Button Classes="tool" Content="Import MIL-Q batch…" Command="{Binding $parent[Window].DataContext.ImportOpenQuantBatchCommand}" ToolTip.Tip="Add the samples of a MIL-Q (OpenQuant) project (.oqproj) with their type, group, dilution and comment" />
         <Button Classes="tool" Content="Remove" Command="{Binding RemoveSelectedCommand}" />
         <Button Classes="tool" Content="Clear all" Command="{Binding ClearAllCommand}" IsEnabled="{Binding HasSamples}" />
         <Rectangle Classes="vsep" />

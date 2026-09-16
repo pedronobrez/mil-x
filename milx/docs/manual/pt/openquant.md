@@ -1,20 +1,22 @@
 ---
-title: OpenQuant
+title: MIL-Q (OpenQuant)
 section: Data and files
 order: 32
-summary: O que o MIL-X partilha com o OpenQuant, importar um lote do OpenQuant, e exportar uma lista de componentes para quantificação dirigida.
+summary: O que o MIL-X partilha com o MIL-Q — o OpenQuant de hoje —, importar um lote dele, e exportar uma lista de componentes para quantificação dirigida.
 ---
 
-# OpenQuant
+# MIL-Q (OpenQuant)
 
-O OpenQuant é uma aplicação de quantificação dirigida; o MIL-X é processamento untargeted sobre
+**MIL-Q** é a metade dirigida da família — o OpenQuant de hoje, que assume o nome MIL-Q na sua
+própria 1.0. Os botões já dizem MIL-Q; os formatos de arquivo (`.oqproj`, o CSV de componentes) são
+do OpenQuant e não mudam. O OpenQuant é uma aplicação de quantificação dirigida; o MIL-X é processamento untargeted sobre
 o motor do MS-DIAL. Foram feitos para parecer duas áreas de trabalho de uma só suíte — a mesma
 paleta, a mesma janela de abas e faixas, a mesma leitura nativa de `.wiff` — e o fluxo entre eles
 é *descobrir no MIL-X, quantificar no OpenQuant*.
 
 ## Importar um lote do OpenQuant
 
-**File ▸ Import OpenQuant batch (.oqproj)…**, o botão **Import OpenQuant batch…** na área Samples,
+**File ▸ Import MIL-Q batch (.oqproj)…**, o botão **Import MIL-Q batch…** na área Samples,
 ou abrir um `.oqproj` ou `.opvproj` pelo Finder, adiciona ao lote as amostras do projeto OpenQuant
 com o que o OpenQuant sabia delas:
 
@@ -35,7 +37,7 @@ redigitado. O projeto toma o nome do `.oqproj` quando ainda não tem nenhum.
 
 ## Exportar uma lista de componentes
 
-**Export to OpenQuant…** na barra de ferramentas de Analytics, ou **Process ▸ Export to
+**Export to MIL-Q…** na barra de ferramentas de Analytics, ou **Process ▸ Export to
 OpenQuant…**, grava as features que a tabela de íons está mostrando como um CSV de componentes do
 OpenQuant, com os cabeçalhos que a própria tabela de componentes do OpenQuant grava e lê. O arquivo
 abre no OpenQuant por **Method ▸ Import components**.

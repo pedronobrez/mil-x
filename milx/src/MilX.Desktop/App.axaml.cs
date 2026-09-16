@@ -170,20 +170,20 @@ public partial class App : Application
                             case "stats-cluster":
                             case "stats-network":
                             {
+                                // the page by its header, as the probe's selectStatisticsPage does: an index
+                                // silently lands on whichever page moved into that slot
                                 var statsTabs = Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(window).OfType<Avalonia.Controls.TabControl>().FirstOrDefault(t => t.Name == "StatsTabs");
-                                if (Environment.GetEnvironmentVariable("MILX_SNAPSHOT_ACTION") == "stats-network")
+                                var wantNetwork = Environment.GetEnvironmentVariable("MILX_SNAPSHOT_ACTION") == "stats-network";
+                                var pageHeader = wantNetwork ? "Molecular network" : "Dendrogram";
+                                var page = statsTabs?.Items.OfType<Avalonia.Controls.TabItem>().FirstOrDefault(t => string.Equals(t.Header as string, pageHeader, StringComparison.OrdinalIgnoreCase));
+                                if (statsTabs is not null && page is not null) statsTabs.SelectedItem = page;
+                                await Task.Delay(800);
+                                if (wantNetwork)
                                 {
-                                    if (statsTabs is not null) statsTabs.SelectedIndex = 2;
-                                    await Task.Delay(800);
                                     await vm.Statistics.BuildNetworkCommand.ExecuteAsync(null);
                                     Console.WriteLine("[stats] " + vm.Statistics.NetworkLabel);
-                                    await Task.Delay(2500);
                                 }
-                                else
-                                {
-                                    if (statsTabs is not null) statsTabs.SelectedIndex = 1;
-                                    await Task.Delay(2000);
-                                }
+                                await Task.Delay(2500);
                                 break;
                             }
                             case "search-demo":

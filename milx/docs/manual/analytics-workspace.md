@@ -35,7 +35,7 @@ first.
 | --- | --- |
 | **Process batch** | runs the pipeline (`⌘R`); see [[processing]] |
 | **Re-export…** | the height and area matrix of every feature, as TSV |
-| **Export to OpenQuant…** | the listed features as an OpenQuant component list; see [[openquant]] |
+| **Export to MIL-Q…** | the listed features as an OpenQuant component list; see [[openquant]] |
 | **Export reviewed table…** | the listed features with the review as columns; see [[exports]] |
 | **Open output folder** | the results folder in Finder |
 | **Run report…** | writes the run down — counts, library, injections, method, log and the figures on screen — as one HTML file with the figures inlined as vectors; open it and print to PDF. See [[exports#The run report]] |

@@ -43,7 +43,7 @@ this project first?** com **Cancel**, **Discard** e **Save**.
 | Save project as… | | grava-o noutro lugar; a pasta de resultados passa a ser `results` ao lado |
 | Add data files… | | arquivos brutos para o lote, uma linha por injeção |
 | Add folder… | | todo arquivo bruto suportado diretamente dentro de uma pasta; as pastas `.d` da Agilent e da Bruker só podem ser adicionadas assim, porque o Finder não consegue entregar uma pasta a uma aplicação |
-| Import OpenQuant batch (.oqproj)… | | as amostras de um projeto OpenQuant com os seus tipos, grupos, diluições e comentários; veja [[openquant]] |
+| Import MIL-Q batch (.oqproj)… | | as amostras de um projeto OpenQuant com os seus tipos, grupos, diluições e comentários; veja [[openquant]] |
 | Close project | | esvazia a sessão |
 | Settings… | | tema, cache, msconvert; veja [[settings]] |
 | Quit | `⌘Q` | |
@@ -65,7 +65,7 @@ this project first?** com **Cancel**, **Discard** e **Save**.
 | Process batch | `⌘R` | corre o pipeline sobre o lote; veja [[processing]] |
 | Cancel run | | para-o no próximo ponto de verificação |
 | Re-export alignment matrix… | | uma matriz de alturas e áreas de toda feature contra toda injeção, em TSV; veja [[exports]] |
-| Export to OpenQuant… | | as features listadas como uma lista de componentes do OpenQuant; veja [[openquant]] |
+| Export to MIL-Q… | | as features listadas como uma lista de componentes do OpenQuant; veja [[openquant]] |
 | Open output folder | | a pasta de resultados no Finder |
 | Choose output folder… | | onde a próxima corrida grava |
 | Load method file… | | substitui o método pelo conteúdo de um arquivo; veja [[method-workspace]] |

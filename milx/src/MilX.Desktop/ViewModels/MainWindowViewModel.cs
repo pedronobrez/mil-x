@@ -383,7 +383,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private async Task ImportOpenQuantBatchAsync()
     {
-        var files = await _dialogs.PickFilesAsync("Import an OpenQuant batch", new[] { "*.oqproj", "*.opvproj" }, allowMultiple: false, Settings.Current.LastProjectFolder);
+        var files = await _dialogs.PickFilesAsync("Import a MIL-Q batch", new[] { "*.oqproj", "*.opvproj" }, allowMultiple: false, Settings.Current.LastProjectFolder);
         if (files.Count == 0) return;
         await ImportOpenQuantBatchAsync(files[0]);
     }
@@ -450,13 +450,13 @@ public sealed partial class MainWindowViewModel : ViewModelBase
                 var text = string.Empty;
                 if (missing.Count > 0) text += "These files do not exist (the rows were added anyway):\n" + string.Join("\n", missing.Take(12)) + (missing.Count > 12 ? $"\n… and {missing.Count - 12} more" : string.Empty);
                 if (problems.Count > 0) text += (text.Length > 0 ? "\n\n" : string.Empty) + string.Join("\n", problems);
-                await _messages.ShowErrorAsync("OpenQuant batch imported with warnings", text);
+                await _messages.ShowErrorAsync("MIL-Q batch imported with warnings", text);
             }
         }
         catch (Exception ex)
         {
             Status = "Import failed: " + ex.Message;
-            await _messages.ShowErrorAsync("Could not import the OpenQuant batch", ex.Message);
+            await _messages.ShowErrorAsync("Could not import the MIL-Q batch", ex.Message);
         }
     }
 
@@ -533,12 +533,12 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private async Task ExportOpenQuantAsync()
     {
-        if (Results is null || !Analytics.HasResults) { Status = "Process the batch (or open results) before exporting to OpenQuant."; return; }
+        if (Results is null || !Analytics.HasResults) { Status = "Process the batch (or open results) before exporting to MIL-Q."; return; }
         if (ShowOpenQuantExport is null) return;
         var options = await ShowOpenQuantExport();
         if (options is null) return;
         var suggested = (string.IsNullOrEmpty(ProjectName) ? "components" : ProjectName + "_components") + ".csv";
-        var path = await _dialogs.SaveFileAsync("Export components to OpenQuant", suggested, "csv", OutputFolder);
+        var path = await _dialogs.SaveFileAsync("Export components to MIL-Q", suggested, "csv", OutputFolder);
         if (path is null) return;
         try
         {

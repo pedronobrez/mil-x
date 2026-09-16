@@ -61,7 +61,7 @@ supported, but Finder cannot bind a folder to an application, so open those from
 
 ![analytics](docs/images/review-ion-table.png)
 
-A TripleTOF `.wiff` opened natively in the Explorer:
+A SCIEX `.wiff` opened natively in the Explorer, its IDA product-ion channels beside the TIC:
 
 ![wiff](docs/images/explorer-wiff.png)
 

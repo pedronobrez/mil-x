@@ -19,7 +19,7 @@ aba de distância.
 | --- | --- |
 | **Add data files…** | escolhe arquivos brutos; cada um vira uma linha, um `.wiff` com várias amostras vira várias |
 | **Add folder…** | todo arquivo bruto suportado diretamente dentro de uma pasta, por ordem de nome; a única forma de adicionar pastas `.d` da Agilent ou da Bruker |
-| **Import OpenQuant batch…** | as amostras de um `.oqproj` com o seu tipo, grupo, diluição e comentário; veja [[openquant]] |
+| **Import MIL-Q batch…** | as amostras de um `.oqproj` com o seu tipo, grupo, diluição e comentário; veja [[openquant]] |
 | **Remove** | as linhas selecionadas |
 | **Clear all** | todas as linhas |
 | **Set type of selected** ▸ **Apply** | o tipo escolhido em todas as linhas selecionadas |

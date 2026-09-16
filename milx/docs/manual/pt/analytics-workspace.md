@@ -35,7 +35,7 @@ com um clique antes.
 | --- | --- |
 | **Process batch** | corre o pipeline (`⌘R`); veja [[processing]] |
 | **Re-export…** | a matriz de alturas e áreas de toda feature, em TSV |
-| **Export to OpenQuant…** | as features listadas como uma lista de componentes do OpenQuant; veja [[openquant]] |
+| **Export to MIL-Q…** | as features listadas como uma lista de componentes do OpenQuant; veja [[openquant]] |
 | **Export reviewed table…** | as features listadas com a revisão em colunas; veja [[exports]] |
 | **Open output folder** | a pasta de resultados no Finder |
 | **Run report…** | escreve a corrida — contagens, biblioteca, injeções, método, log e as figuras da tela — num arquivo HTML com as figuras em vetor embutidas; abra e imprima em PDF. Veja [[exports#O relatório da corrida]] |

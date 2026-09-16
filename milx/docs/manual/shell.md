@@ -43,7 +43,7 @@ project first?** with **Cancel**, **Discard** and **Save**.
 | Save project as… | | writes it somewhere else; the results folder defaults to `results` beside it |
 | Add data files… | | raw files into the batch, one row per injection |
 | Add folder… | | every supported raw file directly inside a folder; Agilent and Bruker `.d` folders can only be added this way, since Finder cannot hand a folder to an application |
-| Import OpenQuant batch (.oqproj)… | | the samples of an OpenQuant project with their types, groups, dilutions and comments; see [[openquant]] |
+| Import MIL-Q batch (.oqproj)… | | the samples of an OpenQuant project with their types, groups, dilutions and comments; see [[openquant]] |
 | Close project | | empties the session |
 | Settings… | | theme, cache, msconvert; see [[settings]] |
 | Quit | `⌘Q` | |
@@ -65,7 +65,7 @@ project first?** with **Cancel**, **Discard** and **Save**.
 | Process batch | `⌘R` | runs the pipeline on the batch; see [[processing]] |
 | Cancel run | | stops it at the next checkpoint |
 | Re-export alignment matrix… | | a height and area matrix of every feature against every injection, as TSV; see [[exports]] |
-| Export to OpenQuant… | | the listed features as an OpenQuant component list; see [[openquant]] |
+| Export to MIL-Q… | | the listed features as an OpenQuant component list; see [[openquant]] |
 | Open output folder | | the results folder in Finder |
 | Choose output folder… | | where the next run writes |
 | Load method file… | | replaces the method with a file's contents; see [[method-workspace]] |

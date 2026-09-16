@@ -16,7 +16,7 @@ The current version. It tracks MS-DIAL 5.5.260817.
 
 **The name.** OpenDIAL is now **MIL-X**: *Multi-omics Identification Laboratory*, and X for
 exploration. Its targeted counterpart, today's OpenQuant, becomes MIL-Q at its own 1.0; the two
-are one family — *explore, then quantify* — which **Export to OpenQuant…** already does. The mark
+are one family — *explore, then quantify* — which **Export to MIL-Q…** already does. The mark
 is a cow's head, face on: MIL-X is said like *milks*, and MS-DIAL's icon is a rotary telephone, so
 the pun is a homage to the parent project. See [[about#The name]].
 
@@ -60,8 +60,6 @@ are exactly what 0.9 wrote, and 0.9 still opens them.
 - **Verified on a real negative-mode batch.** The polarity merge is checked against synthetic pairs
   and against a real alignment mirrored on itself; it has not yet seen a batch acquired in
   negative mode. [[polarity-merge]] says so too.
-- **Photographed under its own name.** Some screenshots in this manual were taken on 0.9 and show
-  *OpenDIAL* in the title bar. The interface under it is the current one.
 
 After 1.0: a library manager, the SIRIUS hand-off, a molecular network on the modified cosine,
 calibration curves, and a processing queue.

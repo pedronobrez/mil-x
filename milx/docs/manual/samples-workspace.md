@@ -18,7 +18,7 @@ it. `⌘4` shows it. A project with no results opens here; a processed project k
 | --- | --- |
 | **Add data files…** | picks raw files; each becomes a row, a multi-sample `.wiff` several |
 | **Add folder…** | every supported raw file directly inside a folder, in name order; the only way to add Agilent or Bruker `.d` folders |
-| **Import OpenQuant batch…** | the samples of an `.oqproj` with their type, group, dilution and comment; see [[openquant]] |
+| **Import MIL-Q batch…** | the samples of an `.oqproj` with their type, group, dilution and comment; see [[openquant]] |
 | **Remove** | the selected rows |
 | **Clear all** | every row |
 | **Set type of selected** ▸ **Apply** | the chosen type on every selected row |

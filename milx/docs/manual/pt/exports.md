@@ -36,7 +36,7 @@ estatística do MS-DIAL.
 
 ## A lista de componentes do OpenQuant
 
-**Export to OpenQuant…** transforma as features listadas num CSV de componentes do OpenQuant —
+**Export to MIL-Q…** transforma as features listadas num CSV de componentes do OpenQuant —
 precursor, fragmento mais forte, janela de retenção — de modo que uma lista de descoberta vira um
 método dirigido num passo. As opções e as colunas estão em [[openquant]].
 

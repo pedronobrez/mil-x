@@ -16,7 +16,7 @@ with a cross-platform user interface of its own.
 **MIL** is *Multi-omics Identification Laboratory*; **X** is exploration, the untargeted half of
 the work, where a batch goes in and a few thousand features come out and the job is to decide what
 they are. **MIL-Q** is quantification, the targeted half — today's OpenQuant, renamed when its own
-1.0 comes. *Explore, then quantify* is what the two do together, and **Export to OpenQuant…** is
+1.0 comes. *Explore, then quantify* is what the two do together, and **Export to MIL-Q…** is
 the hand-off.
 
 Until 1.0 this program was **OpenDIAL**. The old name is still understood wherever it was written

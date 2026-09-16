@@ -132,7 +132,7 @@ The rest of the shell — menus, the status bar, the log, the progress band — 
    `⌘⇧1` to `⌘⇧5` or **Confirm ▸** and **Reject ▸**. **Save review** writes the tags to the
    file MS-DIAL reads. See [[analytics-workspace]].
 6. **Export reviewed table…** writes what the table is showing, with the review as columns.
-   **Export to OpenQuant…** turns the list into a targeted method. See [[exports]].
+   **Export to MIL-Q…** turns the list into a targeted method. See [[exports]].
 
 Everything you did is in the project file: reopen it from **File ▸ Recent projects** and the
 results, the review and the method come back.
@@ -142,7 +142,7 @@ results, the review and the method come back.
 - A MIL-X project (`.milx`, or `.odproj` from before 1.0) or an MS-DIAL project (`.mdproject`): **File ▸ Open project…** (`⌘O`), or from Finder.
 - A folder of results written by the console or by MS-DIAL, with no project file: **File ▸ Open results folder…**. The batch is reconstructed from the result files.
 - A raw file, or a folder of them, just to look: drop it on the application, or **File ▸ Add data files…**. It opens in the Explorer, unprocessed.
-- An OpenQuant batch (`.oqproj`): **File ▸ Import OpenQuant batch…** adds its samples with their types and groups. See [[openquant]].
+- An OpenQuant batch (`.oqproj`): **File ▸ Import MIL-Q batch…** adds its samples with their types and groups. See [[openquant]].
 
 A processed project opens on Analytics; an unprocessed one on Samples.
 
