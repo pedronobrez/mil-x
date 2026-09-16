@@ -11,9 +11,33 @@ A versão mostrada em **Help ▸ About OpenDIAL** e na sonda da janela é a cari
 `opendial/Directory.Build.props`. Esta página nomeia-a, e um teste falha a construção quando não
 nomeia.
 
+## O que falta para a 1.0
+
+A 1.0 não é um monte de recursos novos. É esta aplicação, renomeada, assinada, e exercitada em
+toda plataforma que ela declara. Seis coisas estão entre aqui e lá.
+
+| O quê | Por que trava a 1.0 |
+| --- | --- |
+| **A renomeação para MIL-X** | A identidade está decidida — MIL-X para exploração, MIL-Q para quantificação, sob *Multi-omics Identification Laboratory* — e a 1.0 é onde ela entra: o nome da aplicação, o identificador do bundle, os ícones, este manual, as strings de toda exportação. Renomear depois da 1.0 quebraria o que as pessoas já anotaram. |
+| **Builds assinadas** | Hoje toda plataforma recebe quem chega com um aviso: "Windows protected your PC", "desenvolvedor não identificado". Um certificado de assinatura de código no Windows e uma notarização na Apple são as únicas coisas que os removem, e uma versão que as pessoas instalam num laboratório inteiro não deveria precisar de contorno no primeiro lançamento. |
+| **Um lote real em modo negativo** | A conciliação de polaridades — a maior coisa da 0.7.0 à 0.9.0 — é verificada contra pares sintéticos e contra um alinhamento real espelhado contra si mesmo. Ela nunca viu um lote real adquirido em modo negativo. Enquanto não vir, o recurso é honesto mas não comprovado, e isso também está escrito em [[polarity-merge]]. |
+| **Um lote processado no Windows** | A build do Windows inicia no Windows, o que um workflow confere a cada construção. Ninguém ainda passou um lote inteiro por ela. Iniciar e funcionar são afirmações diferentes. |
+| **O instalador, instalado** | O `.msi` é lido de volta depois de construído, então sabe-se que as associações de arquivo estão dentro dele. Se a instalação, o duplo clique e a desinstalação se comportam numa máquina Windows de verdade, não foi testado. |
+| **As capturas do manual** | Três delas — a tabela de íons, a área Analytics, a área Samples — são mais velhas que a interface que mostram. |
+
+O que está deliberadamente *fora* desta lista, porque é depois da 1.0: um gerenciador de
+bibliotecas, a entrega para o SIRIUS, uma rede molecular sobre o cosseno modificado, curvas de
+calibração e uma fila de processamento.
+
 ## 0.9.0 — setembro de 2026
 
 A versão atual. Segue o MS-DIAL 5.5.260817.
+
+**A primeira versão que se pode baixar.** Até agora a aplicação era algo que se construía. Toda
+release daqui em diante traz uma build para macOS, Windows e Linux —
+[github.com/pedronobrez/mil-x/releases](https://github.com/pedronobrez/mil-x/releases) — com um
+instalador do Windows que registra o `.odproj`. Nenhuma delas carrega o SDK da SCIEX, que não pode
+ser redistribuído. Veja [[getting-started]].
 
 **Novo**
 

@@ -10,9 +10,33 @@ summary: What each version of OpenDIAL brought; the notes are updated with every
 The version shown in **Help ▸ About OpenDIAL** and in the window's probe is the one stamped in
 `opendial/Directory.Build.props`. This page names it, and a test fails the build when it does not.
 
+## What 1.0 needs
+
+1.0 is not a pile of new features. It is this application, renamed, signed, and exercised on every
+platform it claims. Six things stand between here and there.
+
+| What | Why it blocks 1.0 |
+| --- | --- |
+| **The rename to MIL-X** | The identity is decided — MIL-X for exploration, MIL-Q for quantification, under *Multi-omics Identification Laboratory* — and 1.0 is where it lands: the application name, the bundle identifier, the icons, this manual, the strings in every export. A rename after 1.0 would break what people have written down. |
+| **Signed builds** | Today every platform greets a new user with a warning: "Windows protected your PC", "unidentified developer". A Windows code-signing certificate and an Apple notarisation are the only things that remove them, and a version people install across a lab should not need a workaround on the first launch. |
+| **A real negative-mode batch** | The polarity merge — the largest thing in 0.7.0 through 0.9.0 — is verified against synthetic pairs and against one real alignment mirrored on itself. It has never seen a real batch acquired in negative mode. Until it has, the feature is honest but unproven, and that is written into [[polarity-merge]] too. |
+| **A batch processed on Windows** | The Windows build starts on Windows, which a workflow checks on every build. Nobody has yet run a batch through it end to end. Starting and working are different claims. |
+| **The installer, installed** | The `.msi` is read back after it is built, so the file associations are known to be inside it. Whether the install, the double click and the uninstall behave on a real Windows machine is untested. |
+| **The manual's screenshots** | Three of them — the ion table, the Analytics workspace, the Samples workspace — are older than the interface they show. |
+
+What is deliberately *not* on this list, because it belongs after 1.0: a library manager, the
+SIRIUS hand-off, a molecular network on the modified cosine, calibration curves, and a processing
+queue.
+
 ## 0.9.0 — September 2026
 
 The current version. It tracks MS-DIAL 5.5.260817.
+
+**The first version you can download.** Until now the application was something you built. Every
+release from here carries a build for macOS, Windows and Linux —
+[github.com/pedronobrez/mil-x/releases](https://github.com/pedronobrez/mil-x/releases) — with a
+Windows installer that registers `.odproj`. None of them carries the SCIEX SDK, which cannot be
+redistributed. See [[getting-started]].
 
 **New**
 

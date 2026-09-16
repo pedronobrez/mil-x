@@ -7,6 +7,26 @@ summary: Instalar a aplicação, abri-la pela primeira vez e um primeiro projeto
 
 # Primeiros passos
 
+## Onde conseguir
+
+Toda release traz uma versão para cada plataforma, em
+[github.com/pedronobrez/mil-x/releases](https://github.com/pedronobrez/mil-x/releases). Todas são
+autocontidas: o runtime .NET viaja dentro, então nada precisa ser instalado antes.
+
+| Plataforma | Arquivo | O que é |
+| --- | --- | --- |
+| macOS, Apple silicon | `OpenDIAL-<versão>-macos-arm64.dmg` | o bundle da aplicação, para arrastar até Applications |
+| Windows x64 | `OpenDIAL-<versão>-windows-x64.msi` | um instalador, por usuário, sem administrador |
+| Windows x64 | `OpenDIAL-<versão>-windows-x64.zip` | a mesma aplicação sem instalador |
+| Linux x86_64 | `OpenDIAL-<versão>-linux-x86_64.tar.gz` | uma pasta para descompactar e rodar |
+
+Nenhuma delas carrega o SDK Clearcore2 da SCIEX, porque a licença dele proíbe repassá-lo: a
+leitura de `.wiff` é configurada na sua própria máquina, uma vez, pelo
+`scripts/fetch-sciex-assemblies.sh`. Sem ele o `.wiff` passa pelo msconvert e a aplicação diz
+isso. Veja [[raw-data-formats]].
+
+O `SHA256SUMS` na página da release tem a soma de verificação de cada arquivo.
+
 ## Instalar no macOS
 
 O OpenDIAL é distribuído como um bundle de aplicação autocontido, `OpenDIAL.app`. Ele carrega o
@@ -30,8 +50,53 @@ projetos `.odproj` e `.mdproject`, lotes `.oqproj` e arquivos brutos (`.mzML`, `
 no OpenDIAL com um duplo clique ou um arrasto sobre o ícone. Veja [[projects-and-files]] e
 [[raw-data-formats]] para o que cada um faz.
 
-Construir a partir do código-fonte, e as versões Linux e Windows, estão em
-[[building-and-testing]].
+## Instalar no Windows
+
+O `.msi` instala em `%LOCALAPPDATA%\OpenDIAL` **para o usuário atual**, então nenhum administrador
+entra na história — o que importa num laboratório onde quem analisa o dado raramente é quem tem a
+senha de administrador. Ele cria entrada no menu Iniciar, aparece em **Adicionar ou remover
+programas**, e uma atualização substitui a versão anterior em vez de ficar ao lado dela.
+
+1. Dê duplo clique no `.msi`. O Windows mostra **"Windows protected your PC"**, porque a build não
+   tem certificado de assinatura de código: **More info ▸ Run anyway**. Só um certificado remove
+   esse aviso.
+2. Inicie pelo menu Iniciar, ou dê duplo clique em qualquer projeto `.odproj` — o instalador
+   registra essa extensão, com o ícone da aplicação.
+3. O `.mdproject` continua com o MS-DIAL, que provavelmente está instalado na mesma máquina; o
+   OpenDIAL só se acrescenta à lista **Abrir com** desse tipo de arquivo.
+
+O `.zip` é a mesma aplicação sem instalador e sem nada escrito no registro: descompacte onde
+quiser e rode `OpenDIAL.exe`. Desbloqueie o zip antes de extrair (clique direito ▸ **Propriedades
+▸ Desbloquear**) ou o Windows marca cada arquivo de dentro dele.
+
+O próprio MS-DIAL 5 roda no Windows, e lá ele faz mais do que este port faz — mobilidade iônica e
+imaging entre as coisas. A versão Windows existe para que uma máquina com Windows possa abrir e
+continuar uma revisão começada num Mac ou no Linux, e para que um laboratório misto compartilhe um
+conjunto só de arquivos.
+
+## Instalar no Linux
+
+Descompacte o tarball e rode o binário:
+
+```bash
+tar -xzf OpenDIAL-<versão>-linux-x86_64.tar.gz
+cd OpenDIAL-<versão>-linux-x86_64
+./OpenDIAL
+```
+
+Se o bit de execução não sobreviveu à cópia, `chmod +x OpenDIAL` o devolve. O que a distribuição
+precisa fornecer são as bibliotecas cliente do X11 e o fontconfig, que todo Linux de desktop já
+tem; num servidor ou imagem de container pelada:
+
+```bash
+apt-get install -y libx11-6 libice6 libsm6 libfontconfig1 libicu-dev   # Debian, Ubuntu
+dnf install -y libX11 libICE libSM fontconfig libicu                   # Fedora, RHEL
+```
+
+Não há entrada de desktop no tarball: crie uma apontando para o binário se quiser vê-lo no menu
+de aplicações.
+
+Construir a partir do código-fonte, para qualquer uma das três, está em [[building-and-testing]].
 
 ## A janela em um minuto
 

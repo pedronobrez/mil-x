@@ -7,6 +7,25 @@ summary: Installing the application, opening it for the first time, and a first 
 
 # Getting started
 
+## Where to get it
+
+Every release carries a build for each platform, at
+[github.com/pedronobrez/mil-x/releases](https://github.com/pedronobrez/mil-x/releases). They are
+self-contained: the .NET runtime travels inside, so nothing has to be installed first.
+
+| Platform | File | What it is |
+| --- | --- | --- |
+| macOS, Apple silicon | `OpenDIAL-<version>-macos-arm64.dmg` | the application bundle, to drag to Applications |
+| Windows x64 | `OpenDIAL-<version>-windows-x64.msi` | an installer, per user, no administrator needed |
+| Windows x64 | `OpenDIAL-<version>-windows-x64.zip` | the same application without an installer |
+| Linux x86_64 | `OpenDIAL-<version>-linux-x86_64.tar.gz` | a folder to unpack and run |
+
+None of them carries the SCIEX Clearcore2 SDK, because its licence forbids passing it on: `.wiff`
+reading is set up on your own machine, once, by `scripts/fetch-sciex-assemblies.sh`. Without it
+`.wiff` goes through msconvert and the application says so. See [[raw-data-formats]].
+
+`SHA256SUMS` on the release page has the checksum of every file.
+
 ## Installing on macOS
 
 OpenDIAL ships as a self-contained application bundle, `OpenDIAL.app`. It carries its own .NET
@@ -28,7 +47,51 @@ The application registers the document types it understands, so from then on Fin
 in OpenDIAL with a double click or a drag onto its icon. See [[projects-and-files]] and
 [[raw-data-formats]] for what each does.
 
-Building from source, and the Linux and Windows builds, are in [[building-and-testing]].
+## Installing on Windows
+
+The `.msi` installs into `%LOCALAPPDATA%\OpenDIAL` **for the current user**, so no administrator
+is involved — which matters in a lab where the person analysing the data is rarely the person with
+the admin password. It adds a Start menu entry, appears in **Add or remove programs**, and an
+upgrade replaces the previous version rather than sitting beside it.
+
+1. Double-click the `.msi`. Windows shows **"Windows protected your PC"**, because the build has no
+   code-signing certificate: **More info ▸ Run anyway**. Only a certificate removes that warning.
+2. Start it from the Start menu, or double-click any `.odproj` project — the installer registers
+   that extension, with the application's icon.
+3. `.mdproject` stays with MS-DIAL, which is probably installed on the same machine; OpenDIAL only
+   adds itself to that file type's **Open with** list.
+
+The `.zip` is the same application with no installer and nothing written to the registry: unpack it
+anywhere and run `OpenDIAL.exe`. Unblock the zip before extracting (right-click ▸ **Properties ▸
+Unblock**) or Windows marks every file inside it.
+
+MS-DIAL 5 itself runs on Windows, and there it does more than this port does — ion mobility and
+imaging among it. The Windows build exists so that a machine running Windows can open and continue
+a review started on a Mac or on Linux, and so a mixed lab shares one set of files.
+
+## Installing on Linux
+
+Unpack the tarball and run the binary:
+
+```bash
+tar -xzf OpenDIAL-<version>-linux-x86_64.tar.gz
+cd OpenDIAL-<version>-linux-x86_64
+./OpenDIAL
+```
+
+If the executable bit did not survive the copy, `chmod +x OpenDIAL` puts it back. What the
+distribution has to supply is the X11 client libraries and fontconfig, which every desktop Linux
+already has; on a bare server or container image:
+
+```bash
+apt-get install -y libx11-6 libice6 libsm6 libfontconfig1 libicu-dev   # Debian, Ubuntu
+dnf install -y libX11 libICE libSM fontconfig libicu                   # Fedora, RHEL
+```
+
+There is no desktop entry in the tarball: create one pointing at the binary if you want it in the
+applications menu.
+
+Building from source, for any of the three, is in [[building-and-testing]].
 
 ## The window in one minute
 
