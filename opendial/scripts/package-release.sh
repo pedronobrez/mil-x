@@ -11,6 +11,16 @@
 # installed first. What does not travel is the SCIEX Clearcore2 SDK — its licence forbids
 # redistribution — so .wiff reading is set up on the user's machine by scripts/fetch-sciex-assemblies.sh.
 #
+# Build a release on a machine that HAS the SDK and this script will refuse its own archives. The
+# plugin folder is stripped here, but the Clearcore2 assemblies also reach the application root
+# through the project reference, and there they are indistinguishable from the app's own files. So
+# move the SDK out of the way for the build:
+#
+#     mv vendor/sciex vendor/sciex.hold && scripts/package-release.sh ; mv vendor/sciex.hold vendor/sciex
+#
+# That is also the configuration everyone who downloads the archive is in, which is the better
+# reason to build it that way.
+#
 # The Windows and Linux builds are cross-compiled; the macOS one can only be built on macOS,
 # because the bundle needs codesign and iconutil.
 set -euo pipefail
