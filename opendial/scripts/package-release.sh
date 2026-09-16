@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # Builds the downloadable archives for a release, one per platform.
 #
-#   scripts/package-release.sh [--only linux|windows|macos] [--skip-build]
+#   scripts/package-release.sh [--only linux|linux-arm|windows|macos|macos-intel] [--skip-build]
 #       -> dist/release/OpenDIAL-<version>-linux-x86_64.tar.gz
+#          dist/release/OpenDIAL-<version>-linux-arm64.tar.gz
 #          dist/release/OpenDIAL-<version>-windows-x64.zip
 #          dist/release/OpenDIAL-<version>-macos-arm64.dmg
+#          dist/release/OpenDIAL-<version>-macos-x86_64.dmg
 #          dist/release/SHA256SUMS
 #
 # Every archive is self-contained: the .NET runtime travels inside it, so nothing has to be
@@ -69,23 +71,27 @@ readme () { # <platform> <destination>
 }
 
 # ---- Linux ------------------------------------------------------------------------------------
-if wanted linux; then
-  echo "== linux-x64"
-  [ "$SKIP_BUILD" = "1" ] || "$HERE/build-gui.sh" linux-x64 >/dev/null
-  SRC="$ROOT/dist/opendial-desktop-linux-x64"
-  STAGE="$(mktemp -d)/OpenDIAL-$VERSION-linux-x86_64"
-  mkdir -p "$STAGE"
-  cp -R "$SRC"/. "$STAGE/"
-  chmod +x "$STAGE/OpenDIAL"
-  drop_sciex "$STAGE"
-  carry_paperwork "$STAGE"
+# x86_64 is what a desktop or a cluster node runs; arm64 is a Raspberry-class box, an Ampere VM, or
+# an ARM laptop. Same application, and the .NET publish cross-compiles either from here.
+linux_archive () { # <runtime identifier> <name in the archive>
+  local rid="$1" arch="$2"
+  echo "== $rid"
+  [ "$SKIP_BUILD" = "1" ] || "$HERE/build-gui.sh" "$rid" >/dev/null
+  local src="$ROOT/dist/opendial-desktop-$rid"
+  local stage; stage="$(mktemp -d)/OpenDIAL-$VERSION-$arch"
+  mkdir -p "$stage"
+  cp -R "$src"/. "$stage/"
+  chmod +x "$stage/OpenDIAL"
+  drop_sciex "$stage"
+  carry_paperwork "$stage"
+  readme linux "$stage/README.txt"
+  ( cd "$(dirname "$stage")" && tar -czf "$OUT/OpenDIAL-$VERSION-$arch.tar.gz" "$(basename "$stage")" )
+  rm -rf "$(dirname "$stage")"
+  echo "   $OUT/OpenDIAL-$VERSION-$arch.tar.gz"
+}
 
-  readme linux "$STAGE/README.txt"
-
-  ( cd "$(dirname "$STAGE")" && tar -czf "$OUT/OpenDIAL-$VERSION-linux-x86_64.tar.gz" "$(basename "$STAGE")" )
-  rm -rf "$(dirname "$STAGE")"
-  echo "   $OUT/OpenDIAL-$VERSION-linux-x86_64.tar.gz"
-fi
+if wanted linux;     then linux_archive linux-x64   linux-x86_64; fi
+if wanted linux-arm; then linux_archive linux-arm64 linux-arm64;  fi
 
 # ---- Windows ----------------------------------------------------------------------------------
 if wanted windows; then
@@ -106,32 +112,38 @@ if wanted windows; then
 fi
 
 # ---- macOS ------------------------------------------------------------------------------------
-if wanted macos; then
-  if [ "$(uname -s)" != "Darwin" ]; then
-    echo "== macos: skipped (bundles can only be built on macOS)"
+# Apple silicon is what this is developed on; the Intel build is for the Macs still on a desk. Both
+# are built here because a bundle needs codesign and iconutil, which only exist on macOS.
+macos_dmg () { # <runtime identifier> <name in the archive>
+  local rid="$1" arch="$2"
+  echo "== $rid"
+  if [ "$SKIP_BUILD" = "1" ]; then
+    "$HERE/make-app-bundle.sh" "$rid" --skip-publish >/dev/null
   else
-    echo "== osx-arm64"
-    if [ "$SKIP_BUILD" = "1" ]; then
-      "$HERE/make-app-bundle.sh" osx-arm64 --skip-publish >/dev/null
-    else
-      "$HERE/make-app-bundle.sh" osx-arm64 >/dev/null
-    fi
-    STAGE="$(mktemp -d)/OpenDIAL $VERSION"
-    mkdir -p "$STAGE"
-    ditto "$ROOT/dist/OpenDIAL.app" "$STAGE/OpenDIAL.app"
-    # taking files out of a signed bundle invalidates the signature, so it is signed again after
-    drop_sciex "$STAGE/OpenDIAL.app/Contents/MacOS"
-    codesign --force --deep --sign - --timestamp=none "$STAGE/OpenDIAL.app" 2>/dev/null
-    codesign --verify --deep "$STAGE/OpenDIAL.app" || { echo "the bundle lost its signature" >&2; exit 1; }
-    ln -s /Applications "$STAGE/Applications"
-    carry_paperwork "$STAGE"
-    readme macos "$STAGE/README.txt"
-    DMG="$OUT/OpenDIAL-$VERSION-macos-arm64.dmg"
-    rm -f "$DMG"
-    hdiutil create -quiet -volname "OpenDIAL $VERSION" -srcfolder "$STAGE" -ov -format UDZO "$DMG"
-    rm -rf "$(dirname "$STAGE")"
-    echo "   $DMG"
+    "$HERE/make-app-bundle.sh" "$rid" >/dev/null
   fi
+  local stage; stage="$(mktemp -d)/OpenDIAL $VERSION"
+  mkdir -p "$stage"
+  ditto "$ROOT/dist/OpenDIAL.app" "$stage/OpenDIAL.app"
+  # taking files out of a signed bundle invalidates the signature, so it is signed again after
+  drop_sciex "$stage/OpenDIAL.app/Contents/MacOS"
+  codesign --force --deep --sign - --timestamp=none "$stage/OpenDIAL.app" 2>/dev/null
+  codesign --verify --deep "$stage/OpenDIAL.app" || { echo "the bundle lost its signature" >&2; exit 1; }
+  ln -s /Applications "$stage/Applications"
+  carry_paperwork "$stage"
+  readme macos "$stage/README.txt"
+  local dmg="$OUT/OpenDIAL-$VERSION-$arch.dmg"
+  rm -f "$dmg"
+  hdiutil create -quiet -volname "OpenDIAL $VERSION" -srcfolder "$stage" -ov -format UDZO "$dmg"
+  rm -rf "$(dirname "$stage")"
+  echo "   $dmg"
+}
+
+if [ "$(uname -s)" != "Darwin" ]; then
+  if wanted macos || wanted macos-intel; then echo "== macos: skipped (bundles can only be built on macOS)"; fi
+else
+  if wanted macos;       then macos_dmg osx-arm64 macos-arm64; fi
+  if wanted macos-intel; then macos_dmg osx-x64   macos-x86_64; fi
 fi
 
 # ---- nothing redistributable slipped in -------------------------------------------------------
