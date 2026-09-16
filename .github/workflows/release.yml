@@ -197,8 +197,61 @@ jobs:
           name: linux
           path: dist/*
 
+  # A native arm64 runner, so the build is not cross-compiled and the start test is real. An
+  # emulated arm64 container on an x86 host takes tens of minutes to do the same thing worse.
+  linux-arm:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Read the version
+        id: v
+        run: echo "version=$(sed -n 's/.*<Version>\([^<]*\)<\/Version>.*/\1/p' opendial/Directory.Build.props | head -1)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish
+        run: |
+          dotnet publish opendial/src/OpenDIAL.Desktop/OpenDIAL.Desktop.csproj \
+            -c Release -r linux-arm64 --self-contained \
+            -p:UseOpenRawData=true -p:SkipLibraryDownload=true \
+            -p:DebugType=None -p:DebugSymbols=false -p:ErrorOnDuplicatePublishOutputFiles=false \
+            -o publish/linux-arm64
+
+      - name: It starts on Linux arm64
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb libx11-6 libice6 libsm6 libfontconfig1
+          chmod +x publish/linux-arm64/OpenDIAL
+          export OPENDIAL_UI_PROBE="$PWD/probe.json"
+          xvfb-run -a --server-args="-screen 0 1600x1000x24" publish/linux-arm64/OpenDIAL &
+          for i in $(seq 1 60); do [ -s probe.json ] && break; sleep 1; done
+          [ -s probe.json ] || { echo "the window never reported itself after 60s" >&2; exit 1; }
+          echo "started in ${i}s"
+          head -c 200 probe.json
+
+      - name: Tarball
+        run: |
+          V="${{ steps.v.outputs.version }}"
+          mkdir -p "stage/OpenDIAL-$V-linux-arm64" dist
+          cp -R publish/linux-arm64/. "stage/OpenDIAL-$V-linux-arm64/"
+          chmod +x "stage/OpenDIAL-$V-linux-arm64/OpenDIAL"
+          cp LICENSE "stage/OpenDIAL-$V-linux-arm64/LICENSE.txt"
+          cp NOTICE  "stage/OpenDIAL-$V-linux-arm64/NOTICE.txt"
+          sed "s/@VERSION@/$V/g" opendial/packaging/linux-README.txt > "stage/OpenDIAL-$V-linux-arm64/README.txt"
+          if find stage -iname "*clearcore*" | grep -q .; then
+            echo "the SCIEX SDK must not be redistributed" >&2; exit 1
+          fi
+          tar -czf "dist/OpenDIAL-$V-linux-arm64.tar.gz" -C stage "OpenDIAL-$V-linux-arm64"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-arm
+          path: dist/*
+
   attach:
-    needs: [windows, linux]
+    needs: [windows, linux, linux-arm]
     # on a tag push there is no input at all, so the event decides; a manual run has to name the tag
     if: github.event_name == 'push' || inputs.tag != ''
     runs-on: ubuntu-latest
