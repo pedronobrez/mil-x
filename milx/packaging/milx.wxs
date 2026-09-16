@@ -28,10 +28,10 @@
   without accepting a paid maintenance fee EULA.
 
       dotnet tool install wix -g ; version 5.0.2
-      wix build packaging/milx.wxs -d Version=1.0.0 \
+      wix build packaging/milx.wxs -d Version=1.0.1 \
         -d BundleDir="$PWD/dist/milx-desktop-win-x64" \
         -d IconFile="$PWD/packaging/icons/MIL-X.ico" \
-        -o dist/release/MIL-X-1.0.0-windows-x64.msi
+        -o dist/release/MIL-X-1.0.1-windows-x64.msi
 
   BundleDir and IconFile are absolute on purpose: a relative path resolves
   against the working directory rather than against this file, and a glob that

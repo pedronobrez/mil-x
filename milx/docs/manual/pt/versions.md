@@ -11,9 +11,22 @@ A versão mostrada em **Help ▸ About MIL-X** e na sonda da janela é a carimba
 `milx/Directory.Build.props`. Esta página nomeia-a, e um teste falha a construção quando não
 nomeia.
 
-## 1.0.0 — setembro de 2026
+## 1.0.1 — setembro de 2026
 
 A versão atual. Segue o MS-DIAL 5.5.260817.
+
+**Os botões dizem MIL-Q.** **Export to MIL-Q…** na barra de Analytics e no menu Process, **Import
+MIL-Q batch…** na área Samples, e o diálogo de exportação com eles: o nome da família primeiro, com
+o OpenQuant nomeado como o que o MIL-Q é hoje. Os formatos de arquivo — `.oqproj`, o CSV de
+componentes — são do OpenQuant e não mudam. Veja [[openquant]].
+
+**Toda captura deste manual foi refeita na 1.0**, então nenhuma mostra o nome antigo. As ações de
+captura do dendrograma e da rede molecular escolhiam a página por um índice de aba que deixara de
+apontar para elas; agora escolhem pelo nome.
+
+## 1.0.0 — setembro de 2026
+
+Segue o MS-DIAL 5.5.260817.
 
 **O nome.** O OpenDIAL agora é **MIL-X**: *Multi-omics Identification Laboratory*, e X de
 exploração. O irmão dirigido, o OpenQuant de hoje, vira MIL-Q na sua própria 1.0; os dois são uma

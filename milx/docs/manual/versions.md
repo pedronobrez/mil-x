@@ -10,9 +10,22 @@ summary: What each version brought, from OpenDIAL 0.1 to MIL-X 1.0; the notes ar
 The version shown in **Help ▸ About MIL-X** and in the window's probe is the one stamped in
 `milx/Directory.Build.props`. This page names it, and a test fails the build when it does not.
 
-## 1.0.0 — September 2026
+## 1.0.1 — September 2026
 
 The current version. It tracks MS-DIAL 5.5.260817.
+
+**The buttons say MIL-Q.** **Export to MIL-Q…** on the Analytics toolbar and in the Process menu,
+**Import MIL-Q batch…** in the Samples workspace, and the export dialog with them: the family name
+first, with OpenQuant named as what MIL-Q is today. The file formats — `.oqproj`, the component
+CSV — are OpenQuant's and do not change. See [[openquant]].
+
+**Every screenshot in this manual was retaken on 1.0**, so none shows the old name. The capture
+actions for the dendrogram and the molecular network picked their page by a tab index that had
+stopped pointing at them; they now pick it by name.
+
+## 1.0.0 — September 2026
+
+Tracks MS-DIAL 5.5.260817.
 
 **The name.** OpenDIAL is now **MIL-X**: *Multi-omics Identification Laboratory*, and X for
 exploration. Its targeted counterpart, today's OpenQuant, becomes MIL-Q at its own 1.0; the two
