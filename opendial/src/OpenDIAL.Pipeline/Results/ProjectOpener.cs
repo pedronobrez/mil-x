@@ -78,7 +78,7 @@ public static class ProjectOpener
                 new MsdialIntegrateSerializer(),
                 dir => new DirectoryTreeStreamManager(dir),
                 projectDir,
-                _ => Task.FromResult<string?>(null),
+                p => Task.FromResult(FindDataset(p.ProjectFileName, projectDir)),
                 _ => { }).ConfigureAwait(false);
         }
         if (storage is null || storage.Storages.Count == 0)
@@ -90,6 +90,64 @@ public static class ProjectOpener
         var mode = data.Parameter is MsdialGcmsParameter ? IonizationMode.GCMS : IonizationMode.LCMS;
         var alignment = data.AlignmentFiles.LastOrDefault(a => File.Exists(a.FilePath) || File.Exists(a.FilePath + "2"));
         return new OpenedProject(projectDir, data.AnalysisFiles, alignment, data.Parameter, data.DataBaseMapper, CollectExports(projectDir), projectPath, mode, "mdproject");
+    }
+
+    /// <summary>
+    /// Finds the dataset file of a project that has moved, by name rather than by the path stored
+    /// inside it.
+    ///
+    /// A project records where its own <c>.mddata</c> was when it was written, as an absolute path.
+    /// Copy the folder to another machine and that path names nothing: a different user name is
+    /// enough on macOS, and a Windows machine cannot make sense of a POSIX path at all. Upstream
+    /// tries the folder the project file is actually in, then the stored one, and then asks — in
+    /// the MS-DIAL GUI, a file dialog. Here it asks this, which looks where a moved project keeps
+    /// its dataset: beside the project file, one level up, and in the folders next to it. That
+    /// covers a project written into <c>results/</c> whose data sits in <c>data/</c>, which is how
+    /// this pipeline lays a run out.
+    ///
+    /// Only the file name travels, so the answer does not depend on the shape of the old path.
+    /// </summary>
+    /// <returns>The full path of the dataset file, or null when it is nowhere near.</returns>
+    public static string? FindDataset(string projectFileName, string projectDir)
+    {
+        if (string.IsNullOrWhiteSpace(projectFileName) || string.IsNullOrWhiteSpace(projectDir)) return null;
+
+        // Both separators by hand, not Path.GetFileName: a project written on Windows stores
+        // "C:\Users\…\Project.mddata", and on macOS and Linux the backslash is an ordinary
+        // character, so GetFileName hands the whole string back and nothing is ever found. This is
+        // the case that carries a project from a Windows machine to anywhere else.
+        var name = projectFileName;
+        var cut = name.LastIndexOfAny(new[] { '/', '\\' });
+        if (cut >= 0) name = name.Substring(cut + 1);
+        if (name.Length == 0) return null;
+
+        var here = Path.Combine(projectDir, name);
+        if (File.Exists(here)) return here;
+
+        var parent = Path.GetDirectoryName(Path.GetFullPath(projectDir));
+        if (parent is null) return null;
+
+        var up = Path.Combine(parent, name);
+        if (File.Exists(up)) return up;
+
+        foreach (var sibling in SafeDirectories(parent))
+        {
+            var candidate = Path.Combine(sibling, name);
+            if (File.Exists(candidate)) return candidate;
+        }
+        return null;
+    }
+
+    private static IEnumerable<string> SafeDirectories(string folder)
+    {
+        try
+        {
+            return Directory.EnumerateDirectories(folder).OrderBy(f => f, StringComparer.OrdinalIgnoreCase).ToList();
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            return Array.Empty<string>();
+        }
     }
 
     /// <summary>Reconstructs file beans from the .pai2/.dcl/.arf2 files in a folder (no parameters, no library mapper).</summary>
