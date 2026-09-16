@@ -97,6 +97,36 @@ jobs:
             -d IconFile="$PWD\opendial\packaging\icons\OpenDIAL.ico" `
             -o "dist\OpenDIAL-$v-windows-x64.msi"
 
+      # The .odproj association is registry rows inside the installer, and a typo in a key name
+      # fails silently: the MSI builds, installs, and double clicking a project still does nothing.
+      # So the built database is queried for the rows before it ships.
+      - name: The project association is in the installer
+        shell: pwsh
+        run: |
+          $v = "${{ steps.v.outputs.version }}"
+          $msi = "$PWD\dist\OpenDIAL-$v-windows-x64.msi"
+          $installer = New-Object -ComObject WindowsInstaller.Installer
+          $db = $installer.GetType().InvokeMember("OpenDatabase", "InvokeMethod", $null, $installer, @($msi, 0))
+          $view = $db.GetType().InvokeMember("OpenView", "InvokeMethod", $null, $db, @("SELECT ``Key``, ``Name``, ``Value`` FROM ``Registry``"))
+          $view.GetType().InvokeMember("Execute", "InvokeMethod", $null, $view, $null)
+          $rows = @()
+          while ($true) {
+            $rec = $view.GetType().InvokeMember("Fetch", "InvokeMethod", $null, $view, $null)
+            if ($null -eq $rec) { break }
+            $key   = $rec.GetType().InvokeMember("StringData", "GetProperty", $null, $rec, 1)
+            $name  = $rec.GetType().InvokeMember("StringData", "GetProperty", $null, $rec, 2)
+            $value = $rec.GetType().InvokeMember("StringData", "GetProperty", $null, $rec, 3)
+            $rows += [pscustomobject]@{ Key = $key; Name = $name; Value = $value }
+          }
+          $rows | Where-Object { $_.Key -match "odproj|OpenDIAL.Project|mdproject|Applications" } | Format-Table -AutoSize | Out-String | Write-Host
+          $need = @("Software\\Classes\\.odproj", "OpenDIAL.Project\\shell\\open\\command", "OpenDIAL.Project\\DefaultIcon")
+          foreach ($n in $need) {
+            if (-not ($rows | Where-Object { $_.Key -match $n })) { throw "the installer has no $n row" }
+          }
+          $cmd = ($rows | Where-Object { $_.Key -match "OpenDIAL.Project\\shell\\open\\command" }).Value
+          if ($cmd -notmatch 'OpenDIAL\.exe" "%1"') { throw "the open command does not pass the file: $cmd" }
+          Write-Host "association ok: $cmd"
+
       # WiX treats a glob that matches nothing as success and writes a tiny installer. Every build
       # here carries a .NET runtime and Avalonia; anything under 30 MB is an empty one.
       - name: The installer is not empty

@@ -66,6 +66,7 @@
     <Feature Id="Main" Title="OpenDIAL" Level="1">
       <ComponentGroupRef Id="ApplicationFiles" />
       <ComponentGroupRef Id="Shortcuts" />
+      <ComponentGroupRef Id="FileAssociations" />
     </Feature>
 
     <ComponentGroup Id="ApplicationFiles" Directory="INSTALLFOLDER">
@@ -84,6 +85,50 @@
                       On="uninstall" />
         <RegistryValue Root="HKCU" Key="Software\OpenDIAL"
                        Name="installed" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <!--
+      Double clicking a project opens it. The application already accepts a path as its first
+      argument, which is how Finder opens documents on macOS; this is the same door on Windows.
+
+      Written as registry values rather than as ProgId and Extension elements because the
+      application files are harvested by a glob, and those elements have to hang off a File element
+      that a glob never names.
+
+      Under HKCU, because the package installs per user. An installation for the whole machine
+      would write the same keys under HKLM and would need an administrator for it.
+
+      .odproj is OpenDIAL's own project file, so it takes the default. .mdproject belongs to
+      MS-DIAL, which is very likely installed on the same Windows machine and should keep the
+      double click; OpenDIAL only adds itself to its Open with list. It is the same distinction the
+      macOS bundle makes between Owner and Alternate.
+    -->
+    <ComponentGroup Id="FileAssociations" Directory="INSTALLFOLDER">
+      <Component Id="ProjectAssociation" Guid="*">
+        <RegistryValue Root="HKCU" Key="Software\Classes\.odproj"
+                       Value="OpenDIAL.Project" Type="string" KeyPath="yes" />
+        <RegistryValue Root="HKCU" Key="Software\Classes\.odproj\OpenWithProgids"
+                       Name="OpenDIAL.Project" Value="" Type="string" />
+
+        <RegistryValue Root="HKCU" Key="Software\Classes\OpenDIAL.Project"
+                       Value="OpenDIAL project" Type="string" />
+        <RegistryValue Root="HKCU" Key="Software\Classes\OpenDIAL.Project\DefaultIcon"
+                       Value="[INSTALLFOLDER]OpenDIAL.exe,0" Type="string" />
+        <RegistryValue Root="HKCU" Key="Software\Classes\OpenDIAL.Project\shell\open\command"
+                       Value="&quot;[INSTALLFOLDER]OpenDIAL.exe&quot; &quot;%1&quot;" Type="string" />
+
+        <!-- offered for MS-DIAL's project file, never taking the default away from it -->
+        <RegistryValue Root="HKCU" Key="Software\Classes\.mdproject\OpenWithProgids"
+                       Name="OpenDIAL.Project" Value="" Type="string" />
+
+        <!-- what Explorer reads to list the application under Open with -->
+        <RegistryValue Root="HKCU" Key="Software\Classes\Applications\OpenDIAL.exe\shell\open\command"
+                       Value="&quot;[INSTALLFOLDER]OpenDIAL.exe&quot; &quot;%1&quot;" Type="string" />
+        <RegistryValue Root="HKCU" Key="Software\Classes\Applications\OpenDIAL.exe\SupportedTypes"
+                       Name=".odproj" Value="" Type="string" />
+        <RegistryValue Root="HKCU" Key="Software\Classes\Applications\OpenDIAL.exe\SupportedTypes"
+                       Name=".mdproject" Value="" Type="string" />
       </Component>
     </ComponentGroup>
   </Package>
