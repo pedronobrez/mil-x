@@ -43,6 +43,17 @@ internal static class ClearcoreReader
     }
 
     /// <summary>
+    /// <summary>
+    /// Touches a Clearcore2 type so the runtime has to find the assembly, and says whether it
+    /// could. The release builds carry this reader without SCIEX's assemblies — their licence
+    /// forbids passing them on — so "compiled with the SDK" and "the SDK is on this machine" are
+    /// two different questions, and only this one matters when a file is opened.
+    /// </summary>
+    internal static bool SdkLoads() {
+        _ = typeof(AnalystDataProviderFactory).Assembly;
+        return true;
+    }
+
     /// Clearcore2.StructuredStorage chooses between the Windows COM structured-storage API and a
     /// managed OpenMcdf implementation through a private static flag that is only false under
     /// Mono. On .NET 8 / macOS / Linux the COM path cannot work, so the flag is forced off.

@@ -77,8 +77,18 @@
       <Private>false</Private>
     </Reference>
 
-    <!-- the whole SDK folder travels with the plugin so the plugin directory is self-contained -->
-    <None Include="$(SciexAssemblyDir)/*.dll;$(SciexAssemblyDir)/*.txt" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
+    <!--
+      The SDK travels with the plugin on a development machine, so the plugin folder is
+      self-contained and .wiff opens without further ado.
+
+      A release must not carry it: SCIEX's licence forbids passing the assemblies on. Building with
+      -p:ShipSciexSdk=false compiles the reader (the References above are Private=false, compile
+      time only) and leaves the assemblies out, so the published application can read .wiff on any
+      machine where the user has accepted SCIEX's licence and put them in plugins/sciex themselves.
+      Without them the plugin says so and the file goes through msconvert, as it always did.
+    -->
+    <None Condition="'$(ShipSciexSdk)' != 'false'"
+          Include="$(SciexAssemblyDir)/*.dll;$(SciexAssemblyDir)/*.txt" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
   </ItemGroup>
 
   <Target Name="WarnNoSciex" BeforeTargets="Build" Condition="'$(SciexAssembliesFound)' != 'true'">

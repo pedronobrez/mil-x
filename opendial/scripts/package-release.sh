@@ -13,15 +13,11 @@
 # installed first. What does not travel is the SCIEX Clearcore2 SDK — its licence forbids
 # redistribution — so .wiff reading is set up on the user's machine by scripts/fetch-sciex-assemblies.sh.
 #
-# Build a release on a machine that HAS the SDK and this script will refuse its own archives. The
-# plugin folder is stripped here, but the Clearcore2 assemblies also reach the application root
-# through the project reference, and there they are indistinguishable from the app's own files. So
-# move the SDK out of the way for the build:
-#
-#     mv vendor/sciex vendor/sciex.hold && scripts/package-release.sh ; mv vendor/sciex.hold vendor/sciex
-#
-# That is also the configuration everyone who downloads the archive is in, which is the better
-# reason to build it that way.
+# The builds are made with OPENDIAL_SHIP_SCIEX=false, which compiles the native .wiff reader and
+# leaves SCIEX's assemblies out of the output. So the archives carry a reader that works the moment
+# somebody who has accepted SCIEX's licence puts the SDK in plugins/sciex on their own machine, and
+# they carry none of SCIEX's bytes. Without the SDK the reader says so and .wiff goes through
+# msconvert, which is what a machine without it did before.
 #
 # The Windows and Linux builds are cross-compiled; the macOS one can only be built on macOS,
 # because the bundle needs codesign and iconutil.
@@ -48,6 +44,9 @@ OUT="$ROOT/dist/release"
 mkdir -p "$OUT"
 
 wanted () { [ -z "$ONLY" ] || [ "$ONLY" = "$1" ]; }
+
+# the one thing every platform's build has in common
+export OPENDIAL_SHIP_SCIEX=false
 
 # The licence and the notice of what was changed upstream travel with every binary — the GPL asks
 # for the first and the LGPL for the second.

@@ -37,6 +37,21 @@ jobs:
         shell: bash
         run: echo "version=$(sed -n 's/.*<Version>\([^<]*\)<\/Version>.*/\1/p' opendial/Directory.Build.props | head -1)" >> "$GITHUB_OUTPUT"
 
+      # The reader is compiled against SCIEX's SDK and shipped without it: the licence forbids
+      # passing the assemblies on, so they are fetched here only to compile, and -p:ShipSciexSdk=false
+      # keeps them out of everything this job publishes. A step below reads the archives back to
+      # make sure of that.
+      - name: Fetch the SCIEX SDK (to compile against, never to ship)
+        shell: bash
+        run: |
+          python -m pip install --quiet --upgrade pip
+          python -m pip download alpharaw --no-deps --only-binary=:all: -d sdk
+          wheel=$(ls sdk/alpharaw-*.whl | head -1)
+          (cd sdk && unzip -q -o "$(basename "$wheel")" 'alpharaw/ext/sciex/*')
+          mkdir -p opendial/vendor/sciex
+          cp sdk/alpharaw/ext/sciex/*.dll sdk/alpharaw/ext/sciex/*.txt opendial/vendor/sciex/ 2>/dev/null || true
+          ls opendial/vendor/sciex | wc -l
+
       - name: Publish
         shell: bash
         run: |
@@ -44,7 +59,12 @@ jobs:
             -c Release -r win-x64 --self-contained \
             -p:UseOpenRawData=true -p:SkipLibraryDownload=true \
             -p:DebugType=None -p:DebugSymbols=false -p:ErrorOnDuplicatePublishOutputFiles=false \
+            -p:ShipSciexSdk=false \
             -o publish/win-x64
+          dotnet publish opendial/src/OpenDIAL.Plugins.SciexWiff/OpenDIAL.Plugins.SciexWiff.csproj \
+            -c Release -p:ShipSciexSdk=false -p:DebugType=None -p:DebugSymbols=false \
+            -o publish/win-x64/plugins/sciex
+          rm -f publish/win-x64/plugins/sciex/{Common,OpenDIAL.RawData,NCDK,MathNet.Numerics,Newtonsoft.Json,Splash}.dll publish/win-x64/plugins/sciex/{Accord,MessagePack}*.dll || true
 
       # The point of a Windows runner. The application writes what its window is showing to the
       # file named by OPENDIAL_UI_PROBE; if that file appears, Avalonia started, the window was
@@ -158,13 +178,33 @@ jobs:
         id: v
         run: echo "version=$(sed -n 's/.*<Version>\([^<]*\)<\/Version>.*/\1/p' opendial/Directory.Build.props | head -1)" >> "$GITHUB_OUTPUT"
 
+      # The reader is compiled against SCIEX's SDK and shipped without it: the licence forbids
+      # passing the assemblies on, so they are fetched here only to compile, and -p:ShipSciexSdk=false
+      # keeps them out of everything this job publishes. A step below reads the archives back to
+      # make sure of that.
+      - name: Fetch the SCIEX SDK (to compile against, never to ship)
+        shell: bash
+        run: |
+          python -m pip install --quiet --upgrade pip
+          python -m pip download alpharaw --no-deps --only-binary=:all: -d sdk
+          wheel=$(ls sdk/alpharaw-*.whl | head -1)
+          (cd sdk && unzip -q -o "$(basename "$wheel")" 'alpharaw/ext/sciex/*')
+          mkdir -p opendial/vendor/sciex
+          cp sdk/alpharaw/ext/sciex/*.dll sdk/alpharaw/ext/sciex/*.txt opendial/vendor/sciex/ 2>/dev/null || true
+          ls opendial/vendor/sciex | wc -l
+
       - name: Publish
         run: |
           dotnet publish opendial/src/OpenDIAL.Desktop/OpenDIAL.Desktop.csproj \
             -c Release -r linux-x64 --self-contained \
             -p:UseOpenRawData=true -p:SkipLibraryDownload=true \
             -p:DebugType=None -p:DebugSymbols=false -p:ErrorOnDuplicatePublishOutputFiles=false \
+            -p:ShipSciexSdk=false \
             -o publish/linux-x64
+          dotnet publish opendial/src/OpenDIAL.Plugins.SciexWiff/OpenDIAL.Plugins.SciexWiff.csproj \
+            -c Release -p:ShipSciexSdk=false -p:DebugType=None -p:DebugSymbols=false \
+            -o publish/linux-x64/plugins/sciex
+          rm -f publish/linux-x64/plugins/sciex/{Common,OpenDIAL.RawData,NCDK,MathNet.Numerics,Newtonsoft.Json,Splash}.dll publish/linux-x64/plugins/sciex/{Accord,MessagePack}*.dll || true
 
       - name: It starts on Linux
         run: |
@@ -211,13 +251,33 @@ jobs:
         id: v
         run: echo "version=$(sed -n 's/.*<Version>\([^<]*\)<\/Version>.*/\1/p' opendial/Directory.Build.props | head -1)" >> "$GITHUB_OUTPUT"
 
+      # The reader is compiled against SCIEX's SDK and shipped without it: the licence forbids
+      # passing the assemblies on, so they are fetched here only to compile, and -p:ShipSciexSdk=false
+      # keeps them out of everything this job publishes. A step below reads the archives back to
+      # make sure of that.
+      - name: Fetch the SCIEX SDK (to compile against, never to ship)
+        shell: bash
+        run: |
+          python -m pip install --quiet --upgrade pip
+          python -m pip download alpharaw --no-deps --only-binary=:all: -d sdk
+          wheel=$(ls sdk/alpharaw-*.whl | head -1)
+          (cd sdk && unzip -q -o "$(basename "$wheel")" 'alpharaw/ext/sciex/*')
+          mkdir -p opendial/vendor/sciex
+          cp sdk/alpharaw/ext/sciex/*.dll sdk/alpharaw/ext/sciex/*.txt opendial/vendor/sciex/ 2>/dev/null || true
+          ls opendial/vendor/sciex | wc -l
+
       - name: Publish
         run: |
           dotnet publish opendial/src/OpenDIAL.Desktop/OpenDIAL.Desktop.csproj \
             -c Release -r linux-arm64 --self-contained \
             -p:UseOpenRawData=true -p:SkipLibraryDownload=true \
             -p:DebugType=None -p:DebugSymbols=false -p:ErrorOnDuplicatePublishOutputFiles=false \
+            -p:ShipSciexSdk=false \
             -o publish/linux-arm64
+          dotnet publish opendial/src/OpenDIAL.Plugins.SciexWiff/OpenDIAL.Plugins.SciexWiff.csproj \
+            -c Release -p:ShipSciexSdk=false -p:DebugType=None -p:DebugSymbols=false \
+            -o publish/linux-arm64/plugins/sciex
+          rm -f publish/linux-arm64/plugins/sciex/{Common,OpenDIAL.RawData,NCDK,MathNet.Numerics,Newtonsoft.Json,Splash}.dll publish/linux-arm64/plugins/sciex/{Accord,MessagePack}*.dll || true
 
       - name: It starts on Linux arm64
         run: |

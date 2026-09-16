@@ -1,3 +1,4 @@
+using System.Reflection;
 using CompMs.Common.DataObj;
 using OpenDIAL.RawData.Plugins;
 
@@ -26,15 +27,57 @@ public sealed class SciexWiffReaderPlugin : IRawFileReaderPlugin
     /// <summary>Selects which sample of a multi-sample .wiff is read; receives (path, sampleNames) and returns an index.</summary>
     public static Func<string, IReadOnlyList<string>, int>? SampleSelector { get; set; }
 
+    /// <summary>
+    /// Whether .wiff can be read natively on this machine. Compiled with the SDK is not the same
+    /// as running with it: the released builds carry this reader but not SCIEX's assemblies, whose
+    /// licence forbids redistribution, and a user who accepts that licence drops them into
+    /// plugins/sciex themselves.
+    ///
+    /// So the question is asked of the file system and the runtime, not of a compile-time flag,
+    /// and a "no" is not remembered: the folder scan that teaches the runtime where plugin
+    /// dependencies live runs after the first thing that asks this, and a cached no would outlive
+    /// the answer becoming yes.
+    /// </summary>
     public static bool IsSdkAvailable {
         get {
 #if SCIEX_SDK
-            return true;
+            if (_sdkPresent == true) return true;
+            _sdkPresent = ProbeSdk();
+            return _sdkPresent.Value;
 #else
             return false;
 #endif
         }
     }
+
+#if SCIEX_SDK
+    private static bool? _sdkPresent;
+
+    private const string SdkAssembly = "Clearcore2.Data.AnalystDataProvider";
+
+    /// <summary>
+    /// Loads the SDK from wherever it sits next to the application — its own folder, or any
+    /// plugin folder under it — and then touches a type from it, which is the only proof that
+    /// counts. Looking the file up first keeps the common "not installed" answer cheap: no
+    /// exception is thrown to learn it.
+    /// </summary>
+    private static bool ProbeSdk() {
+        try {
+            if (AppDomain.CurrentDomain.GetAssemblies().Any(a => a.GetName().Name == SdkAssembly)) {
+                return ClearcoreReader.SdkLoads();
+            }
+            var baseDir = AppContext.BaseDirectory;
+            if (string.IsNullOrEmpty(baseDir)) return false;
+            var found = Directory.EnumerateFiles(baseDir, SdkAssembly + ".dll", SearchOption.AllDirectories).FirstOrDefault();
+            if (found is null) return false;
+            Assembly.LoadFrom(found);
+            return ClearcoreReader.SdkLoads();
+        }
+        catch (Exception e) when (e is FileNotFoundException or FileLoadException or TypeLoadException or BadImageFormatException or IOException or UnauthorizedAccessException) {
+            return false;
+        }
+    }
+#endif
 
     public bool CanRead(string path) {
         if (string.IsNullOrEmpty(path)) return false;

@@ -11,12 +11,14 @@ SmartScreen
     "Windows protected your PC". More info > Run anyway. Unblock the zip before extracting
     (right-click the .zip > Properties > Unblock) and Windows will stop marking every file inside.
 
-Raw data
-    mzML and mzXML are read directly. Vendor formats go through msconvert (ProteoWizard) when it is
-    on PATH — on Windows that is the normal ProteoWizard install.
-    Native .wiff reading needs the SCIEX Clearcore2 SDK, which cannot be redistributed. Accept
-    SCIEX's licence and fetch it yourself with scripts/fetch-sciex-assemblies.sh from the source
-    tree; the files belong in plugins\sciex next to this README.
+Native .wiff reading
+    The reader is in this build; SCIEX's Clearcore2 SDK is not, because its licence forbids passing
+    it on. Accept that licence, fetch the assemblies yourself, and put them in a plugins\\sciex folder
+    beside the application: .wiff is then read natively, with nothing else installed — no Analyst,
+    no ProteoWizard. scripts/fetch-sciex-assemblies.sh (or .ps1 on Windows) in the source tree
+    fetches them from the alpharaw package, which redistributes them under SCIEX's own
+    redistribution licence.
+    Without them the application says so and .wiff goes through msconvert, when that is on PATH.
 
 Note
     MS-DIAL 5 itself runs on Windows, and on Windows it does more than this port does — ion
