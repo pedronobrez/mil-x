@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    MilX.RawData
+    Open, cross-platform raw mass-spectrometry data access layer for the MIL-X
+    port of MS-DIAL 5. It is a drop-in replacement for the closed
+    "RawDataHandler-Vendor-UnSupported" package: it exposes the same public types in
+    the same namespaces (CompMs.RawDataHandler.Core.RawDataAccess, SpectrumParser,
+    RawDataExtension, MassBin, MassBinPool) so that MsdialCore and the other
+    upstream projects compile unchanged when built with -p:UseOpenRawData=true.
+
+    Readers:
+      * mzML / indexedmzML  - native streaming reader (zlib, numpress, 32/64-bit, ion mobility)
+      * .raw .d .wiff .wiff2 .lcd .qgd .lrp  - converted to mzML on demand through the
+        ProteoWizard msconvert bridge (native executable or Docker), then read as mzML
+      * .abf .ibf .iabf .cdf .imzml  - delegated, via reflection, to the original closed
+        RawDataHandler dll if it is present next to the application (see LegacyReaderPlugin)
+      * any format  - through IRawFileReaderPlugin implementations found in ./plugins
+  -->
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <RootNamespace>MilX.RawData</RootNamespace>
+    <AssemblyName>MilX.RawData</AssemblyName>
+    <Configurations>Debug;Release;Debug vendor unsupported;Release vendor unsupported</Configurations>
+    <Description>Open, cross-platform raw MS data access for MIL-X / MS-DIAL 5 (drop-in replacement for CompMs.RawDataHandler.Core).</Description>
+    <Authors>MIL-X contributors</Authors>
+    <PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../MsdialWorkbench-MSDIAL-v5.5.260817/src/Common/CommonStandard/CommonStandard.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="MilX.RawData.Tests" />
+  </ItemGroup>
+
+</Project>

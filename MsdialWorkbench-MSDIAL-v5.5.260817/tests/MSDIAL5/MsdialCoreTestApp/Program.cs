@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace CompMs.App.MsdialConsole;
 class Program {
     public static Task<int> Main(string[] args) {
-        // OpenDIAL: MS-DIAL parses numbers with the current culture in many places (method files,
+        // MIL-X: MS-DIAL parses numbers with the current culture in many places (method files,
         // MSP libraries, mzML cvParam values). Force the invariant culture so results do not depend
         // on the OS locale (e.g. decimal comma locales silently produce zero peaks).
         System.Globalization.CultureInfo.DefaultThreadCurrentCulture = System.Globalization.CultureInfo.InvariantCulture;

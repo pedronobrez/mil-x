@@ -1,0 +1,42 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:MilX.Desktop.ViewModels"
+        xmlns:views="using:MilX.Desktop.Views"
+        x:Class="MilX.Desktop.Views.IonTableWindow"
+        x:DataType="vm:AnalyticsViewModel"
+        Title="Ion table"
+        Width="1180" Height="820" MinWidth="560" MinHeight="320"
+        FontSize="13"
+        Background="{DynamicResource OdCanvas}"
+        WindowStartupLocation="CenterScreen">
+  <!--
+    The ion table torn off into its own window, so it can sit on a second screen while the evidence
+    panels keep the main one. It hosts the same control bound to the same view model, which is what
+    keeps the selection, the filters and the tagging in step between the two.
+  -->
+  <Window.KeyBindings>
+    <KeyBinding Gesture="Cmd+Shift+D1" Command="{Binding ToggleTagCommand}" CommandParameter="1" />
+    <KeyBinding Gesture="Cmd+Shift+D2" Command="{Binding ToggleTagCommand}" CommandParameter="2" />
+    <KeyBinding Gesture="Cmd+Shift+D3" Command="{Binding ToggleTagCommand}" CommandParameter="3" />
+    <KeyBinding Gesture="Cmd+Shift+D4" Command="{Binding ToggleTagCommand}" CommandParameter="4" />
+    <KeyBinding Gesture="Cmd+Shift+D5" Command="{Binding ToggleTagCommand}" CommandParameter="5" />
+    <KeyBinding Gesture="Cmd+Shift+D0" Command="{Binding ClearTagsCommand}" />
+    <KeyBinding Gesture="Cmd+Shift+C" Command="{Binding ConfirmAndNextCommand}" />
+    <KeyBinding Gesture="Cmd+Shift+X" Command="{Binding RejectAndNextCommand}" />
+    <KeyBinding Gesture="Cmd+Shift+N" Command="{Binding NextUnreviewedCommand}" />
+    <KeyBinding Gesture="Cmd+Shift+Down" Command="{Binding NextSpotCommand}" />
+    <KeyBinding Gesture="Cmd+Shift+Up" Command="{Binding PreviousSpotCommand}" />
+    <KeyBinding Gesture="Ctrl+Shift+D1" Command="{Binding ToggleTagCommand}" CommandParameter="1" />
+    <KeyBinding Gesture="Ctrl+Shift+D2" Command="{Binding ToggleTagCommand}" CommandParameter="2" />
+    <KeyBinding Gesture="Ctrl+Shift+D3" Command="{Binding ToggleTagCommand}" CommandParameter="3" />
+    <KeyBinding Gesture="Ctrl+Shift+D4" Command="{Binding ToggleTagCommand}" CommandParameter="4" />
+    <KeyBinding Gesture="Ctrl+Shift+D5" Command="{Binding ToggleTagCommand}" CommandParameter="5" />
+    <KeyBinding Gesture="Ctrl+Shift+D0" Command="{Binding ClearTagsCommand}" />
+    <KeyBinding Gesture="Ctrl+Shift+C" Command="{Binding ConfirmAndNextCommand}" />
+    <KeyBinding Gesture="Ctrl+Shift+X" Command="{Binding RejectAndNextCommand}" />
+    <KeyBinding Gesture="Ctrl+Shift+N" Command="{Binding NextUnreviewedCommand}" />
+    <KeyBinding Gesture="Ctrl+Shift+Down" Command="{Binding NextSpotCommand}" />
+    <KeyBinding Gesture="Ctrl+Shift+Up" Command="{Binding PreviousSpotCommand}" />
+  </Window.KeyBindings>
+  <views:IonTableView x:Name="Table" Margin="8" />
+</Window>

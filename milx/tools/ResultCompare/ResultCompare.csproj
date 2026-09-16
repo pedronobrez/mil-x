@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    ResultCompare: opens two processed datasets (an .mdproject or an output folder each) and reports
+    how far apart they are: peaks per sample, aligned features, and annotation agreement on the
+    features the two have in common. Used to check an MIL-X run against an MS-DIAL one.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>MilX.Tools.ResultCompare</RootNamespace>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <Configurations>Debug;Release;Debug vendor unsupported;Release vendor unsupported</Configurations>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/MilX.Pipeline/MilX.Pipeline.csproj" />
+  </ItemGroup>
+
+</Project>

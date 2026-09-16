@@ -63,7 +63,7 @@ namespace CompMs.App.MsdialConsole.Process
                 return false;
             }
 
-            // OpenDIAL: files imported from a folder keep AcquisitionType.None, because only the
+            // MIL-X: files imported from a folder keep AcquisitionType.None, because only the
             // file-list importer fills it in. The MS/MS of a peak is then collected with whichever
             // rule None happens to fall into, so a run over a folder and the same run over a file
             // list disagree. Give every file the project's acquisition type instead.

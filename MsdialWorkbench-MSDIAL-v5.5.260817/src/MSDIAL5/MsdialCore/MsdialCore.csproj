@@ -6,17 +6,17 @@
     <Configurations>Debug;Release;Debug vendor unsupported;Release vendor unsupported</Configurations>
     <LangVersion>12</LangVersion>
     <Nullable>annotations</Nullable>
-    <!-- OpenDIAL: path of the open raw data project (override with -p:OpenDialRawDataProject=...) -->
-    <DefineConstants Condition="'$(UseOpenRawData)' == 'true'">$(DefineConstants);OPENDIAL_SQLITE</DefineConstants>
-    <OpenDialRawDataProject Condition="'$(OpenDialRawDataProject)' == ''">$(MSBuildThisFileDirectory)..\..\..\..\opendial\src\OpenDIAL.RawData\OpenDIAL.RawData.csproj</OpenDialRawDataProject>
+    <!-- MIL-X: path of the open raw data project (override with -p:MilXRawDataProject=...) -->
+    <DefineConstants Condition="'$(UseOpenRawData)' == 'true'">$(DefineConstants);MILX_SQLITE</DefineConstants>
+    <MilXRawDataProject Condition="'$(MilXRawDataProject)' == ''">$(MSBuildThisFileDirectory)..\..\..\..\milx\src\MilX.RawData\MilX.RawData.csproj</MilXRawDataProject>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Accord" Version="3.8.0" />
     <PackageReference Include="Accord.Math" Version="3.8.0" />
     <PackageReference Include="Accord.Statistics" Version="3.8.0" />
-    <!-- OpenDIAL: the closed RawDataHandler package is only referenced when UseOpenRawData is not set.
-         Build with -p:UseOpenRawData=true to use the open, cross-platform OpenDIAL.RawData project instead. -->
+    <!-- MIL-X: the closed RawDataHandler package is only referenced when UseOpenRawData is not set.
+         Build with -p:UseOpenRawData=true to use the open, cross-platform MilX.RawData project instead. -->
 	  <PackageReference Include="RawDataHandler" Version="1.3.9725.140" Condition="'$(UseOpenRawData)' != 'true' AND '$(Configuration)'=='Release'" />
 	  <PackageReference Include="RawDataHandler" Version="1.3.*-*" Condition="'$(UseOpenRawData)' != 'true' AND '$(Configuration)'=='Debug'" />
 	  <PackageReference Include="RawDataHandler-Vendor-UnSupported" Version="1.3.*-*" Condition="'$(UseOpenRawData)' != 'true' AND '$(Configuration)'=='Debug vendor unsupported'" />
@@ -49,7 +49,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Common\CommonStandard\CommonStandard.csproj" />
     <ProjectReference Include="..\..\Common\spectra-hash\splash\Splash.csproj" />
-    <ProjectReference Include="$(OpenDialRawDataProject)" Condition="'$(UseOpenRawData)' == 'true'" />
+    <ProjectReference Include="$(MilXRawDataProject)" Condition="'$(UseOpenRawData)' == 'true'" />
   </ItemGroup>
 
 </Project>

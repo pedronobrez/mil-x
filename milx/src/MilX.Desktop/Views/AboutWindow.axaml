@@ -1,0 +1,28 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MilX.Desktop.Views.AboutWindow"
+        Title="About MIL-X" Width="560" Height="420" CanResize="False"
+        FontSize="13" Background="{DynamicResource OdCanvas}"
+        WindowStartupLocation="CenterOwner">
+  <DockPanel Margin="24">
+    <Button DockPanel.Dock="Bottom" Content="Close" HorizontalAlignment="Right" MinWidth="90" Click="OnClose" Margin="0,14,0,0" />
+    <StackPanel Spacing="10">
+      <TextBlock Classes="wordmark" Text="MIL-X" />
+      <TextBlock x:Name="VersionText" Classes="muted" />
+      <Border Classes="hairline-top" Margin="0,4,0,4" />
+      <TextBlock TextWrapping="Wrap">
+        MIL-X is an open, community-maintained port of the MS-DIAL 5 processing engine
+        (peak picking, MS/MS deconvolution, spectral-library annotation and alignment) to
+        macOS, Linux and Windows, with a cross-platform Avalonia user interface.
+      </TextBlock>
+      <TextBlock TextWrapping="Wrap" Classes="muted">
+        Built on the MS-DIAL source code released under the GNU Lesser General Public
+        License v3.0 (LGPL-3.0). MIL-X is itself distributed under LGPL-3.0.
+      </TextBlock>
+      <TextBlock TextWrapping="Wrap" Classes="muted">
+        MIL-X is not affiliated with, endorsed by, or supported by RIKEN or the MS-DIAL
+        development team. If you use MIL-X in a publication, please cite the original MS-DIAL papers.
+      </TextBlock>
+    </StackPanel>
+  </DockPanel>
+</Window>

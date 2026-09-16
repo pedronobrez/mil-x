@@ -131,7 +131,7 @@ namespace CompMs.Common.MessagePack {
 
         static bool FillFromStream(Stream input, ref byte[] buffer, int offset, int readSize)
         {
-            // OpenDIAL: Stream.Read is allowed to return fewer bytes than asked for, and the
+            // MIL-X: Stream.Read is allowed to return fewer bytes than asked for, and the
             // DeflateStream inside a ZipArchive — which is how a .mdproject stores its databases —
             // does so routinely on a large entry. The single Read this used to do left the tail of
             // the buffer unfilled, and the caller then handed the whole buffer to the unsafe LZ4

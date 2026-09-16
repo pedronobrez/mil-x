@@ -1,0 +1,93 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:MilX.Desktop.ViewModels"
+        xmlns:views="using:MilX.Desktop.Views"
+        x:Class="MilX.Desktop.Views.NewProjectWindow"
+        x:DataType="vm:NewProjectViewModel"
+        Title="New project" Width="820" Height="580" MinWidth="700" MinHeight="480"
+        FontSize="13" Background="{DynamicResource OdCanvas}"
+        WindowStartupLocation="CenterOwner">
+  <DockPanel Margin="20">
+    <!-- header -->
+    <StackPanel DockPanel.Dock="Top" Spacing="2" Margin="0,0,0,14">
+      <TextBlock Classes="eyebrow" Text="{Binding StepLabel}" Margin="0" />
+      <TextBlock Classes="title" Text="{Binding Step, Converter={x:Static views:NewProjectWindow.StepTitle}}" />
+    </StackPanel>
+    <!-- footer -->
+    <DockPanel DockPanel.Dock="Bottom" Margin="0,14,0,0">
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
+        <Button Content="Cancel" Click="OnCancel" MinWidth="90" />
+        <Button Content="Back" Command="{Binding BackCommand}" IsEnabled="{Binding !IsFirstStep}" MinWidth="90" />
+        <Button Classes="primary" Content="{Binding NextLabel}" Click="OnNext" IsEnabled="{Binding CanNext}" MinWidth="120" />
+      </StackPanel>
+      <TextBlock Classes="danger" Text="{Binding Error}" VerticalAlignment="Center" TextWrapping="Wrap" />
+    </DockPanel>
+
+    <Border Classes="card" Padding="20,16">
+      <Panel>
+        <!-- step 1: project -->
+        <StackPanel IsVisible="{Binding IsStep0}" Spacing="10">
+          <TextBlock Classes="muted" Text="The project file is written when the wizard finishes, and every later change is saved back into it." TextWrapping="Wrap" />
+          <Grid ColumnDefinitions="90,*,Auto" RowDefinitions="Auto,Auto" Margin="0,8,0,0">
+            <TextBlock Grid.Row="0" Classes="label" Text="Name" />
+            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Name}" Watermark="Plasma cohort A" Margin="0,3" />
+            <TextBlock Grid.Row="1" Classes="label" Text="Folder" />
+            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Folder}" Margin="0,3" />
+            <Button Grid.Row="1" Grid.Column="2" Content="Browse…" Command="{Binding BrowseFolderCommand}" Margin="8,3,0,3" />
+          </Grid>
+          <TextBlock Classes="hint" Text="{Binding ProjectPreview}" TextWrapping="Wrap" />
+        </StackPanel>
+
+        <!-- step 2: samples -->
+        <DockPanel IsVisible="{Binding IsStep1}">
+          <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="6" Margin="0,0,0,10">
+            <Button Content="Add data files…" Command="{Binding AddFilesCommand}" />
+            <Button Content="Add folder…" Command="{Binding AddFolderCommand}" />
+            <Button Content="Remove" Command="{Binding RemoveSampleCommand}" />
+            <TextBlock Classes="muted" Text="{Binding SamplesSummary}" VerticalAlignment="Center" Margin="10,0,0,0" />
+          </StackPanel>
+          <DataGrid ItemsSource="{Binding Samples}" SelectedItem="{Binding SelectedSample}" AutoGenerateColumns="False" IsReadOnly="False" CanUserSortColumns="False">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="File" Binding="{Binding FileName}" Width="220" IsReadOnly="True" />
+              <DataGridTextColumn Header="Sample" Binding="{Binding Name}" Width="150" />
+              <DataGridTemplateColumn Header="Type" Width="120">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:InputFileViewModel">
+                    <ComboBox Classes="compact" ItemsSource="{x:Static vm:InputFileViewModel.SampleTypes}" SelectedItem="{Binding SampleType, Mode=TwoWay}" Margin="3,1" />
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
+              <DataGridTextColumn Header="Class" Binding="{Binding Class}" Width="110" />
+              <DataGridTextColumn Header="Format" Binding="{Binding Badge}" Width="*" IsReadOnly="True" />
+            </DataGrid.Columns>
+          </DataGrid>
+        </DockPanel>
+
+        <!-- step 3: method -->
+        <StackPanel IsVisible="{Binding IsStep2}" Spacing="10">
+          <TextBlock Classes="muted" Text="Where the processing method comes from. It can be edited afterwards in the Method workspace." TextWrapping="Wrap" />
+          <RadioButton Content="Defaults for LC-MS (DDA, positive, centroid)" IsChecked="{Binding DefaultsLcms}" GroupName="method" />
+          <RadioButton Content="Defaults for GC-MS (EI, RT alignment)" IsChecked="{Binding DefaultsGcms}" GroupName="method" />
+          <RadioButton Content="From a method file" IsChecked="{Binding FromFile}" GroupName="method" />
+          <Grid ColumnDefinitions="90,*,Auto" RowDefinitions="Auto,Auto" Margin="24,0,0,0">
+            <TextBlock Grid.Row="0" Classes="label" Text="Method file" />
+            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding MethodFile}" IsEnabled="{Binding FromFile}" Margin="0,3" Watermark="console-compatible method .txt" />
+            <Button Grid.Row="0" Grid.Column="2" Content="Browse…" Command="{Binding BrowseMethodCommand}" Margin="8,3,0,3" />
+            <TextBlock Grid.Row="1" Classes="label" Text="Library" />
+            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding MspFile}" Margin="0,3" Watermark="MSP spectral library (optional)" />
+            <Button Grid.Row="1" Grid.Column="2" Content="Browse…" Command="{Binding BrowseMspCommand}" Margin="8,3,0,3" />
+          </Grid>
+        </StackPanel>
+
+        <!-- step 4: summary -->
+        <StackPanel IsVisible="{Binding IsStep3}" Spacing="12">
+          <TextBlock Classes="muted" Text="Review and create. The project file and its results folder are created now." TextWrapping="Wrap" />
+          <Border Classes="panel" Padding="14,10" Background="{DynamicResource OdSurfaceAlt}">
+            <TextBlock Classes="mono" Text="{Binding Summary}" TextWrapping="Wrap" />
+          </Border>
+          <CheckBox Content="Process the batch right away" IsChecked="{Binding ProcessNow}" />
+        </StackPanel>
+      </Panel>
+    </Border>
+  </DockPanel>
+</Window>

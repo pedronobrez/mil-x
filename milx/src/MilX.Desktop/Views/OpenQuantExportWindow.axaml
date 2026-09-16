@@ -1,0 +1,33 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MilX.Desktop.Views.OpenQuantExportWindow"
+        Title="Export to OpenQuant" Width="520" Height="360" CanResize="False"
+        FontSize="13" Background="{DynamicResource OdCanvas}"
+        WindowStartupLocation="CenterOwner">
+  <DockPanel Margin="20">
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,14,0,0">
+      <Button Content="Cancel" Click="OnCancel" MinWidth="90" />
+      <Button Content="Export…" Click="OnExport" MinWidth="110" Classes="primary" />
+    </StackPanel>
+    <Border Classes="card" Padding="20,16">
+      <StackPanel Spacing="10">
+        <TextBlock Classes="eyebrow" Text="COMPONENT LIST" />
+        <TextBlock Classes="muted" TextWrapping="Wrap"
+                   Text="The spots currently listed in Analytics become OpenQuant components: precursor m/z, the strongest fragment of the representative MS/MS, and the retention-time window. Unknowns are named after their m/z and RT." />
+        <CheckBox x:Name="AnnotatedOnly" Content="Annotated spots only" IsChecked="True" Margin="0,4,0,0" />
+        <CheckBox x:Name="UseFragment" Content="Fill the fragment column from the representative MS/MS" IsChecked="True" />
+        <Grid ColumnDefinitions="190,Auto,Auto" RowDefinitions="Auto,Auto" Margin="0,6,0,0">
+          <TextBlock Grid.Row="0" Classes="label" Text="RT half-window (min)" />
+          <NumericUpDown Grid.Row="0" Grid.Column="1" x:Name="RtHalfWidth" Value="0.3" Minimum="0.01" Maximum="10" Increment="0.05" FormatString="0.##" Width="130" Margin="0,3" />
+          <TextBlock Grid.Row="1" Classes="label" Text="Mass tolerance" />
+          <NumericUpDown Grid.Row="1" Grid.Column="1" x:Name="Tolerance" Value="0.02" Minimum="0.0001" Maximum="500" Increment="0.005" FormatString="0.####" Width="130" Margin="0,3" />
+          <ComboBox Grid.Row="1" Grid.Column="2" x:Name="Unit" Classes="compact" Width="80" Margin="8,3,0,3" SelectedIndex="0">
+            <ComboBoxItem Content="Da" />
+            <ComboBoxItem Content="ppm" />
+          </ComboBox>
+        </Grid>
+        <TextBlock Classes="hint" TextWrapping="Wrap" Text="Choose the .csv location on the next screen. The file opens in OpenQuant through Method ▸ Import components." />
+      </StackPanel>
+    </Border>
+  </DockPanel>
+</Window>

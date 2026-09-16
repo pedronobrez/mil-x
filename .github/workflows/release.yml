@@ -1,6 +1,6 @@
 # Builds the downloadable Windows and Linux artifacts, on Windows and on Linux.
 #
-# The macOS disk image is built locally by opendial/scripts/package-release.sh, because a bundle
+# The macOS disk image is built locally by milx/scripts/package-release.sh, because a bundle
 # needs codesign and iconutil. Everything else is built here for two reasons: the MSI cannot be
 # built anywhere but Windows (WiX 5 validates directory names with Windows path rules and rejects
 # every name on macOS), and a Windows runner is the only place this application has ever been
@@ -35,7 +35,7 @@ jobs:
       - name: Read the version
         id: v
         shell: bash
-        run: echo "version=$(sed -n 's/.*<Version>\([^<]*\)<\/Version>.*/\1/p' opendial/Directory.Build.props | head -1)" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(sed -n 's/.*<Version>\([^<]*\)<\/Version>.*/\1/p' milx/Directory.Build.props | head -1)" >> "$GITHUB_OUTPUT"
 
       # The reader is compiled against SCIEX's SDK and shipped without it: the licence forbids
       # passing the assemblies on, so they are fetched here only to compile, and -p:ShipSciexSdk=false
@@ -48,32 +48,32 @@ jobs:
           python -m pip download alpharaw --no-deps --only-binary=:all: -d sdk
           wheel=$(ls sdk/alpharaw-*.whl | head -1)
           (cd sdk && unzip -q -o "$(basename "$wheel")" 'alpharaw/ext/sciex/*')
-          mkdir -p opendial/vendor/sciex
-          cp sdk/alpharaw/ext/sciex/*.dll sdk/alpharaw/ext/sciex/*.txt opendial/vendor/sciex/ 2>/dev/null || true
-          ls opendial/vendor/sciex | wc -l
+          mkdir -p milx/vendor/sciex
+          cp sdk/alpharaw/ext/sciex/*.dll sdk/alpharaw/ext/sciex/*.txt milx/vendor/sciex/ 2>/dev/null || true
+          ls milx/vendor/sciex | wc -l
 
       - name: Publish
         shell: bash
         run: |
-          dotnet publish opendial/src/OpenDIAL.Desktop/OpenDIAL.Desktop.csproj \
+          dotnet publish milx/src/MilX.Desktop/MilX.Desktop.csproj \
             -c Release -r win-x64 --self-contained \
             -p:UseOpenRawData=true -p:SkipLibraryDownload=true \
             -p:DebugType=None -p:DebugSymbols=false -p:ErrorOnDuplicatePublishOutputFiles=false \
             -p:ShipSciexSdk=false \
             -o publish/win-x64
-          dotnet publish opendial/src/OpenDIAL.Plugins.SciexWiff/OpenDIAL.Plugins.SciexWiff.csproj \
+          dotnet publish milx/src/MilX.Plugins.SciexWiff/MilX.Plugins.SciexWiff.csproj \
             -c Release -p:ShipSciexSdk=false -p:DebugType=None -p:DebugSymbols=false \
             -o publish/win-x64/plugins/sciex
-          rm -f publish/win-x64/plugins/sciex/{Common,OpenDIAL.RawData,NCDK,MathNet.Numerics,Newtonsoft.Json,Splash}.dll publish/win-x64/plugins/sciex/{Accord,MessagePack}*.dll || true
+          rm -f publish/win-x64/plugins/sciex/{Common,MilX.RawData,NCDK,MathNet.Numerics,Newtonsoft.Json,Splash}.dll publish/win-x64/plugins/sciex/{Accord,MessagePack}*.dll || true
 
       # The point of a Windows runner. The application writes what its window is showing to the
-      # file named by OPENDIAL_UI_PROBE; if that file appears, Avalonia started, the window was
+      # file named by MILX_UI_PROBE; if that file appears, Avalonia started, the window was
       # created and the view models are alive. Until this ran, "works on Windows" was a guess.
       - name: It starts on Windows
         shell: pwsh
         run: |
-          $env:OPENDIAL_UI_PROBE = "$PWD\probe.json"
-          $app = Start-Process -FilePath "publish\win-x64\OpenDIAL.exe" -PassThru
+          $env:MILX_UI_PROBE = "$PWD\probe.json"
+          $app = Start-Process -FilePath "publish\win-x64\MIL-X.exe" -PassThru
           for ($i = 0; $i -lt 60; $i++) {
             if ((Test-Path probe.json) -and (Get-Item probe.json).Length -gt 0) { break }
             Start-Sleep -Seconds 1
@@ -90,15 +90,15 @@ jobs:
         shell: bash
         run: |
           V="${{ steps.v.outputs.version }}"
-          mkdir -p "stage/OpenDIAL-$V-windows-x64"
-          cp -R publish/win-x64/. "stage/OpenDIAL-$V-windows-x64/"
-          cp LICENSE "stage/OpenDIAL-$V-windows-x64/LICENSE.txt"
-          cp NOTICE  "stage/OpenDIAL-$V-windows-x64/NOTICE.txt"
-          sed "s/@VERSION@/$V/g" opendial/packaging/windows-README.txt > "stage/OpenDIAL-$V-windows-x64/README.txt"
+          mkdir -p "stage/MIL-X-$V-windows-x64"
+          cp -R publish/win-x64/. "stage/MIL-X-$V-windows-x64/"
+          cp LICENSE "stage/MIL-X-$V-windows-x64/LICENSE.txt"
+          cp NOTICE  "stage/MIL-X-$V-windows-x64/NOTICE.txt"
+          sed "s/@VERSION@/$V/g" milx/packaging/windows-README.txt > "stage/MIL-X-$V-windows-x64/README.txt"
           # SCIEX's redistributable components, chosen by the appendix of their own licence
-          opendial/scripts/carry-sciex.sh "stage/OpenDIAL-$V-windows-x64"
+          milx/scripts/carry-sciex.sh "stage/MIL-X-$V-windows-x64"
           # what travels must be named in Appendix A, and the licence must travel with it
-          listed=$(sed -n '/APPENDIX A/,$p' opendial/vendor/sciex/SCIEX_LICENSE.txt | sed -n 's/^[[:space:]]*\([A-Za-z0-9_.]*\.dll\)[[:space:]]*$/\1/p')
+          listed=$(sed -n '/APPENDIX A/,$p' milx/vendor/sciex/SCIEX_LICENSE.txt | sed -n 's/^[[:space:]]*\([A-Za-z0-9_.]*\.dll\)[[:space:]]*$/\1/p')
           for f in $(find stage -name "Clearcore2.*.dll" -o -name "Sciex*.dll" -o -name "SciexToolKit.dll"); do
             grep -qx "$(basename "$f")" <<< "$listed" || { echo "$f is not named in Appendix A" >&2; exit 1; }
           done
@@ -109,26 +109,27 @@ jobs:
         run: |
           $v = "${{ steps.v.outputs.version }}"
           New-Item -ItemType Directory -Force -Path dist | Out-Null
-          Compress-Archive -Path "stage\OpenDIAL-$v-windows-x64" -DestinationPath "dist\OpenDIAL-$v-windows-x64.zip"
+          Compress-Archive -Path "stage\MIL-X-$v-windows-x64" -DestinationPath "dist\MIL-X-$v-windows-x64.zip"
 
       - name: MSI
         shell: pwsh
         run: |
           dotnet tool install --global wix --version 5.0.2
           $v = "${{ steps.v.outputs.version }}"
-          wix build opendial/packaging/opendial.wxs -d Version=$v `
-            -d BundleDir="$PWD\stage\OpenDIAL-$v-windows-x64" `
-            -d IconFile="$PWD\opendial\packaging\icons\OpenDIAL.ico" `
-            -o "dist\OpenDIAL-$v-windows-x64.msi"
+          wix build milx/packaging/milx.wxs -d Version=$v `
+            -d BundleDir="$PWD\stage\MIL-X-$v-windows-x64" `
+            -d IconFile="$PWD\milx\packaging\icons\MIL-X.ico" `
+            -o "dist\MIL-X-$v-windows-x64.msi"
 
-      # The .odproj association is registry rows inside the installer, and a typo in a key name
-      # fails silently: the MSI builds, installs, and double clicking a project still does nothing.
-      # So the built database is queried for the rows before it ships.
+      # The .milx association (and the .odproj one, for projects from before 1.0) is registry rows
+      # inside the installer, and a typo in a key name fails silently: the MSI builds, installs, and
+      # double clicking a project still does nothing. So the built database is queried for the rows
+      # before it ships.
       - name: The project association is in the installer
         shell: pwsh
         run: |
           $v = "${{ steps.v.outputs.version }}"
-          $msi = "$PWD\dist\OpenDIAL-$v-windows-x64.msi"
+          $msi = "$PWD\dist\MIL-X-$v-windows-x64.msi"
           $installer = New-Object -ComObject WindowsInstaller.Installer
           $db = $installer.GetType().InvokeMember("OpenDatabase", "InvokeMethod", $null, $installer, @($msi, 0))
           $view = $db.GetType().InvokeMember("OpenView", "InvokeMethod", $null, $db, @("SELECT ``Key``, ``Name``, ``Value`` FROM ``Registry``"))
@@ -142,13 +143,13 @@ jobs:
             $value = $rec.GetType().InvokeMember("StringData", "GetProperty", $null, $rec, 3)
             $rows += [pscustomobject]@{ Key = $key; Name = $name; Value = $value }
           }
-          $rows | Where-Object { $_.Key -match "odproj|OpenDIAL.Project|mdproject|Applications" } | Format-Table -AutoSize | Out-String | Write-Host
-          $need = @("Software\\Classes\\.odproj", "OpenDIAL.Project\\shell\\open\\command", "OpenDIAL.Project\\DefaultIcon")
+          $rows | Where-Object { $_.Key -match "milx|odproj|MilX.Project|mdproject|Applications" } | Format-Table -AutoSize | Out-String | Write-Host
+          $need = @("Software\\Classes\\.milx", "Software\\Classes\\.odproj\\OpenWithProgids", "MilX.Project\\shell\\open\\command", "MilX.Project\\DefaultIcon")
           foreach ($n in $need) {
             if (-not ($rows | Where-Object { $_.Key -match $n })) { throw "the installer has no $n row" }
           }
-          $cmd = ($rows | Where-Object { $_.Key -match "OpenDIAL.Project\\shell\\open\\command" }).Value
-          if ($cmd -notmatch 'OpenDIAL\.exe" "%1"') { throw "the open command does not pass the file: $cmd" }
+          $cmd = ($rows | Where-Object { $_.Key -match "MilX.Project\\shell\\open\\command" }).Value
+          if ($cmd -notmatch 'MIL-X\.exe" "%1"') { throw "the open command does not pass the file: $cmd" }
           Write-Host "association ok: $cmd"
 
       # WiX treats a glob that matches nothing as success and writes a tiny installer. Every build
@@ -180,7 +181,7 @@ jobs:
 
       - name: Read the version
         id: v
-        run: echo "version=$(sed -n 's/.*<Version>\([^<]*\)<\/Version>.*/\1/p' opendial/Directory.Build.props | head -1)" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(sed -n 's/.*<Version>\([^<]*\)<\/Version>.*/\1/p' milx/Directory.Build.props | head -1)" >> "$GITHUB_OUTPUT"
 
       # The reader is compiled against SCIEX's SDK and shipped without it: the licence forbids
       # passing the assemblies on, so they are fetched here only to compile, and -p:ShipSciexSdk=false
@@ -193,30 +194,30 @@ jobs:
           python -m pip download alpharaw --no-deps --only-binary=:all: -d sdk
           wheel=$(ls sdk/alpharaw-*.whl | head -1)
           (cd sdk && unzip -q -o "$(basename "$wheel")" 'alpharaw/ext/sciex/*')
-          mkdir -p opendial/vendor/sciex
-          cp sdk/alpharaw/ext/sciex/*.dll sdk/alpharaw/ext/sciex/*.txt opendial/vendor/sciex/ 2>/dev/null || true
-          ls opendial/vendor/sciex | wc -l
+          mkdir -p milx/vendor/sciex
+          cp sdk/alpharaw/ext/sciex/*.dll sdk/alpharaw/ext/sciex/*.txt milx/vendor/sciex/ 2>/dev/null || true
+          ls milx/vendor/sciex | wc -l
 
       - name: Publish
         run: |
-          dotnet publish opendial/src/OpenDIAL.Desktop/OpenDIAL.Desktop.csproj \
+          dotnet publish milx/src/MilX.Desktop/MilX.Desktop.csproj \
             -c Release -r linux-x64 --self-contained \
             -p:UseOpenRawData=true -p:SkipLibraryDownload=true \
             -p:DebugType=None -p:DebugSymbols=false -p:ErrorOnDuplicatePublishOutputFiles=false \
             -p:ShipSciexSdk=false \
             -o publish/linux-x64
-          dotnet publish opendial/src/OpenDIAL.Plugins.SciexWiff/OpenDIAL.Plugins.SciexWiff.csproj \
+          dotnet publish milx/src/MilX.Plugins.SciexWiff/MilX.Plugins.SciexWiff.csproj \
             -c Release -p:ShipSciexSdk=false -p:DebugType=None -p:DebugSymbols=false \
             -o publish/linux-x64/plugins/sciex
-          rm -f publish/linux-x64/plugins/sciex/{Common,OpenDIAL.RawData,NCDK,MathNet.Numerics,Newtonsoft.Json,Splash}.dll publish/linux-x64/plugins/sciex/{Accord,MessagePack}*.dll || true
+          rm -f publish/linux-x64/plugins/sciex/{Common,MilX.RawData,NCDK,MathNet.Numerics,Newtonsoft.Json,Splash}.dll publish/linux-x64/plugins/sciex/{Accord,MessagePack}*.dll || true
 
       - name: It starts on Linux
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq xvfb libx11-6 libice6 libsm6 libfontconfig1
-          chmod +x publish/linux-x64/OpenDIAL
-          export OPENDIAL_UI_PROBE="$PWD/probe.json"
-          xvfb-run -a --server-args="-screen 0 1600x1000x24" publish/linux-x64/OpenDIAL &
+          chmod +x publish/linux-x64/MIL-X
+          export MILX_UI_PROBE="$PWD/probe.json"
+          xvfb-run -a --server-args="-screen 0 1600x1000x24" publish/linux-x64/MIL-X &
           for i in $(seq 1 60); do [ -s probe.json ] && break; sleep 1; done
           [ -s probe.json ] || { echo "the window never reported itself after 60s" >&2; exit 1; }
           echo "started in ${i}s"
@@ -225,20 +226,20 @@ jobs:
       - name: Tarball
         run: |
           V="${{ steps.v.outputs.version }}"
-          mkdir -p "stage/OpenDIAL-$V-linux-x86_64" dist
-          cp -R publish/linux-x64/. "stage/OpenDIAL-$V-linux-x86_64/"
-          chmod +x "stage/OpenDIAL-$V-linux-x86_64/OpenDIAL"
-          cp LICENSE "stage/OpenDIAL-$V-linux-x86_64/LICENSE.txt"
-          cp NOTICE  "stage/OpenDIAL-$V-linux-x86_64/NOTICE.txt"
-          sed "s/@VERSION@/$V/g" opendial/packaging/linux-README.txt > "stage/OpenDIAL-$V-linux-x86_64/README.txt"
+          mkdir -p "stage/MIL-X-$V-linux-x86_64" dist
+          cp -R publish/linux-x64/. "stage/MIL-X-$V-linux-x86_64/"
+          chmod +x "stage/MIL-X-$V-linux-x86_64/MIL-X"
+          cp LICENSE "stage/MIL-X-$V-linux-x86_64/LICENSE.txt"
+          cp NOTICE  "stage/MIL-X-$V-linux-x86_64/NOTICE.txt"
+          sed "s/@VERSION@/$V/g" milx/packaging/linux-README.txt > "stage/MIL-X-$V-linux-x86_64/README.txt"
           # SCIEX's redistributable components, chosen by the appendix of their own licence
-          opendial/scripts/carry-sciex.sh "stage/OpenDIAL-$V-linux-x86_64"
-          listed=$(sed -n '/APPENDIX A/,$p' opendial/vendor/sciex/SCIEX_LICENSE.txt | sed -n 's/^[[:space:]]*\([A-Za-z0-9_.]*\.dll\)[[:space:]]*$/\1/p')
+          milx/scripts/carry-sciex.sh "stage/MIL-X-$V-linux-x86_64"
+          listed=$(sed -n '/APPENDIX A/,$p' milx/vendor/sciex/SCIEX_LICENSE.txt | sed -n 's/^[[:space:]]*\([A-Za-z0-9_.]*\.dll\)[[:space:]]*$/\1/p')
           for f in $(find stage -name "Clearcore2.*.dll" -o -name "Sciex*.dll" -o -name "SciexToolKit.dll"); do
             grep -qx "$(basename "$f")" <<< "$listed" || { echo "$f is not named in Appendix A" >&2; exit 1; }
           done
           test -f "$(find stage -name SCIEX_LICENSE.txt | head -1)" || { echo "the components must travel with their licence" >&2; exit 1; }
-          tar -czf "dist/OpenDIAL-$V-linux-x86_64.tar.gz" -C stage "OpenDIAL-$V-linux-x86_64"
+          tar -czf "dist/MIL-X-$V-linux-x86_64.tar.gz" -C stage "MIL-X-$V-linux-x86_64"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -257,7 +258,7 @@ jobs:
 
       - name: Read the version
         id: v
-        run: echo "version=$(sed -n 's/.*<Version>\([^<]*\)<\/Version>.*/\1/p' opendial/Directory.Build.props | head -1)" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(sed -n 's/.*<Version>\([^<]*\)<\/Version>.*/\1/p' milx/Directory.Build.props | head -1)" >> "$GITHUB_OUTPUT"
 
       # The reader is compiled against SCIEX's SDK and shipped without it: the licence forbids
       # passing the assemblies on, so they are fetched here only to compile, and -p:ShipSciexSdk=false
@@ -270,30 +271,30 @@ jobs:
           python -m pip download alpharaw --no-deps --only-binary=:all: -d sdk
           wheel=$(ls sdk/alpharaw-*.whl | head -1)
           (cd sdk && unzip -q -o "$(basename "$wheel")" 'alpharaw/ext/sciex/*')
-          mkdir -p opendial/vendor/sciex
-          cp sdk/alpharaw/ext/sciex/*.dll sdk/alpharaw/ext/sciex/*.txt opendial/vendor/sciex/ 2>/dev/null || true
-          ls opendial/vendor/sciex | wc -l
+          mkdir -p milx/vendor/sciex
+          cp sdk/alpharaw/ext/sciex/*.dll sdk/alpharaw/ext/sciex/*.txt milx/vendor/sciex/ 2>/dev/null || true
+          ls milx/vendor/sciex | wc -l
 
       - name: Publish
         run: |
-          dotnet publish opendial/src/OpenDIAL.Desktop/OpenDIAL.Desktop.csproj \
+          dotnet publish milx/src/MilX.Desktop/MilX.Desktop.csproj \
             -c Release -r linux-arm64 --self-contained \
             -p:UseOpenRawData=true -p:SkipLibraryDownload=true \
             -p:DebugType=None -p:DebugSymbols=false -p:ErrorOnDuplicatePublishOutputFiles=false \
             -p:ShipSciexSdk=false \
             -o publish/linux-arm64
-          dotnet publish opendial/src/OpenDIAL.Plugins.SciexWiff/OpenDIAL.Plugins.SciexWiff.csproj \
+          dotnet publish milx/src/MilX.Plugins.SciexWiff/MilX.Plugins.SciexWiff.csproj \
             -c Release -p:ShipSciexSdk=false -p:DebugType=None -p:DebugSymbols=false \
             -o publish/linux-arm64/plugins/sciex
-          rm -f publish/linux-arm64/plugins/sciex/{Common,OpenDIAL.RawData,NCDK,MathNet.Numerics,Newtonsoft.Json,Splash}.dll publish/linux-arm64/plugins/sciex/{Accord,MessagePack}*.dll || true
+          rm -f publish/linux-arm64/plugins/sciex/{Common,MilX.RawData,NCDK,MathNet.Numerics,Newtonsoft.Json,Splash}.dll publish/linux-arm64/plugins/sciex/{Accord,MessagePack}*.dll || true
 
       - name: It starts on Linux arm64
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq xvfb libx11-6 libice6 libsm6 libfontconfig1
-          chmod +x publish/linux-arm64/OpenDIAL
-          export OPENDIAL_UI_PROBE="$PWD/probe.json"
-          xvfb-run -a --server-args="-screen 0 1600x1000x24" publish/linux-arm64/OpenDIAL &
+          chmod +x publish/linux-arm64/MIL-X
+          export MILX_UI_PROBE="$PWD/probe.json"
+          xvfb-run -a --server-args="-screen 0 1600x1000x24" publish/linux-arm64/MIL-X &
           for i in $(seq 1 60); do [ -s probe.json ] && break; sleep 1; done
           [ -s probe.json ] || { echo "the window never reported itself after 60s" >&2; exit 1; }
           echo "started in ${i}s"
@@ -302,20 +303,20 @@ jobs:
       - name: Tarball
         run: |
           V="${{ steps.v.outputs.version }}"
-          mkdir -p "stage/OpenDIAL-$V-linux-arm64" dist
-          cp -R publish/linux-arm64/. "stage/OpenDIAL-$V-linux-arm64/"
-          chmod +x "stage/OpenDIAL-$V-linux-arm64/OpenDIAL"
-          cp LICENSE "stage/OpenDIAL-$V-linux-arm64/LICENSE.txt"
-          cp NOTICE  "stage/OpenDIAL-$V-linux-arm64/NOTICE.txt"
-          sed "s/@VERSION@/$V/g" opendial/packaging/linux-README.txt > "stage/OpenDIAL-$V-linux-arm64/README.txt"
+          mkdir -p "stage/MIL-X-$V-linux-arm64" dist
+          cp -R publish/linux-arm64/. "stage/MIL-X-$V-linux-arm64/"
+          chmod +x "stage/MIL-X-$V-linux-arm64/MIL-X"
+          cp LICENSE "stage/MIL-X-$V-linux-arm64/LICENSE.txt"
+          cp NOTICE  "stage/MIL-X-$V-linux-arm64/NOTICE.txt"
+          sed "s/@VERSION@/$V/g" milx/packaging/linux-README.txt > "stage/MIL-X-$V-linux-arm64/README.txt"
           # SCIEX's redistributable components, chosen by the appendix of their own licence
-          opendial/scripts/carry-sciex.sh "stage/OpenDIAL-$V-linux-arm64"
-          listed=$(sed -n '/APPENDIX A/,$p' opendial/vendor/sciex/SCIEX_LICENSE.txt | sed -n 's/^[[:space:]]*\([A-Za-z0-9_.]*\.dll\)[[:space:]]*$/\1/p')
+          milx/scripts/carry-sciex.sh "stage/MIL-X-$V-linux-arm64"
+          listed=$(sed -n '/APPENDIX A/,$p' milx/vendor/sciex/SCIEX_LICENSE.txt | sed -n 's/^[[:space:]]*\([A-Za-z0-9_.]*\.dll\)[[:space:]]*$/\1/p')
           for f in $(find stage -name "Clearcore2.*.dll" -o -name "Sciex*.dll" -o -name "SciexToolKit.dll"); do
             grep -qx "$(basename "$f")" <<< "$listed" || { echo "$f is not named in Appendix A" >&2; exit 1; }
           done
           test -f "$(find stage -name SCIEX_LICENSE.txt | head -1)" || { echo "the components must travel with their licence" >&2; exit 1; }
-          tar -czf "dist/OpenDIAL-$V-linux-arm64.tar.gz" -C stage "OpenDIAL-$V-linux-arm64"
+          tar -czf "dist/MIL-X-$V-linux-arm64.tar.gz" -C stage "MIL-X-$V-linux-arm64"
 
       - uses: actions/upload-artifact@v4
         with:

@@ -1,0 +1,149 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:help="using:MilX.Desktop.Help"
+        x:Class="MilX.Desktop.Views.HelpWindow"
+        x:DataType="help:HelpViewModel"
+        Title="MIL-X manual" Width="1180" Height="820" MinWidth="820" MinHeight="520"
+        Icon="avares://MIL-X/Assets/icon.png"
+        FontSize="13" Background="{DynamicResource OdCanvas}"
+        WindowStartupLocation="CenterOwner">
+  <!--
+    The manual, beside the application rather than in a browser: a table of contents on the left
+    that a search box turns into a list of hits, and the page on the right, whose [[links]] open
+    other pages the way they do in an Obsidian vault.
+  -->
+  <Window.KeyBindings>
+    <KeyBinding Gesture="Cmd+F" Command="{Binding $parent[Window].FocusSearchCommand}" />
+    <KeyBinding Gesture="Ctrl+F" Command="{Binding $parent[Window].FocusSearchCommand}" />
+    <KeyBinding Gesture="Cmd+OemOpenBrackets" Command="{Binding BackCommand}" />
+    <KeyBinding Gesture="Cmd+OemCloseBrackets" Command="{Binding ForwardCommand}" />
+    <KeyBinding Gesture="Alt+Left" Command="{Binding BackCommand}" />
+    <KeyBinding Gesture="Alt+Right" Command="{Binding ForwardCommand}" />
+  </Window.KeyBindings>
+  <Window.Styles>
+    <Style Selector="Button.toc">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="10,4" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="Foreground" Value="{DynamicResource OdInk}" />
+      <Setter Property="CornerRadius" Value="5" />
+    </Style>
+    <Style Selector="Button.toc:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource OdSurfaceAlt}" />
+    </Style>
+    <Style Selector="Button.toc.current">
+      <Setter Property="Background" Value="{DynamicResource OdAccentSoft}" />
+      <Setter Property="Foreground" Value="{DynamicResource OdAccent}" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Button.toc.current /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource OdAccentSoft}" />
+    </Style>
+    <Style Selector="Button.backlink">
+      <Setter Property="Background" Value="{DynamicResource OdSurfaceAlt}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource OdLine}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="10" />
+      <Setter Property="Padding" Value="9,2" />
+      <Setter Property="FontSize" Value="11.5" />
+      <Setter Property="Foreground" Value="{DynamicResource OdAccent}" />
+    </Style>
+  </Window.Styles>
+
+  <DockPanel>
+    <!-- the band: navigation, where you are, and the search -->
+    <Border DockPanel.Dock="Top" Classes="band">
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+          <Button x:Name="LanguageButton" Classes="tool" Content="{Binding OtherLanguageName}" Command="{Binding ToggleLanguageCommand}" ToolTip.Tip="Read the manual in the other language: English or Português" />
+          <TextBox x:Name="SearchBox" Text="{Binding Query, Mode=TwoWay}" Watermark="Search the manual…  (⌘F)" Width="300" />
+          <Button Classes="icon" Content="✕" Command="{Binding ClearQueryCommand}" IsVisible="{Binding HasQuery}" ToolTip.Tip="Clear the search (Esc)" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+          <Button Classes="icon" Content="◀" Command="{Binding BackCommand}" IsEnabled="{Binding CanGoBack}" ToolTip.Tip="Back (⌘[)" />
+          <Button Classes="icon" Content="▶" Command="{Binding ForwardCommand}" IsEnabled="{Binding CanGoForward}" ToolTip.Tip="Forward (⌘])" />
+          <TextBlock Classes="muted" Text="{Binding Breadcrumb}" VerticalAlignment="Center" Margin="10,0,0,0" TextTrimming="CharacterEllipsis" />
+        </StackPanel>
+      </DockPanel>
+    </Border>
+
+    <Grid ColumnDefinitions="290,6,*" Margin="8">
+      <!-- contents, or the hits -->
+      <Border Grid.Column="0" Classes="panel">
+        <Panel>
+          <DockPanel IsVisible="{Binding !HasQuery}">
+            <Border DockPanel.Dock="Top" Padding="12,10,12,4">
+              <TextBlock Classes="eyebrow" Text="CONTENTS" Margin="0" />
+            </Border>
+            <ScrollViewer>
+              <ItemsControl x:Name="Contents" ItemsSource="{Binding Sections}" Margin="6,0,6,8">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="help:ManualSection">
+                    <StackPanel Margin="0,6,0,2">
+                      <TextBlock Classes="eyebrow" Text="{Binding Name}" Margin="10,0,0,4" />
+                      <ItemsControl ItemsSource="{Binding Pages}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="help:ManualPage">
+                            <Button Classes="toc" Content="{Binding Title}" Tag="{Binding Slug}" Click="OnPageClick" ToolTip.Tip="{Binding Summary}" />
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </StackPanel>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+          </DockPanel>
+          <DockPanel IsVisible="{Binding HasQuery}">
+            <Border DockPanel.Dock="Top" Padding="12,10,12,4">
+              <TextBlock Classes="eyebrow" Text="{Binding Results.Count, StringFormat='{}{0} PAGE(S) MATCH'}" Margin="0" />
+            </Border>
+            <TextBlock DockPanel.Dock="Top" Classes="faint" Text="Nothing matches every word. Try fewer, or a different one." Margin="12,4" TextWrapping="Wrap" IsVisible="{Binding !Results.Count}" />
+            <ListBox x:Name="Hits" Classes="flat" ItemsSource="{Binding Results}" SelectionChanged="OnHitSelected" Margin="6,0,6,8">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="help:ManualHit">
+                  <StackPanel Spacing="2" Margin="4,3">
+                    <TextBlock Classes="strong" Text="{Binding Page.Title}" />
+                    <TextBlock Classes="hint" Text="{Binding Snippet}" TextWrapping="Wrap" />
+                    <TextBlock Classes="faint" Text="{Binding Page.Section}" FontSize="10.5" />
+                  </StackPanel>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </DockPanel>
+        </Panel>
+      </Border>
+
+      <GridSplitter Grid.Column="1" Classes="vertical" ResizeDirection="Columns" />
+
+      <!-- the page -->
+      <Border Grid.Column="2" Classes="panel">
+        <ScrollViewer x:Name="PageScroller" Padding="28,20,28,24" HorizontalScrollBarVisibility="Disabled">
+          <!-- sized from the scroller in code, because a wrapped paragraph otherwise takes the width it likes -->
+          <StackPanel x:Name="PageColumn" HorizontalAlignment="Left">
+            <StackPanel x:Name="PageHost" />
+            <Border x:Name="BacklinksBox" Classes="hairline-top" Margin="0,18,0,0" Padding="0,12,0,0" IsVisible="{Binding Backlinks.Count}">
+              <StackPanel Spacing="8">
+                <TextBlock Classes="eyebrow" Text="REFERENCED BY" Margin="0" />
+                <ItemsControl ItemsSource="{Binding Backlinks}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <WrapPanel />
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="help:ManualPage">
+                      <Button Classes="backlink" Content="{Binding Title}" Tag="{Binding Slug}" Click="OnPageClick" Margin="0,0,6,6" />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </Border>
+    </Grid>
+  </DockPanel>
+</Window>

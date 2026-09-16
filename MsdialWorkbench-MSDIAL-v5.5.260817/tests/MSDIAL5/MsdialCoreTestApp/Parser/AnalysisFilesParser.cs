@@ -179,7 +179,7 @@ namespace CompMs.App.MsdialConsole.Parser
                     AcquisitionType = afAcqType,
                     DeconvolutionFilePath = Path.Combine(fileDir, afFilename + "_" + dtString + ".dcl"),
                     PeakAreaBeanInformationFilePath = Path.Combine(fileDir, afFilename + "_" + dtString + ".pai"),
-                    RetentionTimeCorrectionBean = new RetentionTimeCorrectionBean(Path.Combine(fileDir, afFilename + "_" + dtString + ".rtc")), // OpenDIAL: portable path
+                    RetentionTimeCorrectionBean = new RetentionTimeCorrectionBean(Path.Combine(fileDir, afFilename + "_" + dtString + ".rtc")), // MIL-X: portable path
                     AnalysisBatch = afBatch,
                     DilutionFactor = afInjectVolume
                 });

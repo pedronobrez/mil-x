@@ -7,8 +7,8 @@ using CompMs.Common.Lipidomics;
 using CompMs.MsdialCore.Algorithm.Annotation;
 using System;
 using System.Collections.Generic;
-#if OPENDIAL_SQLITE
-// OpenDIAL: Microsoft.Data.Sqlite ships native SQLite for osx-arm64/linux-arm64; the ADO.NET surface used here is identical.
+#if MILX_SQLITE
+// MIL-X: Microsoft.Data.Sqlite ships native SQLite for osx-arm64/linux-arm64; the ADO.NET surface used here is identical.
 using Microsoft.Data.Sqlite;
 using SQLiteConnection = Microsoft.Data.Sqlite.SqliteConnection;
 using SQLiteConnectionStringBuilder = Microsoft.Data.Sqlite.SqliteConnectionStringBuilder;

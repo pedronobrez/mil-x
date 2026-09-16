@@ -1,0 +1,97 @@
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Interactivity;
+using Avalonia.Styling;
+using MilX.Desktop.Services;
+
+namespace MilX.Desktop.Views;
+
+public partial class SettingsWindow : Window
+{
+    private readonly SettingsService? _settings;
+
+    public SettingsWindow() : this(null) { }
+
+    public SettingsWindow(SettingsService? settings)
+    {
+        InitializeComponent();
+        _settings = settings;
+        if (settings is not null)
+        {
+            var v = settings.Current.VendorConversion;
+            MsconvertPath.Text = v.MsconvertPath;
+            UseDocker.IsChecked = v.UseDocker;
+            DockerImage.Text = v.DockerImage;
+            CacheFolder.Text = v.ConversionCacheFolder;
+            SettingsPath.Text = "Stored in " + settings.FilePath;
+            ThemeBox.SelectedIndex = settings.Current.Theme switch { "Light" => 1, "Dark" => 2, _ => 0 };
+        }
+        ShowCacheSize();
+    }
+
+    private readonly MilX.Pipeline.Caching.RawSnapshotCache _ms1Cache = new();
+
+    private void ShowCacheSize()
+    {
+        var count = _ms1Cache.Count();
+        var megabytes = _ms1Cache.SizeBytes() / 1024.0 / 1024.0;
+        Ms1CacheInfo.Text = count == 0
+            ? $"Empty · {_ms1Cache.Root}"
+            : $"{count} file(s), {megabytes:N0} MB · {_ms1Cache.Root}";
+    }
+
+    private void OnClearMs1Cache(object? sender, RoutedEventArgs e)
+    {
+        _ms1Cache.Clear();
+        ShowCacheSize();
+    }
+
+    public static void ApplyTheme(string theme)
+    {
+        if (Application.Current is null) return;
+        Application.Current.RequestedThemeVariant = theme switch
+        {
+            "Light" => ThemeVariant.Light,
+            "Dark" => ThemeVariant.Dark,
+            _ => ThemeVariant.Default,
+        };
+    }
+
+    private async void OnBrowseMsconvert(object? sender, RoutedEventArgs e)
+    {
+        var files = await new FileDialogService(this).PickFilesAsync("Locate msconvert", new[] { "*" }, allowMultiple: false);
+        if (files.Count > 0) MsconvertPath.Text = files[0];
+    }
+
+    private async void OnBrowseCache(object? sender, RoutedEventArgs e)
+    {
+        var folder = await new FileDialogService(this).PickFolderAsync("Choose the conversion cache folder");
+        if (folder is not null) CacheFolder.Text = folder;
+    }
+
+    private async void OnSave(object? sender, RoutedEventArgs e)
+    {
+        if (_settings is not null)
+        {
+            var v = _settings.Current.VendorConversion;
+            v.MsconvertPath = MsconvertPath.Text?.Trim() ?? string.Empty;
+            v.UseDocker = UseDocker.IsChecked == true;
+            v.DockerImage = string.IsNullOrWhiteSpace(DockerImage.Text) ? "chambm/pwiz-skyline-i-agree-to-the-vendor-licenses" : DockerImage.Text.Trim();
+            v.ConversionCacheFolder = CacheFolder.Text?.Trim() ?? string.Empty;
+            _settings.Current.Theme = (ThemeBox.SelectedItem as ComboBoxItem)?.Tag as string ?? "System";
+            ApplyTheme(_settings.Current.Theme);
+            try
+            {
+                await _settings.SaveAsync();
+            }
+            catch (Exception ex)
+            {
+                SettingsPath.Text = "Could not save settings: " + ex.Message;
+                return;
+            }
+        }
+        Close();
+    }
+
+    private void OnCancel(object? sender, RoutedEventArgs e) => Close();
+}

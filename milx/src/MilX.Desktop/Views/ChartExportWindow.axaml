@@ -1,0 +1,70 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MilX.Desktop.Views.ChartExportWindow"
+        Title="Export the figure" Width="820" Height="560" CanResize="True"
+        FontSize="13" Background="{DynamicResource OdCanvas}"
+        WindowStartupLocation="CenterOwner">
+  <!--
+    What a figure looks like once it is out of the application is not what the screen looks like:
+    a paper or a slide wants it light however the reviewer works, and a slide wants larger type.
+    The preview is the chart drawn with the very settings the file will be written with, so the
+    choice is made by looking rather than by guessing.
+  -->
+  <DockPanel Margin="20">
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,14,0,0">
+      <TextBlock x:Name="SizeLine" Classes="hint" VerticalAlignment="Center" Margin="0,0,12,0" />
+      <Button Content="Cancel" Click="OnCancel" MinWidth="90" />
+      <Button x:Name="SaveButton" Content="Save…" Click="OnSave" MinWidth="110" Classes="primary" />
+    </StackPanel>
+    <Grid ColumnDefinitions="*,16,310">
+      <Border Grid.Column="0" Classes="card" Padding="10" ClipToBounds="True">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Top" Classes="eyebrow" x:Name="PreviewLabel" Text="PREVIEW" Margin="0,0,0,8"
+                     TextTrimming="CharacterEllipsis" MaxLines="1" />
+          <Border x:Name="PreviewPaper" Background="{DynamicResource OdCanvas}" CornerRadius="4">
+            <Image x:Name="Preview" Stretch="Uniform" StretchDirection="DownOnly" Margin="6" />
+          </Border>
+        </DockPanel>
+      </Border>
+      <Border Grid.Column="2" Classes="card" Padding="16,14">
+        <StackPanel Spacing="10">
+          <TextBlock Classes="eyebrow" Text="THE FILE" />
+          <Grid ColumnDefinitions="96,*" RowDefinitions="Auto,Auto">
+            <TextBlock Grid.Row="0" Classes="label" Text="Format" />
+            <ComboBox Grid.Row="0" Grid.Column="1" x:Name="FormatBox" Classes="compact" Margin="0,2" HorizontalAlignment="Stretch">
+              <ComboBoxItem Content="SVG (vector)" />
+              <ComboBoxItem Content="PNG (bitmap)" />
+            </ComboBox>
+            <TextBlock Grid.Row="1" Classes="label" Text="Resolution" />
+            <ComboBox Grid.Row="1" Grid.Column="1" x:Name="ScaleBox" Classes="compact" Margin="0,2" HorizontalAlignment="Stretch">
+              <ComboBoxItem Content="2 ×" />
+              <ComboBoxItem Content="3 ×" />
+              <ComboBoxItem Content="4 ×" />
+              <ComboBoxItem Content="6 ×" />
+            </ComboBox>
+          </Grid>
+
+          <TextBlock Classes="eyebrow" Text="HOW IT LOOKS" Margin="0,6,0,0" />
+          <Grid ColumnDefinitions="96,*" RowDefinitions="Auto,Auto,Auto">
+            <TextBlock Grid.Row="0" Classes="label" Text="Theme" />
+            <ComboBox Grid.Row="0" Grid.Column="1" x:Name="ThemeBox" Classes="compact" Margin="0,2" HorizontalAlignment="Stretch">
+              <ComboBoxItem Content="As on screen" />
+              <ComboBoxItem Content="Light" />
+              <ComboBoxItem Content="Dark" />
+            </ComboBox>
+            <TextBlock Grid.Row="1" Classes="label" Text="Background" />
+            <ComboBox Grid.Row="1" Grid.Column="1" x:Name="BackgroundBox" Classes="compact" Margin="0,2" HorizontalAlignment="Stretch">
+              <ComboBoxItem Content="Paper" />
+              <ComboBoxItem Content="White" />
+              <ComboBoxItem Content="Transparent" />
+            </ComboBox>
+            <TextBlock Grid.Row="2" Classes="label" Text="Type size" />
+            <Slider Grid.Row="2" Grid.Column="1" x:Name="FontScaleSlider" Minimum="0.7" Maximum="2.2" Value="1" Margin="0,2" />
+          </Grid>
+          <TextBlock x:Name="Explain" Classes="hint" TextWrapping="Wrap"
+                     Text="A light figure from a dark window keeps every other choice — the palette, the labels, the grid — exactly as the chart options have them." />
+        </StackPanel>
+      </Border>
+    </Grid>
+  </DockPanel>
+</Window>

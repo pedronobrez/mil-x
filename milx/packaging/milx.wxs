@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Windows installer, built from the published win-x64 folder.
+
+  The zip beside it in every release is the same application; this exists for
+  the machines where software is expected to arrive as an installer: a Start
+  menu entry, a version in Add or remove programs, and an upgrade that replaces
+  the previous install instead of sitting beside it.
+
+  It installs per user, into LocalAppData, so no administrator is involved.
+  That is deliberate in a lab: the person analysing the data is often not the
+  person with the admin password.
+
+  Unsigned. SmartScreen will show "Windows protected your PC" on the first run
+  and the reader has to choose More info, then Run anyway. Only a code signing
+  certificate removes that.
+
+  The whole application directory is taken as it stands rather than each file
+  being listed: a self contained .NET publish is 250 files and no hand kept
+  list survives a dependency change.
+
+  The UpgradeCode is the one OpenDIAL 0.9 was installed under. It is what tells
+  Windows that MIL-X 1.0 is the same product under a new name, so installing it
+  removes the OpenDIAL install rather than leaving two copies. It must never
+  change.
+
+  Build with WiX 5, installed as a dotnet tool. Pinned: WiX 7 refuses to run
+  without accepting a paid maintenance fee EULA.
+
+      dotnet tool install wix -g ; version 5.0.2
+      wix build packaging/milx.wxs -d Version=1.0.0 \
+        -d BundleDir="$PWD/dist/milx-desktop-win-x64" \
+        -d IconFile="$PWD/packaging/icons/MIL-X.ico" \
+        -o dist/release/MIL-X-1.0.0-windows-x64.msi
+
+  BundleDir and IconFile are absolute on purpose: a relative path resolves
+  against the working directory rather than against this file, and a glob that
+  matches nothing is not an error in WiX. It produces a small installer and
+  reports success, so scripts/package-release.sh checks the size afterwards.
+
+  (written without a double hyphen anywhere: XML forbids one inside a comment,
+  and WiX reports it as an invalid source file rather than a comment problem)
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="MIL-X"
+           Manufacturer="MIL-X"
+           Version="$(Version)"
+           UpgradeCode="6b1f4d28-9c53-4e77-a1b0-5d2e8f37c904"
+           Scope="perUser"
+           Compressed="yes">
+
+    <!-- an upgrade replaces the previous version rather than sitting beside it; OpenDIAL 0.9 included -->
+    <MajorUpgrade DowngradeErrorMessage="A newer version of MIL-X is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- the executable carries its own icon for Explorer and the taskbar; the
+         Start menu entry and Add or remove programs are told separately -->
+    <Icon Id="MilXIcon" SourceFile="$(IconFile)" />
+    <Property Id="ARPPRODUCTICON" Value="MilXIcon" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/pedronobrez/mil-x" />
+    <Property Id="ARPNOREPAIR" Value="1" />
+
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="INSTALLFOLDER" Name="MIL-X" />
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ShortcutFolder" Name="MIL-X" />
+    </StandardDirectory>
+
+    <Feature Id="Main" Title="MIL-X" Level="1">
+      <ComponentGroupRef Id="ApplicationFiles" />
+      <ComponentGroupRef Id="Shortcuts" />
+      <ComponentGroupRef Id="FileAssociations" />
+    </Feature>
+
+    <ComponentGroup Id="ApplicationFiles" Directory="INSTALLFOLDER">
+      <Files Include="$(BundleDir)\**" />
+    </ComponentGroup>
+
+    <ComponentGroup Id="Shortcuts" Directory="ShortcutFolder">
+      <Component Id="StartMenuShortcut" Guid="*">
+        <Shortcut Id="MilXShortcut"
+                  Name="MIL-X"
+                  Description="Untargeted metabolomics and lipidomics: MS-DIAL 5, ported"
+                  Target="[INSTALLFOLDER]MIL-X.exe"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="MilXIcon" />
+        <RemoveFolder Id="RemoveShortcutFolder" Directory="ShortcutFolder"
+                      On="uninstall" />
+        <RegistryValue Root="HKCU" Key="Software\MIL-X"
+                       Name="installed" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <!--
+      Double clicking a project opens it. The application already accepts a path as its first
+      argument, which is how Finder opens documents on macOS; this is the same door on Windows.
+
+      Written as registry values rather than as ProgId and Extension elements because the
+      application files are harvested by a glob, and those elements have to hang off a File element
+      that a glob never names.
+
+      Under HKCU, because the package installs per user. An installation for the whole machine
+      would write the same keys under HKLM and would need an administrator for it.
+
+      .milx is the project file, so it takes the default. .odproj is the same file under the name it
+      had before 1.0: still opened, offered under Open with, and written as .milx the next time it
+      is saved. .mdproject belongs to MS-DIAL, which is very likely installed on the same Windows
+      machine and should keep the double click; MIL-X only adds itself to its Open with list. It is
+      the same distinction the macOS bundle makes between Owner and Alternate.
+    -->
+    <ComponentGroup Id="FileAssociations" Directory="INSTALLFOLDER">
+      <Component Id="ProjectAssociation" Guid="*">
+        <RegistryValue Root="HKCU" Key="Software\Classes\.milx"
+                       Value="MilX.Project" Type="string" KeyPath="yes" />
+        <RegistryValue Root="HKCU" Key="Software\Classes\.milx\OpenWithProgids"
+                       Name="MilX.Project" Value="" Type="string" />
+
+        <RegistryValue Root="HKCU" Key="Software\Classes\MilX.Project"
+                       Value="MIL-X project" Type="string" />
+        <RegistryValue Root="HKCU" Key="Software\Classes\MilX.Project\DefaultIcon"
+                       Value="[INSTALLFOLDER]MIL-X.exe,0" Type="string" />
+        <RegistryValue Root="HKCU" Key="Software\Classes\MilX.Project\shell\open\command"
+                       Value="&quot;[INSTALLFOLDER]MIL-X.exe&quot; &quot;%1&quot;" Type="string" />
+
+        <!-- the project file's name before 1.0: offered, and the default only where nothing else claims it -->
+        <RegistryValue Root="HKCU" Key="Software\Classes\.odproj\OpenWithProgids"
+                       Name="MilX.Project" Value="" Type="string" />
+
+        <!-- offered for MS-DIAL's project file, never taking the default away from it -->
+        <RegistryValue Root="HKCU" Key="Software\Classes\.mdproject\OpenWithProgids"
+                       Name="MilX.Project" Value="" Type="string" />
+
+        <!-- what Explorer reads to list the application under Open with -->
+        <RegistryValue Root="HKCU" Key="Software\Classes\Applications\MIL-X.exe\shell\open\command"
+                       Value="&quot;[INSTALLFOLDER]MIL-X.exe&quot; &quot;%1&quot;" Type="string" />
+        <RegistryValue Root="HKCU" Key="Software\Classes\Applications\MIL-X.exe\SupportedTypes"
+                       Name=".milx" Value="" Type="string" />
+        <RegistryValue Root="HKCU" Key="Software\Classes\Applications\MIL-X.exe\SupportedTypes"
+                       Name=".odproj" Value="" Type="string" />
+        <RegistryValue Root="HKCU" Key="Software\Classes\Applications\MIL-X.exe\SupportedTypes"
+                       Name=".mdproject" Value="" Type="string" />
+      </Component>
+    </ComponentGroup>
+  </Package>
+</Wix>

@@ -1,0 +1,260 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!--
+    The visual identity, shared with OpenQuant: one palette, both themes.
+    Every colour in the interface comes from these tokens. The accent (#234b8c) is used only
+    where it means something: what is selected, what has focus, what is the primary action.
+  -->
+  <ResourceDictionary.ThemeDictionaries>
+    <ResourceDictionary x:Key="Light">
+      <Color x:Key="OdCanvasColor">#f5f5f7</Color>
+      <Color x:Key="OdSurfaceColor">#ffffff</Color>
+      <Color x:Key="OdSurfaceAltColor">#fafafc</Color>
+      <Color x:Key="OdInkColor">#1a1d21</Color>
+      <Color x:Key="OdInkMutedColor">#6b7280</Color>
+      <Color x:Key="OdInkFaintColor">#9aa1ac</Color>
+      <Color x:Key="OdLineColor">#e3e5ea</Color>
+      <Color x:Key="OdLineStrongColor">#cfd3da</Color>
+      <Color x:Key="OdAccentColor">#234b8c</Color>
+      <Color x:Key="OdAccentHoverColor">#2c5aa6</Color>
+      <Color x:Key="OdAccentPressColor">#1b3c70</Color>
+      <Color x:Key="OdAccentSoftColor">#e7edf7</Color>
+      <Color x:Key="OdAccentInkColor">#ffffff</Color>
+      <Color x:Key="OdWarningColor">#a86a00</Color>
+      <Color x:Key="OdDangerColor">#b03030</Color>
+      <Color x:Key="OdOkColor">#2f7d4f</Color>
+      <Color x:Key="OdWarningSoftColor">#fbf1dc</Color>
+      <Color x:Key="OdDangerSoftColor">#f9e3e3</Color>
+
+      <SolidColorBrush x:Key="OdCanvas" Color="#f5f5f7" />
+      <SolidColorBrush x:Key="OdSurface" Color="#ffffff" />
+      <SolidColorBrush x:Key="OdSurfaceAlt" Color="#fafafc" />
+      <SolidColorBrush x:Key="OdInk" Color="#1a1d21" />
+      <SolidColorBrush x:Key="OdInkMuted" Color="#6b7280" />
+      <SolidColorBrush x:Key="OdInkFaint" Color="#9aa1ac" />
+      <SolidColorBrush x:Key="OdLine" Color="#e3e5ea" />
+      <SolidColorBrush x:Key="OdLineStrong" Color="#cfd3da" />
+      <SolidColorBrush x:Key="OdAccent" Color="#234b8c" />
+      <SolidColorBrush x:Key="OdAccentHover" Color="#2c5aa6" />
+      <SolidColorBrush x:Key="OdAccentPress" Color="#1b3c70" />
+      <SolidColorBrush x:Key="OdAccentSoft" Color="#e7edf7" />
+      <SolidColorBrush x:Key="OdAccentInk" Color="#ffffff" />
+      <SolidColorBrush x:Key="OdWarning" Color="#a86a00" />
+      <SolidColorBrush x:Key="OdDanger" Color="#b03030" />
+      <SolidColorBrush x:Key="OdOk" Color="#2f7d4f" />
+      <SolidColorBrush x:Key="OdWarningSoft" Color="#fbf1dc" />
+      <SolidColorBrush x:Key="OdDangerSoft" Color="#f9e3e3" />
+      <SolidColorBrush x:Key="OdTranslucentSurface" Color="#e6ffffff" />
+
+      <!-- Fluent hooks -->
+      <Color x:Key="SystemAccentColor">#234b8c</Color>
+      <Color x:Key="SystemAccentColorDark1">#1b3c70</Color>
+      <Color x:Key="SystemAccentColorDark2">#163059</Color>
+      <Color x:Key="SystemAccentColorDark3">#102443</Color>
+      <Color x:Key="SystemAccentColorLight1">#2c5aa6</Color>
+      <Color x:Key="SystemAccentColorLight2">#4f78bd</Color>
+      <Color x:Key="SystemAccentColorLight3">#7f9fd1</Color>
+      <Color x:Key="DataGridRowHoveredBackgroundColor">#f0f2f6</Color>
+    </ResourceDictionary>
+
+    <ResourceDictionary x:Key="Dark">
+      <Color x:Key="OdCanvasColor">#161819</Color>
+      <Color x:Key="OdSurfaceColor">#1e2124</Color>
+      <Color x:Key="OdSurfaceAltColor">#232629</Color>
+      <Color x:Key="OdInkColor">#e6e8eb</Color>
+      <Color x:Key="OdInkMutedColor">#9ba3ae</Color>
+      <Color x:Key="OdInkFaintColor">#6b7280</Color>
+      <Color x:Key="OdLineColor">#2c3035</Color>
+      <Color x:Key="OdLineStrongColor">#3c4148</Color>
+      <Color x:Key="OdAccentColor">#6f9be0</Color>
+      <Color x:Key="OdAccentHoverColor">#87b0ea</Color>
+      <Color x:Key="OdAccentPressColor">#5b86d6</Color>
+      <Color x:Key="OdAccentSoftColor">#22304a</Color>
+      <Color x:Key="OdAccentInkColor">#0f1113</Color>
+      <Color x:Key="OdWarningColor">#e0a844</Color>
+      <Color x:Key="OdDangerColor">#e07070</Color>
+      <Color x:Key="OdOkColor">#6fbf8a</Color>
+      <Color x:Key="OdWarningSoftColor">#3a3020</Color>
+      <Color x:Key="OdDangerSoftColor">#3d2626</Color>
+
+      <SolidColorBrush x:Key="OdCanvas" Color="#161819" />
+      <SolidColorBrush x:Key="OdSurface" Color="#1e2124" />
+      <SolidColorBrush x:Key="OdSurfaceAlt" Color="#232629" />
+      <SolidColorBrush x:Key="OdInk" Color="#e6e8eb" />
+      <SolidColorBrush x:Key="OdInkMuted" Color="#9ba3ae" />
+      <SolidColorBrush x:Key="OdInkFaint" Color="#6b7280" />
+      <SolidColorBrush x:Key="OdLine" Color="#2c3035" />
+      <SolidColorBrush x:Key="OdLineStrong" Color="#3c4148" />
+      <SolidColorBrush x:Key="OdAccent" Color="#6f9be0" />
+      <SolidColorBrush x:Key="OdAccentHover" Color="#87b0ea" />
+      <SolidColorBrush x:Key="OdAccentPress" Color="#5b86d6" />
+      <SolidColorBrush x:Key="OdAccentSoft" Color="#22304a" />
+      <SolidColorBrush x:Key="OdAccentInk" Color="#0f1113" />
+      <SolidColorBrush x:Key="OdWarning" Color="#e0a844" />
+      <SolidColorBrush x:Key="OdDanger" Color="#e07070" />
+      <SolidColorBrush x:Key="OdOk" Color="#6fbf8a" />
+      <SolidColorBrush x:Key="OdWarningSoft" Color="#3a3020" />
+      <SolidColorBrush x:Key="OdDangerSoft" Color="#3d2626" />
+      <SolidColorBrush x:Key="OdTranslucentSurface" Color="#e61e2124" />
+
+      <Color x:Key="SystemAccentColor">#6f9be0</Color>
+      <Color x:Key="SystemAccentColorDark1">#5b86d6</Color>
+      <Color x:Key="SystemAccentColorDark2">#4a72bd</Color>
+      <Color x:Key="SystemAccentColorDark3">#3a5fa3</Color>
+      <Color x:Key="SystemAccentColorLight1">#87b0ea</Color>
+      <Color x:Key="SystemAccentColorLight2">#a0c2f0</Color>
+      <Color x:Key="SystemAccentColorLight3">#bad4f5</Color>
+      <Color x:Key="DataGridRowHoveredBackgroundColor">#25292d</Color>
+    </ResourceDictionary>
+  </ResourceDictionary.ThemeDictionaries>
+
+  <!-- theme-independent hooks into the Fluent templates -->
+  <CornerRadius x:Key="ControlCornerRadius">6</CornerRadius>
+  <Thickness x:Key="TextControlBorderThemeThickness">1</Thickness>
+  <Thickness x:Key="TextControlBorderThemeThicknessFocused">1</Thickness>
+  <Thickness x:Key="TextControlThemePadding">8,4,8,4</Thickness>
+  <x:Double x:Key="TextControlThemeMinHeight">28</x:Double>
+  <Thickness x:Key="ButtonPadding">12,5,12,5</Thickness>
+  <x:Double x:Key="ComboBoxMinHeight">28</x:Double>
+  <Thickness x:Key="ComboBoxPadding">8,3,4,3</Thickness>
+  <x:Double x:Key="DataGridRowSelectedBackgroundOpacity">1</x:Double>
+  <x:Double x:Key="DataGridRowSelectedHoveredBackgroundOpacity">1</x:Double>
+  <x:Double x:Key="DataGridRowSelectedUnfocusedBackgroundOpacity">1</x:Double>
+  <x:Double x:Key="DataGridRowSelectedHoveredUnfocusedBackgroundOpacity">1</x:Double>
+  <x:Double x:Key="MenuBarHeight">30</x:Double>
+  <x:Double x:Key="DataGridSortIconMinWidth">0</x:Double>
+  <Thickness x:Key="MenuBarItemPadding">10,4,10,4</Thickness>
+  <x:Double x:Key="ScrollBarSize">10</x:Double>
+  <FontFamily x:Key="OdWordmarkFont">Didot, Bodoni 72, Hoefler Text, Georgia, Times New Roman, serif</FontFamily>
+  <FontFamily x:Key="OdMonoFont">avares://MIL-X/Assets/Fonts#JetBrains Mono NL, Menlo, SF Mono, Consolas, DejaVu Sans Mono, monospace</FontFamily>
+
+  <!-- brushes that Fluent reads dynamically; they alias the tokens above -->
+  <SolidColorBrush x:Key="TextControlBackground" Color="{DynamicResource OdSurfaceColor}" />
+  <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="{DynamicResource OdSurfaceColor}" />
+  <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="{DynamicResource OdSurfaceColor}" />
+  <SolidColorBrush x:Key="TextControlBackgroundDisabled" Color="{DynamicResource OdSurfaceAltColor}" />
+  <SolidColorBrush x:Key="TextControlBorderBrush" Color="{DynamicResource OdLineStrongColor}" />
+  <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="{DynamicResource OdLineStrongColor}" />
+  <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="{DynamicResource OdAccentColor}" />
+  <SolidColorBrush x:Key="TextControlBorderBrushDisabled" Color="{DynamicResource OdLineColor}" />
+  <SolidColorBrush x:Key="TextControlForeground" Color="{DynamicResource OdInkColor}" />
+  <SolidColorBrush x:Key="TextControlForegroundPointerOver" Color="{DynamicResource OdInkColor}" />
+  <SolidColorBrush x:Key="TextControlForegroundFocused" Color="{DynamicResource OdInkColor}" />
+  <SolidColorBrush x:Key="TextControlForegroundDisabled" Color="{DynamicResource OdInkFaintColor}" />
+  <SolidColorBrush x:Key="TextControlPlaceholderForeground" Color="{DynamicResource OdInkFaintColor}" />
+  <SolidColorBrush x:Key="TextControlPlaceholderForegroundPointerOver" Color="{DynamicResource OdInkFaintColor}" />
+  <SolidColorBrush x:Key="TextControlPlaceholderForegroundFocused" Color="{DynamicResource OdInkFaintColor}" />
+  <SolidColorBrush x:Key="TextControlSelectionHighlightColor" Color="{DynamicResource OdAccentSoftColor}" />
+
+  <SolidColorBrush x:Key="ButtonBackground" Color="{DynamicResource OdSurfaceColor}" />
+  <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{DynamicResource OdSurfaceColor}" />
+  <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="{DynamicResource OdAccentSoftColor}" />
+  <SolidColorBrush x:Key="ButtonBackgroundDisabled" Color="{DynamicResource OdSurfaceAltColor}" />
+  <SolidColorBrush x:Key="ButtonBorderBrush" Color="{DynamicResource OdLineStrongColor}" />
+  <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="{DynamicResource OdAccentColor}" />
+  <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="{DynamicResource OdAccentColor}" />
+  <SolidColorBrush x:Key="ButtonBorderBrushDisabled" Color="{DynamicResource OdLineColor}" />
+  <SolidColorBrush x:Key="ButtonForeground" Color="{DynamicResource OdInkColor}" />
+  <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="{DynamicResource OdAccentColor}" />
+  <SolidColorBrush x:Key="ButtonForegroundPressed" Color="{DynamicResource OdAccentColor}" />
+  <SolidColorBrush x:Key="ButtonForegroundDisabled" Color="{DynamicResource OdInkFaintColor}" />
+
+  <SolidColorBrush x:Key="AccentButtonBackground" Color="{DynamicResource OdAccentColor}" />
+  <SolidColorBrush x:Key="AccentButtonBackgroundPointerOver" Color="{DynamicResource OdAccentHoverColor}" />
+  <SolidColorBrush x:Key="AccentButtonBackgroundPressed" Color="{DynamicResource OdAccentPressColor}" />
+  <SolidColorBrush x:Key="AccentButtonBackgroundDisabled" Color="{DynamicResource OdLineColor}" />
+  <SolidColorBrush x:Key="AccentButtonBorderBrush" Color="{DynamicResource OdAccentColor}" />
+  <SolidColorBrush x:Key="AccentButtonBorderBrushPointerOver" Color="{DynamicResource OdAccentHoverColor}" />
+  <SolidColorBrush x:Key="AccentButtonBorderBrushPressed" Color="{DynamicResource OdAccentPressColor}" />
+  <SolidColorBrush x:Key="AccentButtonBorderBrushDisabled" Color="{DynamicResource OdLineColor}" />
+  <SolidColorBrush x:Key="AccentButtonForeground" Color="{DynamicResource OdAccentInkColor}" />
+  <SolidColorBrush x:Key="AccentButtonForegroundPointerOver" Color="{DynamicResource OdAccentInkColor}" />
+  <SolidColorBrush x:Key="AccentButtonForegroundPressed" Color="{DynamicResource OdAccentInkColor}" />
+  <SolidColorBrush x:Key="AccentButtonForegroundDisabled" Color="{DynamicResource OdInkFaintColor}" />
+
+  <SolidColorBrush x:Key="ComboBoxBackground" Color="{DynamicResource OdSurfaceColor}" />
+  <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver" Color="{DynamicResource OdSurfaceColor}" />
+  <SolidColorBrush x:Key="ComboBoxBackgroundPressed" Color="{DynamicResource OdSurfaceColor}" />
+  <SolidColorBrush x:Key="ComboBoxBackgroundDisabled" Color="{DynamicResource OdSurfaceAltColor}" />
+  <SolidColorBrush x:Key="ComboBoxBackgroundUnfocused" Color="{DynamicResource OdSurfaceColor}" />
+  <SolidColorBrush x:Key="ComboBoxBorderBrush" Color="{DynamicResource OdLineStrongColor}" />
+  <SolidColorBrush x:Key="ComboBoxBorderBrushPointerOver" Color="{DynamicResource OdLineStrongColor}" />
+  <SolidColorBrush x:Key="ComboBoxBorderBrushPressed" Color="{DynamicResource OdAccentColor}" />
+  <SolidColorBrush x:Key="ComboBoxBorderBrushDisabled" Color="{DynamicResource OdLineColor}" />
+  <SolidColorBrush x:Key="ComboBoxBackgroundBorderBrushFocused" Color="{DynamicResource OdAccentColor}" />
+  <SolidColorBrush x:Key="ComboBoxBackgroundBorderBrushUnfocused" Color="{DynamicResource OdLineStrongColor}" />
+  <SolidColorBrush x:Key="ComboBoxForeground" Color="{DynamicResource OdInkColor}" />
+  <SolidColorBrush x:Key="ComboBoxForegroundFocused" Color="{DynamicResource OdInkColor}" />
+  <SolidColorBrush x:Key="ComboBoxForegroundFocusedPressed" Color="{DynamicResource OdInkColor}" />
+  <SolidColorBrush x:Key="ComboBoxForegroundDisabled" Color="{DynamicResource OdInkFaintColor}" />
+  <SolidColorBrush x:Key="ComboBoxPlaceHolderForeground" Color="{DynamicResource OdInkFaintColor}" />
+  <SolidColorBrush x:Key="ComboBoxDropDownGlyphForeground" Color="{DynamicResource OdInkMutedColor}" />
+  <SolidColorBrush x:Key="ComboBoxDropDownGlyphForegroundFocused" Color="{DynamicResource OdAccentColor}" />
+  <SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="{DynamicResource OdSurfaceColor}" />
+  <SolidColorBrush x:Key="ComboBoxDropDownBorderBrush" Color="{DynamicResource OdLineStrongColor}" />
+  <SolidColorBrush x:Key="ComboBoxItemBackgroundPointerOver" Color="{DynamicResource OdAccentSoftColor}" />
+  <SolidColorBrush x:Key="ComboBoxItemBackgroundSelected" Color="{DynamicResource OdAccentSoftColor}" />
+  <SolidColorBrush x:Key="ComboBoxItemBackgroundSelectedPointerOver" Color="{DynamicResource OdAccentSoftColor}" />
+  <SolidColorBrush x:Key="ComboBoxItemBackgroundSelectedPressed" Color="{DynamicResource OdAccentSoftColor}" />
+  <SolidColorBrush x:Key="ComboBoxItemForegroundSelected" Color="{DynamicResource OdInkColor}" />
+  <SolidColorBrush x:Key="ComboBoxItemForegroundSelectedPointerOver" Color="{DynamicResource OdInkColor}" />
+  <SolidColorBrush x:Key="ComboBoxItemForegroundPointerOver" Color="{DynamicResource OdInkColor}" />
+
+  <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillChecked" Color="{DynamicResource OdAccentColor}" />
+  <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillCheckedPointerOver" Color="{DynamicResource OdAccentHoverColor}" />
+  <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillCheckedPressed" Color="{DynamicResource OdAccentPressColor}" />
+  <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeChecked" Color="{DynamicResource OdAccentColor}" />
+  <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeCheckedPointerOver" Color="{DynamicResource OdAccentHoverColor}" />
+  <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeCheckedPressed" Color="{DynamicResource OdAccentPressColor}" />
+  <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundChecked" Color="{DynamicResource OdAccentInkColor}" />
+  <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundCheckedPointerOver" Color="{DynamicResource OdAccentInkColor}" />
+  <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundCheckedPressed" Color="{DynamicResource OdAccentInkColor}" />
+  <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeUnchecked" Color="{DynamicResource OdLineStrongColor}" />
+  <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeUncheckedPointerOver" Color="{DynamicResource OdAccentColor}" />
+  <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeUncheckedPressed" Color="{DynamicResource OdAccentColor}" />
+  <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillUnchecked" Color="{DynamicResource OdSurfaceColor}" />
+  <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillUncheckedPointerOver" Color="{DynamicResource OdSurfaceColor}" />
+  <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillUncheckedPressed" Color="{DynamicResource OdAccentSoftColor}" />
+
+  <SolidColorBrush x:Key="MenuFlyoutPresenterBackground" Color="{DynamicResource OdSurfaceColor}" />
+  <SolidColorBrush x:Key="MenuFlyoutPresenterBorderBrush" Color="{DynamicResource OdLineStrongColor}" />
+  <SolidColorBrush x:Key="MenuFlyoutItemBackgroundPointerOver" Color="{DynamicResource OdAccentSoftColor}" />
+  <SolidColorBrush x:Key="MenuFlyoutItemForegroundPointerOver" Color="{DynamicResource OdAccentColor}" />
+  <SolidColorBrush x:Key="MenuFlyoutItemBackgroundPressed" Color="{DynamicResource OdAccentSoftColor}" />
+  <SolidColorBrush x:Key="MenuFlyoutItemForegroundPressed" Color="{DynamicResource OdAccentColor}" />
+  <SolidColorBrush x:Key="MenuFlyoutItemForeground" Color="{DynamicResource OdInkColor}" />
+  <SolidColorBrush x:Key="MenuFlyoutItemKeyboardAcceleratorTextForeground" Color="{DynamicResource OdInkMutedColor}" />
+
+  <SolidColorBrush x:Key="DataGridColumnHeaderBackgroundBrush" Color="{DynamicResource OdSurfaceAltColor}" />
+  <SolidColorBrush x:Key="DataGridColumnHeaderHoveredBackgroundBrush" Color="{DynamicResource OdSurfaceAltColor}" />
+  <SolidColorBrush x:Key="DataGridColumnHeaderPressedBackgroundBrush" Color="{DynamicResource OdAccentSoftColor}" />
+  <SolidColorBrush x:Key="DataGridColumnHeaderForegroundBrush" Color="{DynamicResource OdInkMutedColor}" />
+  <SolidColorBrush x:Key="DataGridRowBackgroundBrush" Color="{DynamicResource OdSurfaceColor}" />
+  <SolidColorBrush x:Key="DataGridRowSelectedBackgroundBrush" Color="{DynamicResource OdAccentSoftColor}" />
+  <SolidColorBrush x:Key="DataGridRowSelectedHoveredBackgroundBrush" Color="{DynamicResource OdAccentSoftColor}" />
+  <SolidColorBrush x:Key="DataGridRowSelectedUnfocusedBackgroundBrush" Color="{DynamicResource OdAccentSoftColor}" />
+  <SolidColorBrush x:Key="DataGridRowSelectedHoveredUnfocusedBackgroundBrush" Color="{DynamicResource OdAccentSoftColor}" />
+  <SolidColorBrush x:Key="DataGridGridLinesBrush" Color="{DynamicResource OdLineColor}" />
+  <SolidColorBrush x:Key="DataGridFillerColumnGridLinesBrush" Color="{DynamicResource OdLineColor}" />
+  <SolidColorBrush x:Key="DataGridCellFocusVisualPrimaryBrush" Color="Transparent" />
+  <SolidColorBrush x:Key="DataGridCellFocusVisualSecondaryBrush" Color="Transparent" />
+  <SolidColorBrush x:Key="DataGridCurrencyVisualPrimaryBrush" Color="Transparent" />
+
+  <SolidColorBrush x:Key="ScrollBarThumbFill" Color="{DynamicResource OdLineStrongColor}" />
+  <SolidColorBrush x:Key="ScrollBarThumbFillPointerOver" Color="{DynamicResource OdInkFaintColor}" />
+  <SolidColorBrush x:Key="ScrollBarThumbFillPressed" Color="{DynamicResource OdInkFaintColor}" />
+  <SolidColorBrush x:Key="ScrollBarTrackFill" Color="Transparent" />
+  <SolidColorBrush x:Key="ScrollBarTrackFillPointerOver" Color="{DynamicResource OdSurfaceAltColor}" />
+  <SolidColorBrush x:Key="ScrollBarTrackStroke" Color="Transparent" />
+  <SolidColorBrush x:Key="ScrollBarTrackStrokePointerOver" Color="{DynamicResource OdLineColor}" />
+
+  <SolidColorBrush x:Key="ExpanderHeaderBackground" Color="Transparent" />
+  <SolidColorBrush x:Key="ExpanderHeaderBackgroundPointerOver" Color="Transparent" />
+  <SolidColorBrush x:Key="ExpanderHeaderBackgroundPressed" Color="Transparent" />
+  <SolidColorBrush x:Key="ExpanderHeaderBorderBrush" Color="Transparent" />
+  <SolidColorBrush x:Key="ExpanderContentBackground" Color="Transparent" />
+  <SolidColorBrush x:Key="ExpanderContentBorderBrush" Color="Transparent" />
+  <SolidColorBrush x:Key="ExpanderChevronBackground" Color="Transparent" />
+  <SolidColorBrush x:Key="ExpanderChevronBorderBrush" Color="Transparent" />
+  <SolidColorBrush x:Key="ExpanderChevronForeground" Color="{DynamicResource OdInkMutedColor}" />
+</ResourceDictionary>

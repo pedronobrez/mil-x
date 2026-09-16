@@ -1,0 +1,53 @@
+name: MIL-X (macOS / Linux)
+
+on:
+  push:
+    paths:
+      - "milx/**"
+      - "MsdialWorkbench-MSDIAL-v5.5.260817/src/**"
+      - "MsdialWorkbench-MSDIAL-v5.5.260817/tests/MSDIAL5/MsdialCoreTestApp/**"
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            rid: osx-arm64
+          - os: macos-13
+            rid: osx-x64
+          - os: ubuntu-22.04
+            rid: linux-x64
+    runs-on: ${{ matrix.os }}
+    env:
+      DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: "1"
+      DOTNET_NOLOGO: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install numpy
+      - name: Register upstream package source (closed reader, parity tests only)
+        run: dotnet nuget add source "${{ github.workspace }}/MsdialWorkbench-MSDIAL-v5.5.260817/Assemblies" --name msdial-local
+      - name: SCIEX SDK assemblies (from the alpharaw wheel; SCIEX redistribution license)
+        run: bash milx/scripts/fetch-sciex-assemblies.sh || echo "no SCIEX assemblies; .wiff plugin builds as a stub"
+      - name: Unit tests (MilX.RawData)
+        run: dotnet test milx/tests/MilX.RawData.Tests/MilX.RawData.Tests.csproj -c Release
+      - name: End-to-end + pipeline tests
+        run: bash milx/scripts/test.sh
+      - name: Publish CLI
+        run: bash milx/scripts/build-cli.sh ${{ matrix.rid }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: milx-cli-${{ matrix.rid }}
+          path: milx/dist/milx-cli-${{ matrix.rid }}
+      - name: Build desktop app (if present)
+        if: ${{ hashFiles('milx/src/MilX.Desktop/MilX.Desktop.csproj') != '' }}
+        run: bash milx/scripts/build-gui.sh ${{ matrix.rid }}

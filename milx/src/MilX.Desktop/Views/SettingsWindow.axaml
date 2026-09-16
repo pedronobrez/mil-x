@@ -1,0 +1,50 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MilX.Desktop.Views.SettingsWindow"
+        Title="Settings" Width="640" Height="460" CanResize="False"
+        FontSize="13" Background="{DynamicResource OdCanvas}"
+        WindowStartupLocation="CenterOwner">
+  <DockPanel Margin="20">
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,14,0,0">
+      <Button Content="Cancel" Click="OnCancel" MinWidth="90" />
+      <Button Content="Save" Click="OnSave" MinWidth="90" Classes="primary" />
+    </StackPanel>
+    <Border Classes="card" Padding="20,16">
+      <StackPanel Spacing="6">
+        <TextBlock Classes="eyebrow" Text="APPEARANCE" />
+        <Grid ColumnDefinitions="150,*" RowDefinitions="Auto">
+          <TextBlock Classes="label" Text="Theme" />
+          <ComboBox Grid.Column="1" x:Name="ThemeBox" Width="200" HorizontalAlignment="Left">
+            <ComboBoxItem Content="Follow the system" Tag="System" />
+            <ComboBoxItem Content="Light" Tag="Light" />
+            <ComboBoxItem Content="Dark" Tag="Dark" />
+          </ComboBox>
+        </Grid>
+
+        <Border Classes="section"><TextBlock Classes="eyebrow" Text="SURVEY SCAN CACHE" /></Border>
+        <TextBlock Classes="hint" TextWrapping="Wrap"
+                   Text="Reading a vendor file takes about as long every time it is opened. The survey scans of each file are kept here after the first read, so reopening a project draws its chromatograms straight away. Nothing else is stored, and deleting the folder only costs one slow read." />
+        <DockPanel Margin="0,4,0,0">
+          <Button DockPanel.Dock="Right" Content="Empty it" Margin="8,0,0,0" Click="OnClearMs1Cache" />
+          <TextBlock x:Name="Ms1CacheInfo" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+        </DockPanel>
+
+        <Border Classes="section"><TextBlock Classes="eyebrow" Text="VENDOR FORMAT CONVERSION" /></Border>
+        <TextBlock Classes="hint" TextWrapping="Wrap"
+                   Text="Thermo .raw, Agilent/Bruker .d and Sciex .wiff/.wiff2 are converted to mzML with ProteoWizard msconvert before processing: a native msconvert executable, or the Docker image." />
+        <Grid ColumnDefinitions="150,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto" Margin="0,6,0,0">
+          <TextBlock Grid.Row="0" Classes="label" Text="msconvert path" />
+          <TextBox Grid.Row="0" Grid.Column="1" x:Name="MsconvertPath" Watermark="/usr/local/bin/msconvert or C:\...\msconvert.exe" Margin="0,3" />
+          <Button Grid.Row="0" Grid.Column="2" Content="Browse…" Margin="8,3,0,3" Click="OnBrowseMsconvert" />
+          <CheckBox Grid.Row="1" Grid.Column="1" x:Name="UseDocker" Content="Use Docker instead of a native msconvert" Margin="0,4" />
+          <TextBlock Grid.Row="2" Classes="label" Text="Docker image" />
+          <TextBox Grid.Row="2" Grid.Column="1" x:Name="DockerImage" Margin="0,3" />
+          <TextBlock Grid.Row="3" Classes="label" Text="Conversion cache" />
+          <TextBox Grid.Row="3" Grid.Column="1" x:Name="CacheFolder" Margin="0,3" Watermark="Empty = next to the source file" />
+          <Button Grid.Row="3" Grid.Column="2" Content="Browse…" Margin="8,3,0,3" Click="OnBrowseCache" />
+        </Grid>
+        <TextBlock x:Name="SettingsPath" Classes="hint" Margin="0,10,0,0" TextWrapping="Wrap" />
+      </StackPanel>
+    </Border>
+  </DockPanel>
+</Window>

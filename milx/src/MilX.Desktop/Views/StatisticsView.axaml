@@ -1,0 +1,858 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MilX.Desktop.ViewModels"
+             xmlns:c="using:MilX.Desktop.Controls"
+             xmlns:stats="using:MilX.Pipeline.Statistics"
+             xmlns:views="using:MilX.Desktop.Views"
+             x:Class="MilX.Desktop.Views.StatisticsView"
+             x:DataType="vm:StatisticsViewModel">
+  <!--
+    The dataset seen whole, in the order MetaboAnalyst's one-factor module walks it: the data and
+    its preprocessing first, then the tests on one feature at a time, then the models, the
+    clustering and the enrichment. One dataset feeds every page; the Data page is where it is made.
+  -->
+  <UserControl.Styles>
+    <Style Selector="StackPanel.options">
+      <Setter Property="Orientation" Value="Horizontal" />
+      <Setter Property="Spacing" Value="6" />
+    </Style>
+    <Style Selector="StackPanel.options > TextBlock.label">
+      <Setter Property="Margin" Value="6,0,0,0" />
+    </Style>
+    <Style Selector="Border.strip">
+      <Setter Property="Padding" Value="4,2,4,8" />
+      <Setter Property="Margin" Value="0,0,0,6" />
+    </Style>
+  </UserControl.Styles>
+  <DockPanel>
+    <Border DockPanel.Dock="Top" Classes="band">
+      <DockPanel>
+        <TextBlock DockPanel.Dock="Right" Classes="muted" Text="{Binding Summary}" VerticalAlignment="Center" Margin="12,0,4,0" MaxWidth="520" TextTrimming="CharacterEllipsis" />
+        <StackPanel Classes="options" VerticalAlignment="Center">
+          <TextBlock Classes="label" Text="Source" Margin="0" />
+          <ComboBox Classes="compact" ItemsSource="{x:Static vm:OneFactorViewModel.SourceModes}" SelectedItem="{Binding Analysis.SourceMode}" Width="290"
+                    ToolTip.Tip="Confirmed analytes divided by the standard of their class is what a lipidomics result is reported in; every feature as it is, is the untargeted view" />
+          <Button Classes="tool strong" Content="Internal standards…" Command="{Binding Analysis.ChooseStandardsCommand}" ToolTip.Tip="Choose the standard each class is divided by" />
+          <CheckBox Classes="compact" Content="Area" IsChecked="{Binding Analysis.UseArea}" ToolTip.Tip="Peak area rather than height" />
+          <CheckBox Classes="compact" Content="Annotated only" IsChecked="{Binding Analysis.AnnotatedOnly}" ToolTip.Tip="When every feature is the source, drop the unknowns" />
+          <CheckBox Classes="compact" Content="Drift corrected" IsChecked="{Binding UseCorrectedValues}" IsVisible="{Binding HasCorrection}"
+                    ToolTip.Tip="Feed every page the values corrected against the quality controls, instead of the raw ones" />
+          <Button Classes="tool" Content="Reload from the review" Command="{Binding Analysis.ReloadFromReviewCommand}" IsVisible="{Binding Analysis.ReviewIsNewer}"
+                  ToolTip.Tip="The review changed since the analysis was loaded; take the confirmed set again" />
+          <ProgressBar IsIndeterminate="True" IsVisible="{Binding Analysis.IsBusy}" Width="70" Height="3" VerticalAlignment="Center" />
+        </StackPanel>
+      </DockPanel>
+    </Border>
+
+    <Panel Margin="8">
+      <TextBlock Classes="faint" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasResults}"
+                 Text="Process a batch of two or more injections, or open a project, to see the dataset as a whole." />
+
+      <TabControl x:Name="StatsTabs" Classes="side-tabs" IsVisible="{Binding HasResults}" SelectedIndex="1">
+        <!-- ================================================================ DATA -->
+        <TabItem Header="Data" Classes="section" />
+        <TabItem Header="Data processing">
+          <Border Classes="panel" Margin="0,0,0,0">
+            <ScrollViewer>
+            <DockPanel Margin="12">
+              <TextBlock DockPanel.Dock="Top" Classes="eyebrow" Text="THE DATASET EVERY PAGE READS" />
+              <TextBlock DockPanel.Dock="Top" Classes="hint" TextWrapping="Wrap" Margin="0,0,0,10"
+                         Text="MetaboAnalyst's sequence, in its order: features missing too often are dropped and the rest imputed; the flattest features are filtered out; each injection is normalised; the values are transformed; and, for the models, scaled. Fold changes read the normalised values, the tests read the transformed ones, the models read the scaled ones." />
+              <StackPanel DockPanel.Dock="Top" Spacing="8">
+                <Border Classes="panel" Padding="12,8" Background="{DynamicResource OdSurfaceAlt}">
+                  <StackPanel Spacing="4">
+                    <TextBlock Classes="eyebrow" Text="SOURCE" Margin="0" />
+                    <TextBlock Text="{Binding Analysis.SourceSummary}" TextWrapping="Wrap" />
+                    <TextBlock Classes="hint" Text="{Binding Analysis.StandardsSummary}" TextWrapping="Wrap" />
+                    <TextBlock Classes="hint" Text="{Binding Analysis.ConfirmedCount, StringFormat='{}{0} feature(s) tagged Confirmed in the review'}" />
+                  </StackPanel>
+                </Border>
+                <Grid ColumnDefinitions="*,24,*" RowDefinitions="Auto">
+                  <StackPanel Grid.Column="0" Spacing="6">
+                    <TextBlock Classes="eyebrow" Text="MISSING VALUES AND FILTER" Margin="0" />
+                    <Grid ColumnDefinitions="215,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+                      <TextBlock Grid.Row="0" Classes="label" Text="Drop features missing in more than" />
+                      <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="4"><TextBox Text="{Binding Analysis.MaxMissingPercent}" Width="56" /><TextBlock Classes="label" Text="% of the injections" /></StackPanel>
+                      <TextBlock Grid.Row="1" Classes="label" Text="Replace the rest by" />
+                      <ComboBox Grid.Row="1" Grid.Column="1" Classes="compact" ItemsSource="{x:Static vm:OneFactorViewModel.MissingMethods}" SelectedItem="{Binding Analysis.MissingMethod}" Width="220" Margin="0,2" />
+                      <TextBlock Grid.Row="2" Classes="label" Text="Variance filter" />
+                      <ComboBox Grid.Row="2" Grid.Column="1" Classes="compact" ItemsSource="{x:Static vm:OneFactorViewModel.FilterMethods}" SelectedItem="{Binding Analysis.FilterMethod}" Width="220" Margin="0,2" />
+                      <TextBlock Grid.Row="3" Classes="label" Text="Removing the bottom" />
+                      <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Spacing="4"><TextBox Text="{Binding Analysis.FilterPercent}" Width="56" Watermark="auto" /><TextBlock Classes="label" Text="% (empty: none under 250 features, 5 % to 500, 10 % to 1000, 25 % beyond)" TextWrapping="Wrap" MaxWidth="320" /></StackPanel>
+                      <TextBlock Grid.Row="4" Classes="label" Text="Drop features with QC RSD above" />
+                      <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" Spacing="4"><TextBox Text="{Binding Analysis.MaxControlRsd}" Width="56" /><TextBlock Classes="label" Text="% (0 is off; needs injections typed QC)" /></StackPanel>
+                    </Grid>
+                  </StackPanel>
+                  <StackPanel Grid.Column="2" Spacing="6">
+                    <TextBlock Classes="eyebrow" Text="NORMALISATION, TRANSFORMATION, SCALING" Margin="0" />
+                    <Grid ColumnDefinitions="170,*" RowDefinitions="Auto,Auto,Auto,Auto">
+                      <TextBlock Grid.Row="0" Classes="label" Text="Sample normalisation" />
+                      <ComboBox Grid.Row="0" Grid.Column="1" Classes="compact" ItemsSource="{x:Static vm:OneFactorViewModel.Normalizations}" SelectedItem="{Binding Analysis.Normalization}" Width="220" Margin="0,2" />
+                      <TextBlock Grid.Row="1" Classes="label" Text="Reference feature" />
+                      <ComboBox Grid.Row="1" Grid.Column="1" Classes="compact" ItemsSource="{Binding Analysis.ReferenceFeatures}" SelectedItem="{Binding Analysis.ReferenceFeature}" Width="220" Margin="0,2" ToolTip.Tip="Used when the normalisation is to a reference feature" />
+                      <TextBlock Grid.Row="2" Classes="label" Text="Transformation" />
+                      <ComboBox Grid.Row="2" Grid.Column="1" Classes="compact" ItemsSource="{x:Static vm:OneFactorViewModel.Transforms}" SelectedItem="{Binding Analysis.Transform}" Width="220" Margin="0,2" />
+                      <TextBlock Grid.Row="3" Classes="label" Text="Scaling (models only)" />
+                      <ComboBox Grid.Row="3" Grid.Column="1" Classes="compact" ItemsSource="{x:Static vm:OneFactorViewModel.Scalings}" SelectedItem="{Binding Analysis.Scaling}" Width="220" Margin="0,2" />
+                    </Grid>
+                  </StackPanel>
+                </Grid>
+                <StackPanel Classes="options">
+                  <Button Classes="tool strong" Content="Apply" Command="{Binding Analysis.ApplyCommand}" ToolTip.Tip="Run the preprocessing and refresh every page" />
+                  <CheckBox Classes="compact" Content="Apply when the source changes" IsChecked="{Binding Analysis.AutoApply}" />
+                  <Button Classes="tool" Content="Export normalised data…" Command="{Binding Analysis.ExportTableCommand}" CommandParameter="data" />
+                  <TextBlock Classes="hint" Text="{Binding Analysis.DataSummary}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                </StackPanel>
+                <TextBlock Classes="hint" Text="{Binding Analysis.DataDetail}" TextWrapping="Wrap" />
+              </StackPanel>
+            </DockPanel>
+            </ScrollViewer>
+          </Border>
+        </TabItem>
+
+        <TabItem Header="Normalisation check">
+          <Grid ColumnDefinitions="*,6,*" RowDefinitions="*,6,*">
+            <Border Grid.Column="0" Grid.Row="0" Classes="panel"><c:ChartFrame HeadingText="BEFORE · ONE BOX PER INJECTION (LOG10)"><c:BoxPlotChart Groups="{Binding Analysis.BeforeBoxes}" YLabel="log10 value" ShowPoints="False" /></c:ChartFrame></Border>
+            <GridSplitter Grid.Column="1" Grid.Row="0" Grid.RowSpan="3" Classes="vertical" ResizeDirection="Columns" />
+            <Border Grid.Column="2" Grid.Row="0" Classes="panel"><c:ChartFrame HeadingText="AFTER · ONE BOX PER INJECTION"><c:BoxPlotChart Groups="{Binding Analysis.AfterBoxes}" YLabel="transformed value" ShowPoints="False" /></c:ChartFrame></Border>
+            <GridSplitter Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="3" Classes="horizontal" ResizeDirection="Rows" />
+            <Border Grid.Column="0" Grid.Row="2" Classes="panel"><c:ChartFrame HeadingText="BEFORE · TWENTY FEATURES ACROSS THE INJECTIONS"><c:BoxPlotChart Groups="{Binding Analysis.BeforeFeatureBoxes}" YLabel="log10 value" /></c:ChartFrame></Border>
+            <Border Grid.Column="2" Grid.Row="2" Classes="panel">
+              <DockPanel>
+                <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="10,4,10,8" TextWrapping="Wrap"
+                           Text="The injections should line up after normalisation and the features should spread alike after the transformation; a box that still stands apart is an injection to look at, and a skewed spread is a transformation that did not do its job." />
+                <c:ChartFrame HeadingText="AFTER · THE SAME FEATURES"><c:BoxPlotChart Groups="{Binding Analysis.AfterFeatureBoxes}" YLabel="transformed value" /></c:ChartFrame>
+              </DockPanel>
+            </Border>
+          </Grid>
+        </TabItem>
+
+        <!-- ================================================================ UNIVARIATE -->
+        <TabItem Header="One feature at a time" Classes="section" />
+        <TabItem Header="Fold change">
+          <Border Classes="panel">
+            <DockPanel Margin="6">
+              <Border DockPanel.Dock="Top" Classes="hairline-bottom strip">
+                <StackPanel Classes="options" VerticalAlignment="Center">
+                  <ComboBox Classes="compact" ItemsSource="{Binding Analysis.Classes}" SelectedItem="{Binding Analysis.ClassA}" Width="130" />
+                  <TextBlock Classes="label" Text="over" />
+                  <ComboBox Classes="compact" ItemsSource="{Binding Analysis.Classes}" SelectedItem="{Binding Analysis.ClassB}" Width="130" />
+                  <TextBlock Classes="label" Text="threshold ×" />
+                  <TextBox Text="{Binding Analysis.FoldThresholdText}" Width="50" />
+                  <Button Classes="tool strong" Content="Compare" Command="{Binding Analysis.CompareCommand}" />
+                  <Button Classes="tool" Content="Export table…" Command="{Binding Analysis.ExportTableCommand}" CommandParameter="comparison" />
+                  <TextBlock Classes="hint" Text="{Binding Analysis.ComparisonCounts}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+              </Border>
+              <Grid ColumnDefinitions="*,6,420">
+                <c:ChartFrame Grid.Column="0" HeadingText="LOG2 FOLD CHANGE · ONE POINT PER FEATURE">
+                  <c:ScatterChart Items="{Binding Analysis.FoldChangePoints}" SelectedItem="{Binding Analysis.SelectedFoldChangePoint, Mode=TwoWay}" XLabel="Feature (in table order)" YLabel="log2 fold change" YFromZero="False" GroupColorOverrides="{Binding Analysis.VolcanoColours}" />
+                </c:ChartFrame>
+                <GridSplitter Grid.Column="1" Classes="vertical" ResizeDirection="Columns" />
+                <DataGrid Grid.Column="2" ItemsSource="{Binding Analysis.ComparisonRows}" SelectedItem="{Binding Analysis.SelectedComparison, Mode=TwoWay}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" CanUserSortColumns="True">
+                  <DataGrid.Columns>
+                    <DataGridTextColumn Header="Feature" Binding="{Binding Label}" Width="*" />
+                    <DataGridTextColumn Header="Class" Binding="{Binding Group}" Width="70" />
+                    <DataGridTextColumn Header="FC" Binding="{Binding FoldChange, StringFormat={}{0:0.00}}" Width="70" />
+                    <DataGridTextColumn Header="log2" Binding="{Binding Log2FoldChange, StringFormat={}{0:0.00}}" Width="60" />
+                  </DataGrid.Columns>
+                </DataGrid>
+              </Grid>
+            </DockPanel>
+          </Border>
+        </TabItem>
+
+        <TabItem Header="Statistical test">
+          <Border Classes="panel">
+            <DockPanel Margin="6">
+              <Border DockPanel.Dock="Top" Classes="hairline-bottom strip">
+                <StackPanel Classes="options" VerticalAlignment="Center">
+                  <ComboBox Classes="compact" ItemsSource="{Binding Analysis.Classes}" SelectedItem="{Binding Analysis.ClassA}" Width="130" />
+                  <TextBlock Classes="label" Text="against" />
+                  <ComboBox Classes="compact" ItemsSource="{Binding Analysis.Classes}" SelectedItem="{Binding Analysis.ClassB}" Width="130" />
+                  <CheckBox Classes="compact" Content="Non-parametric" IsChecked="{Binding Analysis.NonParametric}" ToolTip.Tip="Mann–Whitney (or Wilcoxon when paired) instead of a t-test" />
+                  <CheckBox Classes="compact" Content="Equal variances" IsChecked="{Binding Analysis.EqualVariance}" ToolTip.Tip="The pooled-variance t-test instead of Welch's" />
+                  <CheckBox Classes="compact" Content="Paired" IsChecked="{Binding Analysis.Paired}" ToolTip.Tip="The injections of the two classes match one to one, in order" />
+                  <TextBlock Classes="label" Text="adjust" />
+                  <ComboBox Classes="compact" ItemsSource="{x:Static vm:OneFactorViewModel.Adjustments}" SelectedItem="{Binding Analysis.Adjustment}" Width="190" />
+                  <TextBlock Classes="label" Text="α" />
+                  <TextBox Text="{Binding Analysis.AlphaText}" Width="52" />
+                  <Button Classes="tool strong" Content="Test" Command="{Binding Analysis.CompareCommand}" />
+                  <Button Classes="tool" Content="Export table…" Command="{Binding Analysis.ExportTableCommand}" CommandParameter="comparison" />
+                </StackPanel>
+              </Border>
+              <TextBlock DockPanel.Dock="Top" Classes="hint" Text="{Binding Analysis.ComparisonMessage}" Margin="4,0,4,6" TextWrapping="Wrap" />
+              <Grid ColumnDefinitions="*,6,*">
+                <DataGrid Grid.Column="0" ItemsSource="{Binding Analysis.ComparisonRows}" SelectedItem="{Binding Analysis.SelectedComparison, Mode=TwoWay}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" CanUserSortColumns="True">
+                  <DataGrid.Columns>
+                    <DataGridTextColumn Header="Feature" Binding="{Binding Label}" Width="*" />
+                    <DataGridTextColumn Header="Class" Binding="{Binding Group}" Width="70" />
+                    <DataGridTextColumn Header="FC" Binding="{Binding FoldChange, StringFormat={}{0:0.00}}" Width="64" />
+                    <DataGridTextColumn Header="stat" Binding="{Binding Statistic, StringFormat={}{0:0.00}}" Width="60" />
+                    <DataGridTextColumn Header="p" Binding="{Binding P, StringFormat={}{0:0.0E0}}" Width="72" />
+                    <DataGridTextColumn Header="adj. p" Binding="{Binding AdjustedP, StringFormat={}{0:0.0E0}}" Width="72" />
+                  </DataGrid.Columns>
+                </DataGrid>
+                <GridSplitter Grid.Column="1" Classes="vertical" ResizeDirection="Columns" />
+                <DockPanel Grid.Column="2">
+                  <StackPanel DockPanel.Dock="Bottom" Classes="options" Margin="4,6,4,0">
+                    <Button Classes="tool" Content="Open in the ion table" Command="{Binding Analysis.OpenSelectedFeatureCommand}" />
+                    <TextBlock Classes="hint" Text="{Binding Analysis.FeatureBoxTitle}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                  </StackPanel>
+                  <c:ChartFrame HeadingText="THE SELECTED FEATURE · ONE BOX PER CLASS"><c:BoxPlotChart Groups="{Binding Analysis.FeatureBoxes}" YLabel="transformed value" /></c:ChartFrame>
+                </DockPanel>
+              </Grid>
+            </DockPanel>
+          </Border>
+        </TabItem>
+
+        <TabItem Header="Volcano plot">
+          <Border Classes="panel">
+            <DockPanel Margin="6">
+              <Border DockPanel.Dock="Top" Classes="hairline-bottom strip">
+                <StackPanel Classes="options" VerticalAlignment="Center">
+                  <TextBlock Classes="label" Text="fold change ≥" Margin="0" />
+                  <TextBox Text="{Binding Analysis.FoldThresholdText}" Width="50" />
+                  <TextBlock Classes="label" Text="and" />
+                  <ComboBox Classes="compact" ItemsSource="{x:Static vm:OneFactorViewModel.Adjustments}" SelectedItem="{Binding Analysis.Adjustment}" Width="190" />
+                  <TextBlock Classes="label" Text="≤" />
+                  <TextBox Text="{Binding Analysis.AlphaText}" Width="52" />
+                  <Button Classes="tool strong" Content="Redraw" Command="{Binding Analysis.CompareCommand}" />
+                  <TextBlock Classes="hint" Text="{Binding Analysis.ComparisonCounts}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+              </Border>
+              <Grid ColumnDefinitions="*,6,320">
+                <c:ChartFrame Grid.Column="0" HeadingText="VOLCANO · LOG2 FOLD CHANGE AGAINST −LOG10 P">
+                  <c:ScatterChart Items="{Binding Analysis.VolcanoPoints}" SelectedItem="{Binding Analysis.SelectedVolcanoPoint, Mode=TwoWay}" ReferenceLines="{Binding Analysis.VolcanoLines}" GroupColorOverrides="{Binding Analysis.VolcanoColours}"
+                                  XLabel="log2 fold change" YLabel="−log10 p" YFromZero="True" />
+                </c:ChartFrame>
+                <GridSplitter Grid.Column="1" Classes="vertical" ResizeDirection="Columns" />
+                <DockPanel Grid.Column="2">
+                  <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,6,4,0" TextWrapping="Wrap"
+                             Text="Right is higher in the first class, left in the second, up is more certain. The two corners are the features to act on; the features named are the ones past both lines." />
+                  <c:ChartFrame HeadingText="THE SELECTED FEATURE"><c:BoxPlotChart Groups="{Binding Analysis.FeatureBoxes}" YLabel="transformed value" /></c:ChartFrame>
+                </DockPanel>
+              </Grid>
+            </DockPanel>
+          </Border>
+        </TabItem>
+
+        <TabItem Header="ANOVA">
+          <Border Classes="panel">
+            <DockPanel Margin="6">
+              <Border DockPanel.Dock="Top" Classes="hairline-bottom strip">
+                <StackPanel Classes="options" VerticalAlignment="Center">
+                  <CheckBox Classes="compact" Content="Kruskal–Wallis" IsChecked="{Binding Analysis.AnovaNonParametric}" ToolTip.Tip="The rank test instead of the analysis of variance" />
+                  <TextBlock Classes="label" Text="adjust" />
+                  <ComboBox Classes="compact" ItemsSource="{x:Static vm:OneFactorViewModel.Adjustments}" SelectedItem="{Binding Analysis.Adjustment}" Width="190" />
+                  <TextBlock Classes="label" Text="α" />
+                  <TextBox Text="{Binding Analysis.AlphaText}" Width="52" />
+                  <Button Classes="tool strong" Content="Compute" Command="{Binding Analysis.RunAnovaCommand}" />
+                  <Button Classes="tool" Content="Export table…" Command="{Binding Analysis.ExportTableCommand}" CommandParameter="anova" />
+                  <TextBlock Classes="hint" Text="{Binding Analysis.AnovaMessage}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+              </Border>
+              <Grid ColumnDefinitions="*,6,*">
+                <Grid Grid.Column="0" RowDefinitions="*,6,*">
+                  <DataGrid Grid.Row="0" ItemsSource="{Binding Analysis.AnovaRows}" SelectedItem="{Binding Analysis.SelectedAnova, Mode=TwoWay}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" CanUserSortColumns="True">
+                    <DataGrid.Columns>
+                      <DataGridTextColumn Header="Feature" Binding="{Binding Label}" Width="*" />
+                      <DataGridTextColumn Header="Class" Binding="{Binding Group}" Width="70" />
+                      <DataGridTextColumn Header="F / H" Binding="{Binding Statistic, StringFormat={}{0:0.00}}" Width="64" />
+                      <DataGridTextColumn Header="p" Binding="{Binding P, StringFormat={}{0:0.0E0}}" Width="72" />
+                      <DataGridTextColumn Header="adj. p" Binding="{Binding AdjustedP, StringFormat={}{0:0.0E0}}" Width="72" />
+                    </DataGrid.Columns>
+                  </DataGrid>
+                  <GridSplitter Grid.Row="1" Classes="horizontal" ResizeDirection="Rows" />
+                  <c:ChartFrame Grid.Row="2" HeadingText="−LOG10 P · ONE POINT PER FEATURE"><c:ScatterChart Items="{Binding Analysis.AnovaPoints}" SelectedItem="{Binding Analysis.SelectedAnovaPoint, Mode=TwoWay}" XLabel="Feature" YLabel="−log10 p" /></c:ChartFrame>
+                </Grid>
+                <GridSplitter Grid.Column="1" Classes="vertical" ResizeDirection="Columns" />
+                <DockPanel Grid.Column="2">
+                  <Border DockPanel.Dock="Bottom" Classes="panel" Padding="10,8" Margin="0,6,0,0">
+                    <StackPanel Spacing="4">
+                      <TextBlock Classes="eyebrow" Text="POST-HOC · FISHER'S LSD (OR MANN–WHITNEY)" Margin="0" />
+                      <TextBlock Text="{Binding Analysis.PostHocText}" FontFamily="{StaticResource OdMonoFont}" FontSize="11.5" TextWrapping="Wrap" />
+                      <Button Classes="tool" Content="Open in the ion table" Command="{Binding Analysis.OpenSelectedFeatureCommand}" HorizontalAlignment="Left" />
+                    </StackPanel>
+                  </Border>
+                  <c:ChartFrame HeadingText="THE SELECTED FEATURE · ONE BOX PER CLASS"><c:BoxPlotChart Groups="{Binding Analysis.FeatureBoxes}" YLabel="transformed value" /></c:ChartFrame>
+                </DockPanel>
+              </Grid>
+            </DockPanel>
+          </Border>
+        </TabItem>
+
+        <TabItem Header="Correlations">
+          <Border Classes="panel">
+            <DockPanel Margin="6">
+              <Border DockPanel.Dock="Top" Classes="hairline-bottom strip">
+                <StackPanel Classes="options" VerticalAlignment="Center">
+                  <ComboBox Classes="compact" ItemsSource="{x:Static vm:OneFactorViewModel.CorrelationKinds}" SelectedItem="{Binding Analysis.CorrelationKind}" Width="110" />
+                  <TextBlock Classes="label" Text="between the top" />
+                  <TextBox Text="{Binding Analysis.TopCountText}" Width="50" />
+                  <ComboBox Classes="compact" ItemsSource="{x:Static vm:OneFactorViewModel.CorrelationBases}" SelectedItem="{Binding Analysis.CorrelationBasis}" Width="220" />
+                  <CheckBox Classes="compact" Content="Between injections instead" IsChecked="{Binding Analysis.CorrelateSamples}" />
+                  <Button Classes="tool strong" Content="Compute" Command="{Binding Analysis.CorrelateCommand}" />
+                  <TextBlock Classes="hint" Text="{Binding Analysis.CorrelationMessage}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+              </Border>
+              <c:ChartFrame HeadingText="CORRELATION · CLICK A ROW TO OPEN THE FEATURE"><c:HeatmapChart Data="{Binding Analysis.CorrelationHeatmap}" SelectedRowId="{Binding Analysis.CorrelationSelectedId, Mode=TwoWay}" ShowTrees="False" /></c:ChartFrame>
+            </DockPanel>
+          </Border>
+        </TabItem>
+
+        <TabItem Header="Pattern search">
+          <Border Classes="panel">
+            <DockPanel Margin="6">
+              <Border DockPanel.Dock="Top" Classes="hairline-bottom strip">
+                <StackPanel Classes="options" VerticalAlignment="Center">
+                  <ComboBox Classes="compact" ItemsSource="{x:Static vm:OneFactorViewModel.PatternKinds}" SelectedItem="{Binding Analysis.PatternKind}" Width="150" />
+                  <ComboBox Classes="compact" ItemsSource="{Binding Analysis.ReferenceFeatures}" SelectedItem="{Binding Analysis.PatternFeature}" Width="240" ToolTip.Tip="The feature whose profile is searched for" />
+                  <TextBox Text="{Binding Analysis.PatternClassOrder}" Width="200" Watermark="class order, e.g. control, low, high" ToolTip.Tip="The classes in the order of the trend; empty takes them as they come" />
+                  <ComboBox Classes="compact" ItemsSource="{x:Static vm:OneFactorViewModel.CorrelationKinds}" SelectedItem="{Binding Analysis.CorrelationKind}" Width="110" />
+                  <Button Classes="tool strong" Content="Search" Command="{Binding Analysis.SearchPatternCommand}" />
+                  <Button Classes="tool" Content="Export table…" Command="{Binding Analysis.ExportTableCommand}" CommandParameter="pattern" />
+                </StackPanel>
+              </Border>
+              <TextBlock DockPanel.Dock="Top" Classes="hint" Text="{Binding Analysis.PatternMessage}" Margin="4,0,4,6" TextWrapping="Wrap" />
+              <Grid ColumnDefinitions="*,6,380">
+                <c:ChartFrame Grid.Column="0" HeadingText="CORRELATION WITH THE PATTERN · CLICK A BAR TO OPEN THE FEATURE"><c:RankChart Items="{Binding Analysis.PatternBars}" SelectedTag="{Binding Analysis.PatternSelectedTag, Mode=TwoWay}" XLabel="correlation" /></c:ChartFrame>
+                <GridSplitter Grid.Column="1" Classes="vertical" ResizeDirection="Columns" />
+                <DataGrid Grid.Column="2" ItemsSource="{Binding Analysis.PatternRows}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" CanUserSortColumns="True">
+                  <DataGrid.Columns>
+                    <DataGridTextColumn Header="Feature" Binding="{Binding Label}" Width="*" />
+                    <DataGridTextColumn Header="r" Binding="{Binding Correlation, StringFormat={}{0:0.00}}" Width="60" />
+                    <DataGridTextColumn Header="p" Binding="{Binding P, StringFormat={}{0:0.0E0}}" Width="72" />
+                  </DataGrid.Columns>
+                </DataGrid>
+              </Grid>
+            </DockPanel>
+          </Border>
+        </TabItem>
+
+        <!-- ================================================================ MULTIVARIATE -->
+        <TabItem Header="Models" Classes="section" />
+        <TabItem Header="Principal components">
+          <Grid ColumnDefinitions="*,6,*" RowDefinitions="*,6,200">
+            <Border Grid.Column="0" Grid.Row="0" Classes="panel">
+              <DockPanel Margin="6">
+                <StackPanel DockPanel.Dock="Top" Classes="options" Margin="4,2,4,4">
+                  <ComboBox Classes="compact" ItemsSource="{x:Static vm:StatisticsViewModel.ComponentNames}" SelectedItem="{Binding PcX}" Width="80" />
+                  <TextBlock Classes="label" Text="against" />
+                  <ComboBox Classes="compact" ItemsSource="{x:Static vm:StatisticsViewModel.ComponentNames}" SelectedItem="{Binding PcY}" Width="80" />
+                  <CheckBox Classes="compact" Content="F region" IsChecked="{Binding WideRegion}"
+                            ToolTip.Tip="The 95 % region as F(2, n-1) rather than chi-square: wider the fewer injections a class has. MetaboAnalyst offers both and draws chi-square by default." />
+                  <TextBlock Classes="hint" Text="{Binding ScoreLabel}" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,6,4,0" TextWrapping="Wrap"
+                           Text="Replicates of a class should sit together and the classes apart. The ellipse is the 95 % confidence region of each class; an injection that lands among the wrong group, or far from everything, is the first to check." />
+                <c:ChartFrame HeadingText="SCORES · ONE POINT PER INJECTION"><c:ScatterChart Items="{Binding Scores}" XLabel="{Binding PcX}" YLabel="{Binding PcY}" YFromZero="False" ShowEllipses="True" EllipseMethod="{Binding RegionMethod}" ShowPointLabels="False" /></c:ChartFrame>
+              </DockPanel>
+            </Border>
+            <GridSplitter Grid.Column="1" Grid.Row="0" Grid.RowSpan="3" Classes="vertical" ResizeDirection="Columns" />
+            <Border Grid.Column="2" Grid.Row="0" Classes="panel">
+              <DockPanel Margin="6">
+                <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,6,4,0" TextWrapping="Wrap"
+                           Text="A feature far from the centre in the direction that separates the groups is what drives them apart. The ten farthest are named; click any to open it." />
+                <c:ChartFrame HeadingText="LOADINGS · ONE POINT PER FEATURE"><c:ScatterChart Items="{Binding Loadings}" SelectedItem="{Binding SelectedLoading, Mode=TwoWay}" XLabel="{Binding PcX, StringFormat='{}{0} loading'}" YLabel="{Binding PcY, StringFormat='{}{0} loading'}" YFromZero="False" /></c:ChartFrame>
+              </DockPanel>
+            </Border>
+            <GridSplitter Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="3" Classes="horizontal" ResizeDirection="Rows" />
+            <Border Grid.Column="0" Grid.Row="2" Classes="panel"><c:ChartFrame HeadingText="SCREE · VARIANCE EXPLAINED"><c:BarChart Items="{Binding Scree}" YLabel="% of variance" /></c:ChartFrame></Border>
+            <Border Grid.Column="2" Grid.Row="2" Classes="panel">
+              <DataGrid Margin="6" ItemsSource="{Binding Variance}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column">
+                <DataGrid.Columns>
+                  <DataGridTextColumn Header="Component" Binding="{Binding Component}" Width="*" />
+                  <DataGridTextColumn Header="%" Binding="{Binding Percent, StringFormat={}{0:F1}}" Width="70" />
+                  <DataGridTextColumn Header="Cumulative" Binding="{Binding Cumulative, StringFormat={}{0:F1}}" Width="90" />
+                </DataGrid.Columns>
+              </DataGrid>
+            </Border>
+          </Grid>
+        </TabItem>
+
+        <TabItem Header="Discriminant">
+          <Border Classes="panel">
+            <DockPanel Margin="6">
+              <Border DockPanel.Dock="Top" Classes="hairline-bottom strip">
+                <StackPanel Classes="options" VerticalAlignment="Center">
+                  <TextBlock Classes="label" Text="Components" Margin="0" />
+                  <TextBox Text="{Binding PlsComponents}" Width="52" />
+                  <TextBlock Classes="label" Text="Permutations" />
+                  <TextBox Text="{Binding PlsPermutations}" Width="62"
+                           ToolTip.Tip="How many times the labels are shuffled to see how well chance does. Zero skips the test." />
+                  <Button Classes="tool strong" Content="Fit against the classes" Command="{Binding FitDiscriminantCommand}" IsEnabled="{Binding !IsFittingPls}" />
+                  <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsFittingPls}" Width="80" Height="3" VerticalAlignment="Center" />
+                  <TextBlock Classes="hint" Text="{Binding PlsQuality}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+              </Border>
+              <Border DockPanel.Dock="Bottom" Padding="4,8,4,0">
+                <TextBlock Classes="hint" TextWrapping="Wrap" Text="{Binding PlsVerdict}" />
+              </Border>
+              <Grid ColumnDefinitions="*,6,*">
+                <Border Grid.Column="0" Classes="panel">
+                  <DockPanel Margin="6">
+                    <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,6,4,0" Text="{Binding PlsScoreLabel}" />
+                    <c:ChartFrame HeadingText="SCORES · ONE POINT PER INJECTION"><c:ScatterChart EllipseMethod="{Binding RegionMethod}" Items="{Binding PlsScores}" XLabel="Component 1" YLabel="Component 2" YFromZero="False" ShowEllipses="True" /></c:ChartFrame>
+                  </DockPanel>
+                </Border>
+                <GridSplitter Grid.Column="1" Classes="vertical" ResizeDirection="Columns" />
+                <Grid Grid.Column="2" RowDefinitions="*,6,200">
+                  <Border Grid.Row="0" Classes="panel">
+                    <DockPanel Margin="6">
+                      <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,6,4,0" TextWrapping="Wrap"
+                                 Text="VIP above one is the usual mark of a feature the separation rests on; the cells beside each bar are its mean level in every class. None of it means anything if the model did not survive cross-validation." />
+                      <c:ChartFrame HeadingText="FEATURES BY VIP · CLICK ONE TO OPEN IT"><c:RankChart Items="{Binding VipBars}" ClassNames="{Binding PlsClassNames}" SelectedTag="{Binding VipSelectedTag, Mode=TwoWay}" XLabel="VIP" Threshold="1" /></c:ChartFrame>
+                    </DockPanel>
+                  </Border>
+                  <GridSplitter Grid.Row="1" Classes="horizontal" ResizeDirection="Rows" />
+                  <DataGrid Grid.Row="2" ItemsSource="{Binding VipRows}" SelectedItem="{Binding SelectedVipRow}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" CanUserSortColumns="True">
+                    <DataGrid.Columns>
+                      <DataGridTextColumn Header="Feature" Binding="{Binding Label}" Width="*" />
+                      <DataGridTextColumn Header="Class" Binding="{Binding Group}" Width="90" />
+                      <DataGridTextColumn Header="Higher in" Binding="{Binding Side}" Width="110" />
+                      <DataGridTextColumn Header="VIP" Binding="{Binding Vip, StringFormat={}{0:F2}}" Width="70" />
+                    </DataGrid.Columns>
+                  </DataGrid>
+                </Grid>
+              </Grid>
+            </DockPanel>
+          </Border>
+        </TabItem>
+
+        <TabItem Header="Orthogonal">
+          <Border Classes="panel">
+            <DockPanel Margin="6">
+              <Border DockPanel.Dock="Top" Classes="hairline-bottom strip">
+                <StackPanel Classes="options" VerticalAlignment="Center">
+                  <TextBlock Classes="label" Text="Orthogonal components" Margin="0" />
+                  <TextBox Text="{Binding OrthogonalComponents}" Width="52"
+                           ToolTip.Tip="How many rounds of variation unrelated to the classes to strip out before the predictive one is taken" />
+                  <TextBlock Classes="label" Text="Permutations" />
+                  <TextBox Text="{Binding OplsPermutations}" Width="62" />
+                  <Button Classes="tool strong" Content="Fit the orthogonal model" Command="{Binding FitOrthogonalCommand}" IsEnabled="{Binding !IsFittingOpls}" />
+                  <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsFittingOpls}" Width="80" Height="3" VerticalAlignment="Center" />
+                  <TextBlock Classes="hint" Text="{Binding OplsQuality}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+              </Border>
+              <Border DockPanel.Dock="Bottom" Padding="4,8,4,0">
+                <TextBlock Classes="hint" TextWrapping="Wrap" Text="{Binding OplsVerdict}" />
+              </Border>
+              <Grid ColumnDefinitions="*,6,*">
+                <Border Grid.Column="0" Classes="panel">
+                  <DockPanel Margin="6">
+                    <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,6,4,0" TextWrapping="Wrap" Text="{Binding OplsScoreLabel}" />
+                    <c:ChartFrame HeadingText="SCORES · THE SEPARATION ON ONE AXIS"><c:ScatterChart EllipseMethod="{Binding RegionMethod}" Items="{Binding OplsScores}" XLabel="Predictive" YLabel="Orthogonal" YFromZero="False" ShowEllipses="True" /></c:ChartFrame>
+                  </DockPanel>
+                </Border>
+                <GridSplitter Grid.Column="1" Classes="vertical" ResizeDirection="Columns" />
+                <Grid Grid.Column="2" RowDefinitions="*,6,220">
+                  <Border Grid.Row="0" Classes="panel">
+                    <DockPanel Margin="6">
+                      <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,6,4,0" TextWrapping="Wrap"
+                                 Text="Across is how much of the separation a feature carries; up is how consistently it carries it. Only the two far corners are worth acting on: a feature high up but near the middle is reliable and tiny, and one far out but low down is one loud injection. Click a point to open it." />
+                      <c:ChartFrame HeadingText="S-PLOT · MAGNITUDE ACROSS, RELIABILITY UP"><c:ScatterChart Items="{Binding SPlot}" SelectedItem="{Binding SelectedSPlotPoint, Mode=TwoWay}" XLabel="Covariance with the predictive component" YLabel="Correlation" YFromZero="False" /></c:ChartFrame>
+                    </DockPanel>
+                  </Border>
+                  <GridSplitter Grid.Row="1" Classes="horizontal" ResizeDirection="Rows" />
+                  <Border Grid.Row="2" Classes="panel">
+                    <DockPanel Margin="6">
+                      <TextBlock DockPanel.Dock="Top" Classes="eyebrow" Text="THE CORNERS, IN ORDER" Margin="4,4,4,6" />
+                      <DataGrid ItemsSource="{Binding SPlotRows}" SelectedItem="{Binding SelectedSPlotRow}"
+                                AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" CanUserSortColumns="True">
+                        <DataGrid.Columns>
+                          <DataGridTextColumn Header="Feature" Binding="{Binding Label}" Width="*" />
+                          <DataGridTextColumn Header="Higher in" Binding="{Binding Side}" Width="110" />
+                          <DataGridTextColumn Header="Covariance" Binding="{Binding Covariance, StringFormat={}{0:F2}}" Width="96" />
+                          <DataGridTextColumn Header="r" Binding="{Binding Correlation, StringFormat={}{0:F2}}" Width="60" />
+                          <DataGridTextColumn Header="VIP" Binding="{Binding Vip, StringFormat={}{0:F2}}" Width="60" />
+                        </DataGrid.Columns>
+                      </DataGrid>
+                    </DockPanel>
+                  </Border>
+                </Grid>
+              </Grid>
+            </DockPanel>
+          </Border>
+        </TabItem>
+
+        <TabItem Header="Random forest">
+          <Border Classes="panel">
+            <DockPanel Margin="6">
+              <Border DockPanel.Dock="Top" Classes="hairline-bottom strip">
+                <StackPanel Classes="options" VerticalAlignment="Center">
+                  <TextBlock Classes="label" Text="Trees" Margin="0" />
+                  <TextBox Text="{Binding Analysis.TreesText}" Width="60" />
+                  <TextBlock Classes="label" Text="features per split" />
+                  <TextBox Text="{Binding Analysis.FeaturesPerSplitText}" Width="52" Watermark="√p" />
+                  <Button Classes="tool strong" Content="Grow the forest" Command="{Binding Analysis.RunForestCommand}" IsEnabled="{Binding !Analysis.IsGrowing}" />
+                  <ProgressBar IsIndeterminate="True" IsVisible="{Binding Analysis.IsGrowing}" Width="80" Height="3" VerticalAlignment="Center" />
+                  <Button Classes="tool" Content="Export table…" Command="{Binding Analysis.ExportTableCommand}" CommandParameter="forest" />
+                  <TextBlock Classes="hint" Text="{Binding Analysis.ForestMessage}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+              </Border>
+              <Grid ColumnDefinitions="*,6,360">
+                <DockPanel Grid.Column="0">
+                  <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,6,4,0" TextWrapping="Wrap"
+                             Text="The fall in out-of-bag accuracy when a feature's values are shuffled: the features the forest leans on. With few injections and many features the forest will fit the batch; the out-of-bag error above is the number that says whether it would fit the next one." />
+                  <c:ChartFrame HeadingText="IMPORTANCE · MEAN DECREASE IN ACCURACY · CLICK TO OPEN"><c:RankChart Items="{Binding Analysis.ImportanceBars}" ClassNames="{Binding Analysis.ClassNames}" SelectedTag="{Binding Analysis.ImportanceSelectedTag, Mode=TwoWay}" XLabel="mean decrease in accuracy" /></c:ChartFrame>
+                </DockPanel>
+                <GridSplitter Grid.Column="1" Classes="vertical" ResizeDirection="Columns" />
+                <DockPanel Grid.Column="2">
+                  <Border DockPanel.Dock="Top" Classes="panel" Padding="8,6" Margin="0,0,0,6">
+                    <StackPanel Spacing="4">
+                      <TextBlock Classes="eyebrow" Text="OUT-OF-BAG CONFUSION" Margin="0" />
+                      <DataGrid ItemsSource="{Binding Analysis.Confusion}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" MaxHeight="140">
+                        <DataGrid.Columns>
+                          <DataGridTextColumn Header="Class" Binding="{Binding Class}" Width="90" />
+                          <DataGridTextColumn Header="Predicted as" Binding="{Binding Predicted}" Width="*" />
+                          <DataGridTextColumn Header="Error" Binding="{Binding Error, StringFormat={}{0:P0}}" Width="60" />
+                        </DataGrid.Columns>
+                      </DataGrid>
+                    </StackPanel>
+                  </Border>
+                  <DataGrid ItemsSource="{Binding Analysis.ImportanceRows}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" CanUserSortColumns="True">
+                    <DataGrid.Columns>
+                      <DataGridTextColumn Header="Feature" Binding="{Binding Label}" Width="*" />
+                      <DataGridTextColumn Header="Accuracy" Binding="{Binding MeanDecreaseAccuracy, StringFormat={}{0:0.000}}" Width="76" />
+                      <DataGridTextColumn Header="Gini" Binding="{Binding MeanDecreaseGini, StringFormat={}{0:0.000}}" Width="66" />
+                    </DataGrid.Columns>
+                  </DataGrid>
+                </DockPanel>
+              </Grid>
+            </DockPanel>
+          </Border>
+        </TabItem>
+
+        <TabItem Header="Two factors">
+          <Border Classes="panel">
+            <DockPanel Margin="6">
+              <Border DockPanel.Dock="Top" Classes="hairline-bottom strip">
+                <StackPanel Classes="options" VerticalAlignment="Center">
+                  <TextBlock Classes="label" Text="Factor A" Margin="0" />
+                  <ComboBox Classes="compact" ItemsSource="{x:Static vm:TwoFactorViewModel.FactorSources}" SelectedItem="{Binding TwoFactor.FactorA}" Width="200" />
+                  <TextBlock Classes="label" Text="Factor B" />
+                  <ComboBox Classes="compact" ItemsSource="{x:Static vm:TwoFactorViewModel.FactorSources}" SelectedItem="{Binding TwoFactor.FactorB}" Width="200"
+                            ToolTip.Tip="The second factor is typed per injection in the Factor column of the Samples workspace — the time point, the diet, the genotype" />
+                  <CheckBox Classes="compact" Content="Interaction" IsChecked="{Binding TwoFactor.Interaction}" ToolTip.Tip="Test whether the effect of one factor depends on the level of the other; needs a replicate in some cell" />
+                  <TextBlock Classes="label" Text="adjust" />
+                  <ComboBox Classes="compact" ItemsSource="{x:Static vm:OneFactorViewModel.Adjustments}" SelectedItem="{Binding TwoFactor.Adjustment}" Width="190" />
+                  <TextBlock Classes="label" Text="α" />
+                  <TextBox Text="{Binding TwoFactor.AlphaText}" Width="52" />
+                  <TextBlock Classes="label" Text="permutations" />
+                  <TextBox Text="{Binding TwoFactor.PermutationsText}" Width="60" ToolTip.Tip="For ASCA's test of each effect" />
+                  <Button x:Name="TwoFactorCompute" Classes="tool strong" Content="Compute" Command="{Binding TwoFactor.ComputeCommand}" IsEnabled="{Binding !TwoFactor.IsComputing}" />
+                  <ProgressBar IsIndeterminate="True" IsVisible="{Binding TwoFactor.IsComputing}" Width="70" Height="3" VerticalAlignment="Center" />
+                  <Button Classes="tool" Content="Export table…" Command="{Binding TwoFactor.ExportTableCommand}" />
+                </StackPanel>
+              </Border>
+              <TextBlock DockPanel.Dock="Top" Classes="hint" Text="{Binding TwoFactor.Message}" Margin="4,0,4,6" TextWrapping="Wrap" />
+              <Grid ColumnDefinitions="*,6,*">
+                <Grid Grid.Column="0" RowDefinitions="*,6,230">
+                  <DataGrid Grid.Row="0" ItemsSource="{Binding TwoFactor.Rows}" SelectedItem="{Binding TwoFactor.SelectedRow, Mode=TwoWay}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" CanUserSortColumns="True">
+                    <DataGrid.Columns>
+                      <DataGridTextColumn Header="Feature" Binding="{Binding Label}" Width="*" />
+                      <DataGridTextColumn Header="Class" Binding="{Binding Group}" Width="64" />
+                      <DataGridTextColumn Header="adj. p A" Binding="{Binding AdjustedPA, StringFormat={}{0:0.0E0}}" Width="74" />
+                      <DataGridTextColumn Header="adj. p B" Binding="{Binding AdjustedPB, StringFormat={}{0:0.0E0}}" Width="74" />
+                      <DataGridTextColumn Header="adj. p A×B" Binding="{Binding AdjustedPAB, StringFormat={}{0:0.0E0}}" Width="84" />
+                      <DataGridTextColumn Header="F A" Binding="{Binding FA, StringFormat={}{0:0.0}}" Width="56" />
+                      <DataGridTextColumn Header="F B" Binding="{Binding FB, StringFormat={}{0:0.0}}" Width="56" />
+                    </DataGrid.Columns>
+                  </DataGrid>
+                  <GridSplitter Grid.Row="1" Classes="horizontal" ResizeDirection="Rows" />
+                  <DockPanel Grid.Row="2">
+                    <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,4,4,0" Text="{Binding TwoFactor.CellTitle}" TextTrimming="CharacterEllipsis" />
+                    <c:ChartFrame HeadingText="THE SELECTED FEATURE · ONE BOX PER CELL OF THE DESIGN, COLOURED BY FACTOR B"><c:BoxPlotChart Groups="{Binding TwoFactor.CellBoxes}" YLabel="transformed value" /></c:ChartFrame>
+                  </DockPanel>
+                </Grid>
+                <GridSplitter Grid.Column="1" Classes="vertical" ResizeDirection="Columns" />
+                <Grid Grid.Column="2" RowDefinitions="200,6,*">
+                  <DockPanel Grid.Row="0">
+                    <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,4,4,0" Text="{Binding TwoFactor.AscaMessage}" TextWrapping="Wrap" />
+                    <c:ChartFrame HeadingText="ASCA · SHARE OF THE VARIATION EACH EFFECT HOLDS"><c:RankChart Items="{Binding TwoFactor.EffectBars}" XLabel="% of the variation" /></c:ChartFrame>
+                  </DockPanel>
+                  <GridSplitter Grid.Row="1" Classes="horizontal" ResizeDirection="Rows" />
+                  <DockPanel Grid.Row="2">
+                    <StackPanel DockPanel.Dock="Top" Classes="options" Margin="4,2,4,4">
+                      <TextBlock Classes="label" Text="Effect" Margin="0" />
+                      <ComboBox Classes="compact" ItemsSource="{Binding TwoFactor.EffectNames}" SelectedItem="{Binding TwoFactor.SelectedEffect}" Width="180" />
+                      <TextBlock Classes="hint" Text="{Binding TwoFactor.EffectLabel}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                    <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,6,4,0" TextWrapping="Wrap"
+                               Text="ASCA takes the matrix apart into what each factor explains and what is left, and looks at each part with its own components. The scores are the injections on the effect's components with their residual added back, so the spread of the replicates shows against the separation the factor makes; a permutation test says whether the effect holds more than shuffled labels would." />
+                    <c:ChartFrame HeadingText="ASCA SCORES · THE INJECTIONS ON THE EFFECT'S COMPONENTS"><c:ScatterChart Items="{Binding TwoFactor.EffectScores}" XLabel="PC1 of the effect" YLabel="{Binding TwoFactor.EffectYLabel}" YFromZero="False" ShowEllipses="True" /></c:ChartFrame>
+                  </DockPanel>
+                </Grid>
+              </Grid>
+            </DockPanel>
+          </Border>
+        </TabItem>
+
+        <!-- ================================================================ CLUSTERING -->
+        <TabItem Header="Clustering" Classes="section" />
+        <TabItem Header="Dendrogram">
+          <Border Classes="panel">
+            <DockPanel Margin="10">
+              <StackPanel DockPanel.Dock="Top" Classes="options" Margin="0,0,0,8">
+                <TextBlock Classes="label" Text="Distance" Margin="0" />
+                <ComboBox Classes="compact" ItemsSource="{x:Static vm:StatisticsViewModel.ClusterDistances}" SelectedItem="{Binding ClusterDistance}" Width="110" />
+                <TextBlock Classes="label" Text="Linkage" />
+                <ComboBox Classes="compact" ItemsSource="{x:Static vm:StatisticsViewModel.ClusterLinkages}" SelectedItem="{Binding ClusterLinkage}" Width="110" />
+                <TextBlock Classes="hint" Text="{Binding ClusterLabel}" VerticalAlignment="Center" />
+              </StackPanel>
+              <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="0,8,0,0" TextWrapping="Wrap"
+                         Text="Injections join at the height where their profiles stop agreeing. Replicates of a class should join low and the blanks should hang off on their own; one that joins the wrong group is a mix-up or a bad run." />
+              <c:ChartFrame HeadingText="SAMPLE TREE"><c:Dendrogram Root="{Binding ClusterRoot}" /></c:ChartFrame>
+            </DockPanel>
+          </Border>
+        </TabItem>
+
+        <TabItem Header="Heatmap">
+          <Border Classes="panel">
+            <DockPanel Margin="6">
+              <Border DockPanel.Dock="Top" Classes="hairline-bottom strip">
+                <StackPanel Classes="options" VerticalAlignment="Center">
+                  <TextBlock Classes="label" Text="Top" Margin="0" />
+                  <TextBox Text="{Binding Analysis.HeatmapTopText}" Width="50" />
+                  <ComboBox Classes="compact" ItemsSource="{x:Static vm:OneFactorViewModel.HeatmapBases}" SelectedItem="{Binding Analysis.HeatmapBasis}" Width="210" />
+                  <TextBlock Classes="label" Text="distance" />
+                  <ComboBox Classes="compact" ItemsSource="{x:Static vm:OneFactorViewModel.Distances}" SelectedItem="{Binding Analysis.HeatmapDistance}" Width="110" />
+                  <TextBlock Classes="label" Text="linkage" />
+                  <ComboBox Classes="compact" ItemsSource="{x:Static vm:OneFactorViewModel.Linkages}" SelectedItem="{Binding Analysis.HeatmapLinkage}" Width="100" />
+                  <CheckBox Classes="compact" Content="Standardise rows" IsChecked="{Binding Analysis.HeatmapStandardize}" ToolTip.Tip="Each feature to zero mean and unit variance across the injections, so the colours compare features" />
+                  <CheckBox Classes="compact" Content="Cluster injections" IsChecked="{Binding Analysis.HeatmapClusterColumns}" />
+                  <Button x:Name="HeatmapBuild" Classes="tool strong" Content="Build" Command="{Binding Analysis.BuildHeatmapCommand}" />
+                  <TextBlock Classes="hint" Text="{Binding Analysis.HeatmapMessage}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+              </Border>
+              <c:ChartFrame HeadingText="CLUSTERED HEATMAP · CLICK A ROW TO OPEN THE FEATURE"><c:HeatmapChart Data="{Binding Analysis.Heatmap}" SelectedRowId="{Binding Analysis.HeatmapSelectedId, Mode=TwoWay}" /></c:ChartFrame>
+            </DockPanel>
+          </Border>
+        </TabItem>
+
+        <TabItem Header="K-means">
+          <Border Classes="panel">
+            <DockPanel Margin="6">
+              <Border DockPanel.Dock="Top" Classes="hairline-bottom strip">
+                <StackPanel Classes="options" VerticalAlignment="Center">
+                  <TextBlock Classes="label" Text="Clusters (k)" Margin="0" />
+                  <TextBox Text="{Binding Analysis.KText}" Width="50" />
+                  <Button Classes="tool strong" Content="Run" Command="{Binding Analysis.RunKMeansCommand}" />
+                  <TextBlock Classes="hint" Text="{Binding Analysis.KMeansLabel}" VerticalAlignment="Center" />
+                </StackPanel>
+              </Border>
+              <Border DockPanel.Dock="Bottom" Classes="panel" Padding="10,8" Margin="0,6,0,0">
+                <TextBlock Text="{Binding Analysis.KMeansMessage}" FontFamily="{StaticResource OdMonoFont}" FontSize="11.5" TextWrapping="Wrap" />
+              </Border>
+              <c:ChartFrame HeadingText="INJECTIONS ON THE FIRST TWO COMPONENTS, COLOURED BY CLUSTER"><c:ScatterChart Items="{Binding Analysis.KMeansPoints}" XLabel="PC1" YLabel="PC2" YFromZero="False" ShowEllipses="True" /></c:ChartFrame>
+            </DockPanel>
+          </Border>
+        </TabItem>
+
+        <!-- ================================================================ ENRICHMENT -->
+        <TabItem Header="Enrichment" Classes="section" />
+        <TabItem Header="Lipid enrichment">
+          <Border Classes="panel">
+            <DockPanel Margin="6">
+              <Border DockPanel.Dock="Top" Classes="hairline-bottom strip">
+                <StackPanel Classes="options" VerticalAlignment="Center">
+                  <TextBlock Classes="label" Text="Significant set" Margin="0" />
+                  <ComboBox Classes="compact" ItemsSource="{x:Static vm:OneFactorViewModel.EnrichmentBases}" SelectedItem="{Binding Analysis.EnrichmentBasis}" Width="220" />
+                  <TextBlock Classes="label" Text="minimum set size" />
+                  <TextBox Text="{Binding Analysis.MinimumSetSizeText}" Width="44" />
+                  <CheckBox Classes="compact" Content="Species sets too" IsChecked="{Binding Analysis.IncludeSpecies}" ToolTip.Tip="Also test each sum composition (PC 34:1 and so on) as a set" />
+                  <Button x:Name="EnrichmentCompute" Classes="tool strong" Content="Compute" Command="{Binding Analysis.RunEnrichmentCommand}" />
+                  <Button Classes="tool" Content="Export table…" Command="{Binding Analysis.ExportTableCommand}" CommandParameter="enrichment" />
+                  <TextBlock Classes="hint" Text="{Binding Analysis.EnrichmentMessage}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+              </Border>
+              <Grid ColumnDefinitions="*,6,*" RowDefinitions="*,6,*">
+                <DockPanel Grid.Column="0" Grid.Row="0">
+                  <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,6,4,0" TextWrapping="Wrap"
+                             Text="Over-representation: whether the features that changed fall into a lipid class, a chain length or a degree of unsaturation more often than the features tested would by chance. The hypergeometric test, as in MetaboAnalyst's ORA." />
+                  <c:ChartFrame HeadingText="OVER-REPRESENTATION · −LOG10 P PER SET"><c:RankChart Items="{Binding Analysis.EnrichmentBars}" XLabel="−log10 p" Threshold="1.3" /></c:ChartFrame>
+                </DockPanel>
+                <GridSplitter Grid.Column="1" Grid.Row="0" Grid.RowSpan="3" Classes="vertical" ResizeDirection="Columns" />
+                <DataGrid Grid.Column="2" Grid.Row="0" ItemsSource="{Binding Analysis.EnrichmentRows}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" CanUserSortColumns="True">
+                  <DataGrid.Columns>
+                    <DataGridTextColumn Header="Set" Binding="{Binding Set}" Width="*" />
+                    <DataGridTextColumn Header="Kind" Binding="{Binding Kind}" Width="90" />
+                    <DataGridTextColumn Header="Hits" Binding="{Binding Hits}" Width="46" />
+                    <DataGridTextColumn Header="Size" Binding="{Binding SetSize}" Width="46" />
+                    <DataGridTextColumn Header="Ratio" Binding="{Binding EnrichmentRatio, StringFormat={}{0:0.0}}" Width="56" />
+                    <DataGridTextColumn Header="p" Binding="{Binding P, StringFormat={}{0:0.0E0}}" Width="72" />
+                    <DataGridTextColumn Header="adj. p" Binding="{Binding AdjustedP, StringFormat={}{0:0.0E0}}" Width="72" />
+                  </DataGrid.Columns>
+                </DataGrid>
+                <GridSplitter Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="3" Classes="horizontal" ResizeDirection="Rows" />
+                <c:ChartFrame Grid.Column="0" Grid.Row="2" HeadingText="EACH CLASS AS A WHOLE · MEAN LOG2 FOLD CHANGE"><c:RankChart Items="{Binding Analysis.ClassChangeBars}" XLabel="mean log2 fold change" ColourByGroup="False" /></c:ChartFrame>
+                <DockPanel Grid.Column="2" Grid.Row="2">
+                  <StackPanel DockPanel.Dock="Top" Classes="options" Margin="4,0,4,4">
+                    <TextBlock Classes="label" Text="Chain map of" Margin="0" />
+                    <ComboBox Classes="compact" ItemsSource="{Binding Analysis.ChainMapClasses}" SelectedItem="{Binding Analysis.ChainMapClass}" Width="150" />
+                  </StackPanel>
+                  <c:ChartFrame HeadingText="CARBONS DOWN, DOUBLE BONDS ACROSS · MEAN LOG2 FOLD CHANGE"><c:HeatmapChart Data="{Binding Analysis.ChainMap}" ShowTrees="False" ShowValues="True" /></c:ChartFrame>
+                </DockPanel>
+              </Grid>
+            </DockPanel>
+          </Border>
+        </TabItem>
+
+        <TabItem Header="Pathways">
+          <Border Classes="panel">
+            <DockPanel Margin="6">
+              <Border DockPanel.Dock="Top" Classes="hairline-bottom strip">
+                <StackPanel Classes="options" VerticalAlignment="Center">
+                  <TextBlock Classes="label" Text="Level" Margin="0" />
+                  <ComboBox Classes="compact" ItemsSource="{x:Static vm:PathwaysViewModel.Levels}" SelectedItem="{Binding Pathways.Level}" Width="150"
+                            ToolTip.Tip="Whole classes, molecular species with their chains, or the fatty acids summed over the species that carry them" />
+                  <TextBlock Classes="label" Text="|Z| ≥" />
+                  <ComboBox Classes="compact" ItemsSource="{x:Static vm:PathwaysViewModel.Thresholds}" SelectedItem="{Binding Pathways.Threshold}" Width="130" />
+                  <TextBlock Classes="label" Text="chains up to" />
+                  <TextBox Text="{Binding Pathways.MaxPathLengthText}" Width="40" ToolTip.Tip="How many reactions a pathway may chain (1 to 6)" />
+                  <CheckBox Classes="compact" Content="Show unchanged" IsChecked="{Binding Pathways.ShowUnchanged}" ToolTip.Tip="Draw the reactions that did not pass the threshold too" />
+                  <CheckBox Classes="compact" Content="Paired" IsChecked="{Binding Pathways.Paired}" ToolTip.Tip="The injections of the two classes correspond one to one, in order — the same subject before and after; the paired t-test, as BioPAN offers it" />
+                  <CheckBox Classes="compact" Content="Beyond BioPAN" IsChecked="{Binding Pathways.BeyondBioPan}" ToolTip.Tip="Also the steps MIL-X adds to BioPAN's network: the glycosphingolipids, the sterol esters, the acylcarnitines" />
+                  <Button x:Name="PathwaysCompute" Classes="tool strong" Content="Compute" Command="{Binding Pathways.ComputeCommand}"
+                          ToolTip.Tip="Score every reaction between the two classes of the comparison" />
+                  <Button Classes="tool" Content="Export reactions…" Command="{Binding Pathways.ExportTableCommand}" CommandParameter="reactions" />
+                  <Button Classes="tool" Content="Export pathways…" Command="{Binding Pathways.ExportTableCommand}" CommandParameter="pathways" />
+                  <TextBlock Classes="hint" Text="{Binding Pathways.Message}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+              </Border>
+              <Grid ColumnDefinitions="*,6,440">
+                <Grid Grid.Column="0" RowDefinitions="*,6,190">
+                  <DockPanel Grid.Row="0">
+                    <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,6,4,0" TextWrapping="Wrap"
+                               Text="BioPAN's network and method (LIPID MAPS): each reaction is weighted by its product over its reactant in every injection, the weights are compared between the two classes by a t-test, and the one-sided p becomes Z. Green runs faster in the first class, purple slower; the node colour is the class's own change. Click an arrow for its injections; pick a pathway in the table to light its chain." />
+                    <c:ChartFrame HeadingText="REACTION NETWORK · CLICK AN ARROW"><c:PathwayGraph Result="{Binding Pathways.Result}" SelectedReaction="{Binding Pathways.SelectedReaction, Mode=TwoWay}" HighlightedChain="{Binding Pathways.HighlightedChain}" ShowUnchanged="{Binding Pathways.ShowUnchanged}" /></c:ChartFrame>
+                  </DockPanel>
+                  <GridSplitter Grid.Row="1" Classes="horizontal" ResizeDirection="Rows" />
+                  <DockPanel Grid.Row="2">
+                    <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,4,4,0" Text="{Binding Pathways.ReactionDetail}" TextWrapping="Wrap" />
+                    <c:ChartFrame HeadingText="THE SELECTED REACTION · PRODUCT OVER REACTANT, PER INJECTION"><c:BoxPlotChart Groups="{Binding Pathways.ReactionBoxes}" YLabel="weight (product / reactant)" /></c:ChartFrame>
+                  </DockPanel>
+                </Grid>
+                <GridSplitter Grid.Column="1" Classes="vertical" ResizeDirection="Columns" />
+                <TabControl Grid.Column="2" Classes="panel-tabs">
+                  <TabItem Header="Reactions">
+                    <DataGrid ItemsSource="{Binding Pathways.Reactions}" SelectedItem="{Binding Pathways.SelectedReaction, Mode=TwoWay}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" CanUserSortColumns="True">
+                      <DataGrid.Columns>
+                        <DataGridTextColumn Header="Reaction" Binding="{Binding Label}" Width="*" />
+                        <DataGridTextColumn Header="log2" Binding="{Binding Log2Change, StringFormat={}{0:0.00}}" Width="56" />
+                        <DataGridTextColumn Header="Z" Binding="{Binding Z, StringFormat={}{0:0.00}}" Width="52" />
+                        <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="82" />
+                        <DataGridTextColumn Header="Genes" Binding="{Binding GeneText}" Width="120" />
+                      </DataGrid.Columns>
+                    </DataGrid>
+                  </TabItem>
+                  <TabItem Header="Pathways">
+                    <DataGrid ItemsSource="{Binding Pathways.Pathways}" SelectedItem="{Binding Pathways.SelectedPathway, Mode=TwoWay}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" CanUserSortColumns="True">
+                      <DataGrid.Columns>
+                        <DataGridTextColumn Header="Pathway" Binding="{Binding Chain}" Width="*" />
+                        <DataGridTextColumn Header="k" Binding="{Binding Length}" Width="34" />
+                        <DataGridTextColumn Header="Z" Binding="{Binding Z, StringFormat={}{0:0.00}}" Width="52" />
+                        <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="82" />
+                      </DataGrid.Columns>
+                    </DataGrid>
+                  </TabItem>
+                  <TabItem Header="Not measured">
+                    <DockPanel>
+                      <StackPanel DockPanel.Dock="Bottom" Classes="options" Margin="4,6,4,0">
+                        <Button Classes="tool" Content="Export list…" Command="{Binding Pathways.ExportTableCommand}" CommandParameter="predicted" />
+                        <TextBlock Classes="hint" Text="Reactions with one end confirmed and the other not: confirm the missing class in the review and they become testable." TextWrapping="Wrap" VerticalAlignment="Center" />
+                      </StackPanel>
+                      <DataGrid ItemsSource="{Binding Pathways.Predicted}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" CanUserSortColumns="True">
+                        <DataGrid.Columns>
+                          <DataGridTextColumn Header="Reaction" Binding="{Binding Reaction}" Width="*" />
+                          <DataGridTextColumn Header="Measured" Binding="{Binding Present}" Width="80" />
+                          <DataGridTextColumn Header="Missing" Binding="{Binding Missing}" Width="80" />
+                          <DataGridTextColumn Header="Genes" Binding="{Binding GeneText}" Width="120" />
+                        </DataGrid.Columns>
+                      </DataGrid>
+                    </DockPanel>
+                  </TabItem>
+                  <TabItem Header="Nodes">
+                    <DataGrid ItemsSource="{Binding Pathways.Nodes}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" CanUserSortColumns="True">
+                      <DataGrid.Columns>
+                        <DataGridTextColumn Header="Node" Binding="{Binding Name}" Width="*" />
+                        <DataGridTextColumn Header="Analytes" Binding="{Binding Members}" Width="70" />
+                        <DataGridTextColumn Header="log2 change" Binding="{Binding Log2Change, StringFormat={}{0:0.00}}" Width="90" />
+                      </DataGrid.Columns>
+                    </DataGrid>
+                  </TabItem>
+                </TabControl>
+              </Grid>
+            </DockPanel>
+          </Border>
+        </TabItem>
+
+        <!-- ================================================================ QUALITY -->
+        <TabItem Header="Quality" Classes="section" />
+        <TabItem Header="Drift correction">
+          <Border Classes="panel">
+            <DockPanel Margin="6">
+              <Border DockPanel.Dock="Top" Classes="hairline-bottom strip">
+                <StackPanel Classes="options" VerticalAlignment="Center">
+                  <TextBlock Classes="label" Text="Smoothing span" Margin="0" />
+                  <TextBox Text="{Binding CorrectionSpan}" Width="62"
+                           ToolTip.Tip="The share of the controls each local fit sees. Wide follows the slow fall; narrow follows every wobble, including noise." />
+                  <Button Classes="tool strong" Content="Correct against the controls" Command="{Binding ApplyCorrectionCommand}" IsEnabled="{Binding !IsCorrecting}" />
+                  <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsCorrecting}" Width="80" Height="3" VerticalAlignment="Center" />
+                  <TextBlock Classes="hint" Text="{Binding CorrectionVerdict}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+              </Border>
+              <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,6,4,0" TextWrapping="Wrap" Text="{Binding CorrectionDetail}" />
+              <Grid ColumnDefinitions="380,6,*">
+                <DataGrid Grid.Column="0" ItemsSource="{Binding CorrectionRows}" SelectedItem="{Binding SelectedCorrectionRow}"
+                          AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" CanUserSortColumns="True">
+                  <DataGrid.Columns>
+                    <DataGridTextColumn Header="Feature" Binding="{Binding Label}" Width="*" />
+                    <DataGridTextColumn Header="CV before" Binding="{Binding CvBefore, StringFormat={}{0:F1} %}" Width="90" />
+                    <DataGridTextColumn Header="CV after" Binding="{Binding CvAfter, StringFormat={}{0:F1} %}" Width="90" />
+                  </DataGrid.Columns>
+                </DataGrid>
+                <GridSplitter Grid.Column="1" Classes="vertical" ResizeDirection="Columns" />
+                <Grid Grid.Column="2" RowDefinitions="*,6,*">
+                  <Border Grid.Row="0" Classes="panel"><c:ChartFrame HeadingText="BEFORE · RESPONSE ACROSS THE RUN"><c:ScatterChart Items="{Binding DriftBefore}" Connect="True" XLabel="Injection order" YLabel="Response" /></c:ChartFrame></Border>
+                  <GridSplitter Grid.Row="1" Classes="horizontal" ResizeDirection="Rows" />
+                  <Border Grid.Row="2" Classes="panel">
+                    <DockPanel Margin="6">
+                      <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,6,4,0" TextWrapping="Wrap"
+                                 Text="The controls are the same material every time, so whatever they do across the sequence is the instrument. A control trace that falls away or steps at a batch boundary is drift; after correcting it should be flat, and the samples should have moved with it." />
+                      <c:ChartFrame HeadingText="AFTER"><c:ScatterChart Items="{Binding DriftAfter}" Connect="True" XLabel="Injection order" YLabel="Corrected response" /></c:ChartFrame>
+                    </DockPanel>
+                  </Border>
+                </Grid>
+              </Grid>
+            </DockPanel>
+          </Border>
+        </TabItem>
+
+        <TabItem Header="Molecular network">
+          <Border Classes="panel">
+            <DockPanel Margin="6">
+              <Border DockPanel.Dock="Top" Classes="hairline-bottom strip">
+                <StackPanel Classes="options" VerticalAlignment="Center">
+                  <TextBlock Classes="label" Text="Similarity ≥" Margin="0" />
+                  <TextBox Text="{Binding NetworkCutoff}" Width="62" />
+                  <TextBlock Classes="label" Text="fragment tol." />
+                  <TextBox Text="{Binding NetworkTolerance}" Width="62" />
+                  <CheckBox Classes="compact" Content="Show unlinked" IsChecked="{Binding ShowUnconnected}" ToolTip.Tip="Also draw the features joined to nothing; off by default because they crowd out the clusters" />
+                  <Button Classes="tool strong" Content="Build network" Command="{Binding BuildNetworkCommand}" IsEnabled="{Binding !IsBuildingNetwork}" />
+                  <Button Classes="tool" Content="Export for Cytoscape…" Command="{Binding ExportNetworkCommand}" />
+                  <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBuildingNetwork}" Width="80" Height="3" VerticalAlignment="Center" />
+                  <TextBlock Classes="hint" Text="{Binding NetworkLabel}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+              </Border>
+              <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,6,4,0" TextWrapping="Wrap"
+                         Text="Features whose product spectra look alike are joined. One lipid class fragments the same way and forms a cluster, so a feature named as one class sitting inside another's cluster is worth a second look, and an unknown next to a named cluster is a candidate for the same family. Click a node to open it in the ion table." />
+              <c:ChartFrame HeadingText="MOLECULAR NETWORK"><c:NetworkGraph Network="{Binding NetworkResult}" SelectedFeatureId="{Binding SelectedNetworkFeature, Mode=TwoWay}" /></c:ChartFrame>
+            </DockPanel>
+          </Border>
+        </TabItem>
+      </TabControl>
+    </Panel>
+  </DockPanel>
+</UserControl>

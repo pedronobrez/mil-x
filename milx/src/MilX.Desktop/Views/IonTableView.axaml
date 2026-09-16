@@ -1,0 +1,84 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MilX.Desktop.ViewModels"
+             xmlns:c="using:MilX.Desktop.Controls"
+             xmlns:views="using:MilX.Desktop.Views"
+             x:Class="MilX.Desktop.Views.IonTableView"
+             x:DataType="vm:AnalyticsViewModel">
+  <!--
+    The ion table on its own, so the same control serves the review workspace and the window it can
+    be torn off into. Both bind to the one view model, which is what keeps the selection in step.
+  -->
+  <Border Classes="panel">
+    <DockPanel>
+      <Border DockPanel.Dock="Top" Padding="12,10,12,4">
+        <DockPanel>
+          <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="2">
+            <Button Classes="icon" Content="▲" Command="{Binding PreviousSpotCommand}" ToolTip.Tip="Previous feature (Alt+↑)" />
+            <Button Classes="icon" Content="▼" Command="{Binding NextSpotCommand}" ToolTip.Tip="Next feature (Alt+↓)" />
+            <Button Classes="tool" Content="Next unreviewed" Command="{Binding NextUnreviewedCommand}" ToolTip.Tip="Jump to the next feature with no verdict (Alt+N)" />
+            <Rectangle Classes="vsep" />
+            <Button x:Name="ConfirmAllShown" Classes="tool" Content="Confirm all shown" Command="{Binding ConfirmAllShownCommand}" ToolTip.Tip="Tag every feature the filter is showing as Confirmed" />
+            <Button Classes="tool" Content="Reject all shown" Command="{Binding RejectAllShownCommand}" ToolTip.Tip="Tag every feature the filter is showing as Misannotation" />
+            <Button Classes="tool" Content="Clear all shown" Command="{Binding ClearAllShownCommand}" />
+            <Rectangle Classes="vsep" />
+            <Button x:Name="ToggleIonTableWindow" Classes="tool" Command="{Binding ToggleIonTableWindowCommand}"
+                    Content="{Binding IonTableDetached, Converter={x:Static views:Converters.DetachLabel}}"
+                    ToolTip.Tip="Move the ion table into a window of its own, so it can sit on a second screen beside the evidence" />
+          </StackPanel>
+          <TextBlock Classes="eyebrow" Text="ION TABLE" Margin="0" VerticalAlignment="Center" />
+        </DockPanel>
+      </Border>
+      <DataGrid x:Name="IonTable" ItemsSource="{Binding IonRows}" SelectedItem="{Binding SelectedRow, Mode=TwoWay}"
+                AutoGenerateColumns="False" IsReadOnly="True" CanUserSortColumns="True" CanUserResizeColumns="True" CanUserReorderColumns="True"
+                GridLinesVisibility="Horizontal" Margin="0,4,0,0">
+        <DataGrid.Styles>
+          <Style Selector="DataGridRow">
+            <Setter Property="MinHeight" Value="26" />
+          </Style>
+        </DataGrid.Styles>
+        <DataGrid.Columns>
+          <DataGridTemplateColumn Header="" Width="26" CanUserSort="True" SortMemberPath="TagText">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:SpotRowViewModel">
+                <Panel>
+                  <TextBlock Text="✓" Foreground="{DynamicResource OdAccent}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsConfirmed}" ToolTip.Tip="Confirmed" />
+                  <TextBlock Text="✕" Foreground="{DynamicResource OdDanger}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsRejected}" ToolTip.Tip="Misannotation" />
+                  <TextBlock Text="●" Classes="muted" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsFlagged}" ToolTip.Tip="Flagged for another look" />
+                </Panel>
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+          <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="56" />
+          <DataGridTextColumn Header="RT" Binding="{Binding Rt, Converter={x:Static views:Converters.Number}, ConverterParameter=F2}" Width="60" />
+          <DataGridTextColumn Header="m/z" Binding="{Binding Mz, Converter={x:Static views:Converters.Number}, ConverterParameter=F4}" Width="86" />
+          <DataGridTextColumn Header="Annotation" Binding="{Binding DisplayName}" Width="240" MinWidth="150" />
+          <DataGridTextColumn Header="Level" Binding="{Binding Level}" Width="80" />
+          <DataGridTextColumn Header="Adduct" Binding="{Binding Adduct}" Width="90" />
+          <DataGridTextColumn Header="Neutral" Binding="{Binding NeutralText}" Width="90" />
+          <DataGridTextColumn Header="Pol" Binding="{Binding PolarityText}" Width="42" />
+          <DataGridTextColumn Header="Class" Binding="{Binding Ontology}" Width="100" />
+          <DataGridTextColumn Header="Fill %" Binding="{Binding Fill, Converter={x:Static views:Converters.Number}, ConverterParameter=F0}" Width="62" />
+          <DataGridTextColumn Header="MS/MS" Binding="{Binding MsmsText}" Width="70" />
+          <DataGridTextColumn Header="S/N" Binding="{Binding SignalToNoise, Converter={x:Static views:Converters.Number}, ConverterParameter=F0}" Width="60" />
+          <DataGridTextColumn Header="Blank %" Binding="{Binding BlankText}" Width="70" />
+          <DataGridTextColumn Header="Ion of" Binding="{Binding GroupText}" Width="160" />
+          <DataGridTextColumn Header="Other polarity" Binding="{Binding PartnerText}" Width="190" />
+          <DataGridTextColumn Header="Quantify" Binding="{Binding QuantifyText}" Width="80" />
+          <DataGridTextColumn Header="Score" Binding="{Binding Score, Converter={x:Static views:Converters.Number}, ConverterParameter=F2}" Width="64" />
+          <DataGridTextColumn Header="Height" Binding="{Binding Height, Converter={x:Static views:Converters.Number}, ConverterParameter=N0}" Width="90" />
+          <DataGridTextColumn Header="Iso" Binding="{Binding IsotopeText}" Width="50" />
+          <DataGridTemplateColumn Header="Abundance" Width="110" CanUserSort="True" SortMemberPath="Height">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:SpotRowViewModel">
+                <c:MiniBars Items="{Binding ClassHeights}" Height="18" Margin="4,4" ToolTip.Tip="Mean height per sample class" />
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+          <DataGridTextColumn Header="Tags" Binding="{Binding TagText}" Width="140" />
+          <DataGridTextColumn Header="Comment" Binding="{Binding Comment}" Width="160" />
+        </DataGrid.Columns>
+      </DataGrid>
+    </DockPanel>
+  </Border>
+</UserControl>

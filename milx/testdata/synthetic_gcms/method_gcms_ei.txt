@@ -1,0 +1,47 @@
+#Data type
+MS1 data type: Centroid
+Ion mode: Positive
+Target omics: Metabolomics
+Machine category: GCMS
+Accuracy type: IsAccurate
+
+#Data collection parameters
+Retention time begin: 0
+Retention time end: 100
+MS1 mass range begin: 50
+MS1 mass range end: 600
+
+#Peak detection parameters
+Smoothing method: LinearWeightedMovingAverage
+Smoothing level: 3
+Average peak width: 20
+Minimum peak height: 5000
+Mass slice width: 0.5
+Mass accuracy: 0.05
+
+#Deconvolution parameters
+Sigma window value: 0.5
+Amplitude cut off: 10
+
+#Identification
+MSP file path: /Users/pedro/Documents/Code/MIL-X/milx/testdata/synthetic_gcms/library.msp
+Retention type: RT
+RI compound type: Alkanes
+RT tolerance for identification: 0.5
+RI tolerance for identification: 20
+EI similarity library tolerance: 70
+Identification score cut off: 70
+Use retention information for scoring: True
+Use retention information for filtering: False
+Only report top hit for MSP-based annotation: True
+
+#Alignment
+Alignment index type: RT
+Retention time tolerance for alignment: 0.1
+Retention index tolerance for alignment: 20
+EI similarity tolerance for alignment: 70
+Retention time factor for alignment: 0.5
+EI similarity factor for alignment: 0.5
+Peak count filter: 0
+Together with alignment: True
+Is height matrix export: True

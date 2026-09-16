@@ -1,0 +1,240 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MilX.Desktop.ViewModels"
+             xmlns:c="using:MilX.Desktop.Controls"
+             xmlns:views="using:MilX.Desktop.Views"
+             x:Class="MilX.Desktop.Views.AnalyticsView"
+             x:DataType="vm:AnalyticsViewModel">
+  <!--
+    The review workspace, laid out the way an MS-DIAL review pass runs: the ion table is the spine
+    on the left, the evidence for the selected feature is on the right, and the verdict is one
+    keystroke away in the curation strip between them.
+  -->
+  <!-- the review keys are bound on the windows (MainWindow, IonTableWindow), not here: a control's
+       bindings fire only while the focus is inside it, and a reviewer's focus is wherever it last was -->
+
+  <DockPanel>
+    <!-- toolbar -->
+    <Border DockPanel.Dock="Top" Classes="band">
+      <DockPanel>
+        <!-- the buttons are docked first so the summary, which can be a sentence after a save,
+             takes what is left and trims instead of drawing over them -->
+        <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="2">
+          <Button x:Name="ProcessBatch" Classes="tool strong" Content="Process batch" Command="{Binding $parent[Window].DataContext.ProcessBatchCommand}" ToolTip.Tip="Run the pipeline on the current batch (Cmd+R)" />
+          <Button Classes="tool" Content="Re-export…" Command="{Binding $parent[Window].DataContext.ReexportCommand}" IsEnabled="{Binding HasResults}" />
+          <Button Classes="tool" Content="Export to OpenQuant…" Command="{Binding $parent[Window].DataContext.ExportOpenQuantCommand}" IsEnabled="{Binding HasResults}" ToolTip.Tip="Write the listed features as an OpenQuant component CSV (precursor, fragment, RT window)" />
+          <Button Classes="tool" Content="Export reviewed table…" Command="{Binding $parent[Window].DataContext.ExportReviewedTableCommand}" IsEnabled="{Binding HasResults}" ToolTip.Tip="Write the features the filter is showing, with their tags, comments and hand edits as columns" />
+          <Button Classes="tool" Content="Open output folder" Command="{Binding OpenOutputFolderCommand}" IsEnabled="{Binding HasResults}" />
+          <Button Classes="tool" Content="Run report…" Command="{Binding $parent[Window].DataContext.ExportRunReportCommand}" IsEnabled="{Binding HasResults}"
+                  ToolTip.Tip="Write the run down: counts, library, injections, method, log and the figures on screen, as one HTML file that prints to PDF" />
+          <Rectangle Classes="vsep" />
+          <ToggleButton x:Name="SplitEvidence" Classes="tool" Content="Split evidence" IsChecked="{Binding EvidenceSplit}" IsEnabled="{Binding HasResults}"
+                        ToolTip.Tip="Show two sets of evidence tabs side by side — the mirror beside the class statistics, say — each on its own tab" />
+          <Rectangle Classes="vsep" />
+          <Button x:Name="LinkPolarity" Classes="tool" Command="{Binding $parent[Window].DataContext.LinkPolarityCommand}" IsEnabled="{Binding HasResults}"
+                  Content="{Binding HasPolarityLink, Converter={x:Static views:Converters.PolarityLinkLabel}}"
+                  ToolTip.Tip="Pair this result with the same batch run in the other polarity: the compounds are matched on the neutral molecule, so what only ionises the other way stops being a separate project" />
+          <CheckBox x:Name="TagBoth" Classes="compact" Content="Tag both polarities" IsChecked="{Binding TagBothPolarities}" IsEnabled="{Binding HasPolarityLink}" Margin="4,0,0,0"
+                    ToolTip.Tip="A compound both runs saw is one compound: confirming it here confirms it there, and taking the decision back takes it back in both" />
+          <Rectangle Classes="vsep" />
+          <Button x:Name="SaveReview" Classes="tool" Command="{Binding SaveCurationCommand}" IsEnabled="{Binding HasResults}"
+                  ToolTip.Tip="Write the review to &lt;alignment&gt;_tags.xml, the same file MS-DIAL reads and writes">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <TextBlock Text="Save review" VerticalAlignment="Center" />
+              <Ellipse Width="7" Height="7" Fill="{DynamicResource OdAccent}" VerticalAlignment="Center" IsVisible="{Binding CurationDirty}" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" IsVisible="{Binding HasPolarityLink}" Margin="8,0,0,0">
+          <Border Classes="chip" ToolTip.Tip="{Binding PolaritySummary}"><TextBlock Text="± both polarities" /></Border>
+        </StackPanel>
+        <TextBlock Classes="muted" Text="{Binding Summary}" VerticalAlignment="Center" Margin="12,0,4,0" TextAlignment="Right" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Summary}" />
+      </DockPanel>
+    </Border>
+
+    <!-- filter band -->
+    <Border DockPanel.Dock="Top" Classes="band" IsVisible="{Binding HasResults}">
+      <DockPanel>
+        <StackPanel x:Name="FilterCounts" DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+          <Border Classes="count" ToolTip.Tip="confirmed"><TextBlock Text="{Binding ConfirmedCount}" /></Border>
+          <Border Classes="badge" ToolTip.Tip="misannotation"><TextBlock Classes="badge" Text="{Binding RejectedCount}" /></Border>
+          <TextBlock Classes="muted" Text="{Binding TableSummary}" VerticalAlignment="Center" Margin="6,0,4,0" MaxWidth="230" TextTrimming="CharacterEllipsis" />
+        </StackPanel>
+        <!--
+          The filters are wider than a laptop screen once they are all here, and a horizontal
+          StackPanel does not give way: it drew straight over the counts on the right. Inside a
+          scroller it is held to the space that is actually left.
+        -->
+        <ScrollViewer x:Name="FilterScroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+          <TextBox x:Name="FilterBox" Text="{Binding FilterText}" Watermark="name, ontology, adduct, comment, id…" Width="230" />
+          <TextBlock Classes="label" Text="m/z" Margin="6,0,0,0" />
+          <TextBox Text="{Binding MzFrom}" Watermark="from" Width="72" />
+          <TextBox Text="{Binding MzTo}" Watermark="to" Width="72" />
+          <TextBlock Classes="label" Text="RT" Margin="6,0,0,0" />
+          <TextBox Text="{Binding RtFrom}" Watermark="from" Width="62" />
+          <TextBox Text="{Binding RtTo}" Watermark="to" Width="62" />
+          <TextBlock Classes="label" Text="S/N ≥" Margin="6,0,0,0" />
+          <TextBox Text="{Binding SnFrom}" Watermark="min" Width="56" ToolTip.Tip="Keep only features whose average signal-to-noise reaches this" />
+          <TextBlock Classes="label" Text="Blank % ≤" Margin="6,0,0,0" />
+          <TextBox Text="{Binding BlankTo}" Watermark="max" Width="56" ToolTip.Tip="Drop the features the blanks carry: the mean height in the injections typed Blank against the mean in the samples. 20 is a common first cut" />
+          <ComboBox Classes="compact" ItemsSource="{x:Static vm:AnalyticsViewModel.AnnotationFilters}" SelectedItem="{Binding AnnotationFilter}" Width="120" Margin="6,0,0,0" ToolTip.Tip="Annotation confidence" />
+          <ComboBox Classes="compact" ItemsSource="{Binding Ontologies}" SelectedItem="{Binding OntologyFilter}" Width="140" ToolTip.Tip="Lipid class / ontology" />
+          <ComboBox Classes="compact" ItemsSource="{x:Static vm:AnalyticsViewModel.TagFilters}" SelectedItem="{Binding TagFilter}" Width="170" ToolTip.Tip="Review state" />
+          <ComboBox Classes="compact" ItemsSource="{x:Static vm:AnalyticsViewModel.PolarityFilters}" SelectedItem="{Binding PolarityFilter}" Width="150"
+                    IsEnabled="{Binding HasPolarityLink}" ToolTip.Tip="Whether the compound was also seen in the other polarity of this batch" />
+          <CheckBox Classes="compact" Content="MS/MS only" IsChecked="{Binding MsmsOnly}" Margin="4,0,0,0" />
+          <CheckBox Classes="compact" Content="Molecular ion" IsChecked="{Binding MolecularIonOnly}" ToolTip.Tip="Drop the features the run marked as isotopes of another" />
+          <CheckBox Classes="compact" Content="One row per compound" IsChecked="{Binding RepresentativesOnly}" ToolTip.Tip="Hide the adducts, isotopes, in-source fragments and dimers gathered behind the ion that represents each compound" />
+          <CheckBox Classes="compact" Content="Hand-edited" IsChecked="{Binding ManuallyModifiedOnly}" ToolTip.Tip="Only features whose annotation or integration was changed by hand" />
+        </StackPanel>
+        </ScrollViewer>
+      </DockPanel>
+    </Border>
+
+    <Grid x:Name="ReviewGrid" ColumnDefinitions="1.15*,6,1.35*" Margin="8">
+      <!-- ================= ion table ================= -->
+      <!-- torn off into its own window, its column and the splitter collapse (see code-behind), so the
+           peaks and the spectrum take the whole width rather than leaving a hole where it was -->
+      <views:IonTableView Grid.Column="0" x:Name="InlineIonTable" IsVisible="{Binding !IonTableDetached}" />
+
+      <GridSplitter Grid.Column="1" Classes="vertical" ResizeDirection="Columns" IsVisible="{Binding !IonTableDetached}" />
+
+      <!-- where the table lands when its window is dragged back over the main one -->
+      <Border x:Name="DockPreview" Grid.Column="0" Grid.ColumnSpan="3" HorizontalAlignment="Left" IsVisible="{Binding IonTableDockPreview}"
+              Background="{DynamicResource OdAccentSoft}" BorderBrush="{DynamicResource OdAccent}" BorderThickness="2" CornerRadius="8" Opacity="0.85" ZIndex="10" IsHitTestVisible="False">
+        <TextBlock Text="Release to dock the ion table here" Foreground="{DynamicResource OdAccent}" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" Margin="24" />
+      </Border>
+
+      <!-- ================= evidence for the selected feature ================= -->
+      <Panel Grid.Column="2">
+        <Grid RowDefinitions="Auto,Auto,*">
+          <!-- identity -->
+          <Border Grid.Row="0" Padding="2,0,2,6">
+            <DockPanel>
+              <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <Border Classes="chip" IsVisible="{Binding SelectedRow.IsManual}"><TextBlock Text="hand-picked" /></Border>
+                <Border Classes="chip"><TextBlock Text="{Binding SelectedRow.Level}" /></Border>
+              </StackPanel>
+              <StackPanel Spacing="1" VerticalAlignment="Center">
+                <TextBlock Classes="title" Text="{Binding SpotTitle}" TextTrimming="CharacterEllipsis" />
+                <TextBlock Classes="hint" Text="{Binding SpotDetail}" TextTrimming="CharacterEllipsis" />
+              </StackPanel>
+            </DockPanel>
+          </Border>
+
+          <!-- verdict -->
+          <Border Grid.Row="1" Classes="panel" Padding="10,8" Margin="0,0,0,6">
+            <StackPanel Spacing="6">
+              <StackPanel Orientation="Horizontal" Spacing="4">
+                <Button Classes="tool strong" Content="Confirm ▸" Command="{Binding ConfirmAndNextCommand}" ToolTip.Tip="Tag Confirmed and move to the next feature (Alt+C)" />
+                <Button Classes="tool" Content="Reject ▸" Command="{Binding RejectAndNextCommand}" ToolTip.Tip="Tag Misannotation and move to the next feature (Alt+X)" />
+                <Rectangle Classes="vsep" />
+                <Button Classes="tool" Content="Confirmed" Command="{Binding ToggleTagCommand}" CommandParameter="1" Classes.on="{Binding SelectedRow.IsConfirmed}" ToolTip.Tip="Ctrl+1" />
+                <Button Classes="tool" Content="Low quality" Command="{Binding ToggleTagCommand}" CommandParameter="2" Classes.on="{Binding SelectedRow.IsLowQuality}" ToolTip.Tip="Ctrl+2 · the MS/MS is too weak to judge" />
+                <Button Classes="tool" Content="Misannotation" Command="{Binding ToggleTagCommand}" CommandParameter="3" Classes.on="{Binding SelectedRow.IsRejected}" ToolTip.Tip="Ctrl+3" />
+                <Button Classes="tool" Content="Coelution" Command="{Binding ToggleTagCommand}" CommandParameter="4" Classes.on="{Binding SelectedRow.IsCoelution}" ToolTip.Tip="Ctrl+4 · mixed spectrum from co-eluting compounds" />
+                <Button Classes="tool" Content="Overannotation" Command="{Binding ToggleTagCommand}" CommandParameter="5" Classes.on="{Binding SelectedRow.IsOverannotation}" ToolTip.Tip="Ctrl+5 · isotope, adduct or in-source fragment of another feature" />
+                <Button Classes="tool" Content="Clear" Command="{Binding ClearTagsCommand}" ToolTip.Tip="Remove every tag (Ctrl+0)" />
+              </StackPanel>
+              <TextBox Watermark="Comment on this feature…" Text="{Binding SelectedRow.Comment, Mode=TwoWay}" />
+            </StackPanel>
+          </Border>
+
+          <!-- evidence: the peak in every sample above, the spectrum and the rest below.
+               A reviewer confirms an analyte from the chromatogram and the product spectrum
+               together, so both are on screen the moment a result opens; the other views are
+               tabs of the lower panel and never hide the peaks. -->
+          <Grid Grid.Row="2" RowDefinitions="1.15*,6,*">
+            <Border Grid.Row="0" Classes="panel" Padding="6">
+                <DockPanel>
+                  <Border DockPanel.Dock="Top" Padding="0,0,0,6">
+                    <DockPanel>
+                    <TextBlock Classes="eyebrow" Text="PEAKS" VerticalAlignment="Center" Margin="0,0,12,0" ToolTip.Tip="The feature's chromatogram in every sample" />
+                    <WrapPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
+                      <TextBlock Classes="label" Text="Grid" Margin="0,0,6,0" VerticalAlignment="Center" />
+                      <NumericUpDown Value="{Binding Columns}" Minimum="1" Maximum="8" Increment="1" FormatString="0" Width="100" MinWidth="100" MinHeight="26" HorizontalContentAlignment="Center" ToolTip.Tip="Columns of the grid" Margin="0,0,6,0" />
+                      <NumericUpDown Value="{Binding Rows}" Minimum="1" Maximum="6" Increment="1" FormatString="0" Width="100" MinWidth="100" MinHeight="26" HorizontalContentAlignment="Center" ToolTip.Tip="Rows of the grid" Margin="0,0,6,0" />
+                      <CheckBox Classes="compact" Content="Same Y" IsChecked="{Binding SameY}" Margin="6,0,6,0" VerticalAlignment="Center" />
+                      <CheckBox Classes="compact" Content="Link X" IsChecked="{Binding LinkX}" Margin="0,0,6,0" VerticalAlignment="Center" />
+                      <ComboBox Classes="compact" ItemsSource="{x:Static vm:AnalyticsViewModel.ZoomModes}" SelectedItem="{Binding ZoomMode}" Width="140" Margin="0,0,6,0" VerticalAlignment="Center" />
+                      <Button Classes="tool" Content="Magnify" Click="OnMagnifySelected" ToolTip.Tip="Enlarge the selected sample (double-click a panel does the same)" VerticalAlignment="Center" />
+                      <Button Classes="icon" Content="◀" Command="{Binding PreviousPageCommand}" Margin="6,0,0,0" VerticalAlignment="Center" />
+                      <TextBlock Text="{Binding PageLabel}" VerticalAlignment="Center" MinWidth="36" TextAlignment="Center" />
+                      <Button Classes="icon" Content="▶" Command="{Binding NextPageCommand}" VerticalAlignment="Center" />
+                    </WrapPanel>
+                    </DockPanel>
+                  </Border>
+                  <Border DockPanel.Dock="Top" Classes="hairline-bottom" Padding="0,0,0,6" Margin="0,0,0,6">
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                      <TextBlock Classes="eyebrow" Text="INTEGRATE" Margin="0,0,4,0" VerticalAlignment="Center" />
+                      <TextBox x:Name="IntegrateFrom" Text="{Binding IntegrationFrom}" Watermark="from" Width="80" />
+                      <TextBlock Classes="label" Text="to" VerticalAlignment="Center" />
+                      <TextBox x:Name="IntegrateTo" Text="{Binding IntegrationTo}" Watermark="to" Width="80" />
+                      <TextBlock Classes="label" Text="min" VerticalAlignment="Center" Margin="0,0,4,0" />
+                      <Button x:Name="ApplyToAll" Classes="tool strong" Content="Apply to all" Command="{Binding ReintegrateAllCommand}" ToolTip.Tip="Re-integrate this feature over the window in every sample" />
+                      <Button Classes="tool" Content="This sample" Command="{Binding ReintegrateSampleCommand}" ToolTip.Tip="Re-integrate only the sample in focus" />
+                      <Button Classes="tool" Content="Reset" Command="{Binding ResetIntegrationWindowCommand}" ToolTip.Tip="Put the current peak's own boundaries back in the boxes" />
+                      <Rectangle Classes="vsep" />
+                      <Button x:Name="SplitIsomer" Classes="tool" Content="Split isomer" Command="{Binding SplitIsomerCommand}" ToolTip.Tip="Copy the feature so two co-eluting compounds can be integrated and named apart" />
+                      <TextBlock Classes="hint" Text="{Binding IntegrationHint}" VerticalAlignment="Center" Margin="8,0,0,0" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                  </Border>
+                  <Panel>
+                    <ItemsControl ItemsSource="{Binding Panels}">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                          <UniformGrid Columns="{Binding $parent[ItemsControl].DataContext.Columns}" Rows="{Binding $parent[ItemsControl].DataContext.EffectiveRows}" />
+                        </ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ReviewPanelViewModel">
+                          <Border Margin="3" BorderBrush="{DynamicResource OdLine}" BorderThickness="1" CornerRadius="6" ClipToBounds="True">
+                            <c:LineChart Compact="True" Series="{Binding Series}" Windows="{Binding Windows}" Title="{Binding Title}" MarkerX="{Binding MarkerRt}"
+                                         FixedXMin="{Binding FixedXMin}" FixedXMax="{Binding FixedXMax}" FixedYMax="{Binding FixedYMax}" IsHighlighted="{Binding IsSelected}"
+                                         AutoZoomToHighlight="False" ShowLegend="False" PointClicked="OnPanelClicked" ChartDoubleClicked="OnPanelDoubleClicked" RangeSelected="OnRangeSelected" />
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Classes="faint" Text="Select a feature in the ion table to review its peak in every sample." HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !Panels.Count}" />
+                    <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsGridBusy}" VerticalAlignment="Top" Height="3" Margin="2" />
+                  </Panel>
+                </DockPanel>
+            </Border>
+            <GridSplitter Grid.Row="1" Classes="horizontal" ResizeDirection="Rows" />
+            <Border Grid.Row="2" Classes="panel">
+            <!--
+              One set of evidence tabs, or two side by side: reading the mirror while watching the
+              class statistics is a normal thing to want, and switching tabs between them is what
+              slows a review pass down. The second column is collapsed, not merely hidden, so a
+              single pane takes the whole width (see LayoutEvidenceColumns in the code-behind).
+            -->
+            <Grid x:Name="EvidenceColumns" ColumnDefinitions="*,6,*">
+              <views:EvidenceView Grid.Column="0" SelectedTab="{Binding EvidenceTab, Mode=TwoWay}" />
+              <GridSplitter Grid.Column="1" Classes="vertical" ResizeDirection="Columns"
+                            IsVisible="{Binding EvidenceSplit}" />
+              <views:EvidenceView Grid.Column="2" x:Name="SecondEvidence"
+                                  IsVisible="{Binding EvidenceSplit}"
+                                  SelectedTab="{Binding SecondEvidenceTab, Mode=TwoWay}" />
+            </Grid>
+            </Border>
+          </Grid>
+        </Grid>
+
+        <!-- magnified panel overlay -->
+        <Border Classes="panel" IsVisible="{Binding MagnifiedPanel, Converter={x:Static views:Converters.IsNotNull}}" Margin="0" Background="{DynamicResource OdSurface}">
+          <DockPanel DataContext="{Binding MagnifiedPanel}">
+            <Border DockPanel.Dock="Top" Classes="hairline-bottom" Padding="12,8">
+              <DockPanel>
+                <Button DockPanel.Dock="Right" Content="Close" Command="{Binding $parent[UserControl].DataContext.CloseMagnifiedCommand}" />
+                <TextBlock Classes="title" Text="{Binding Title}" VerticalAlignment="Center" />
+              </DockPanel>
+            </Border>
+            <c:LineChart Series="{Binding Series}" Windows="{Binding Windows}" MarkerX="{Binding MarkerRt}" FixedXMin="{Binding FixedXMin}" FixedXMax="{Binding FixedXMax}" AutoZoomToHighlight="False" ShowLegend="False" Margin="4" RangeSelected="OnRangeSelected" />
+          </DockPanel>
+        </Border>
+      </Panel>
+    </Grid>
+  </DockPanel>
+</UserControl>
