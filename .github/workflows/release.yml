@@ -108,10 +108,13 @@ jobs:
             [ "$size" -gt 31457280 ] || { echo "$f is too small to hold an application" >&2; exit 1; }
           done
 
+      # the .wixpdb is WiX's debug database: useful next to the build, noise on a release page
       - uses: actions/upload-artifact@v4
         with:
           name: windows
-          path: dist/*
+          path: |
+            dist/*.msi
+            dist/*.zip
 
   linux:
     runs-on: ubuntu-latest
