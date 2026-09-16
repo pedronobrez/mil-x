@@ -56,7 +56,7 @@ supported, but Finder cannot bind a folder to an application, so open those from
 
 ![explorer](docs/images/explorer.png)
 
-![analytics](docs/images/analytics.png)
+![analytics](docs/images/review-ion-table.png)
 
 A TripleTOF `.wiff` opened natively in the Explorer:
 
