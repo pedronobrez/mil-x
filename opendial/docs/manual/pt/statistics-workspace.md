@@ -81,6 +81,23 @@ uma abre-a na tabela de íons. As duas caixas acima dos escores escolhem que com
 desenhados (**PC1** contra **PC2** por padrão, até PC5); o scree plot e a tabela embaixo dão a
 variância que cada componente carrega e o total acumulado.
 
+**A região de 95 %, e qual delas.** Uma classe precisa de pelo menos três injeções para ter uma —
+com menos, não há covariância a estimar, e o gráfico diz isso em vez de não desenhar nada em
+silêncio. Há duas definições, as mesmas duas que o MetaboAnalyst oferece, para que uma figura feita
+aqui possa ser comparada com outra que o leitor já viu:
+
+| | Raio | O que pressupõe |
+| --- | --- | --- |
+| padrão | `raiz(χ²(2) a 95 %)` = 2,4477 | a região de amostra grande; ela não sabe de quantas injeções a covariância veio, então quatro réplicas e quarenta recebem o mesmo raio. **É o que o MetaboAnalyst desenha se não lhe disserem outra coisa.** |
+| **F region** | `raiz(2 · F(0,95; 2, n − 1))` | alarga conforme a classe encolhe: cerca de 1,4 vez o padrão com seis injeções, e com trinta as duas já quase se encontraram |
+
+A caixa **F region** acima dos escores troca todos os gráficos de escores — componentes
+principais, PLS-DA e OPLS-DA — para que a área inteira conte uma história só.
+
+Nenhuma das duas é um teste. Uma elipse descreve onde uma classe está; duas que não se sobrepõem
+não são por isso significativamente diferentes, e um modelo ajustado para separar as classes vai
+separá-las façam as elipses o que fizerem.
+
 Os componentes são calculados sobre o conjunto escalonado — auto-scaling por padrão, de modo que
 toda feature pesa o mesmo; Pareto ou só centrar estão na página **Data processing**.
 

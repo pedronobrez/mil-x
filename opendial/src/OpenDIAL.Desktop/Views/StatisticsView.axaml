@@ -340,11 +340,13 @@
                   <ComboBox Classes="compact" ItemsSource="{x:Static vm:StatisticsViewModel.ComponentNames}" SelectedItem="{Binding PcX}" Width="80" />
                   <TextBlock Classes="label" Text="against" />
                   <ComboBox Classes="compact" ItemsSource="{x:Static vm:StatisticsViewModel.ComponentNames}" SelectedItem="{Binding PcY}" Width="80" />
+                  <CheckBox Classes="compact" Content="F region" IsChecked="{Binding WideRegion}"
+                            ToolTip.Tip="The 95 % region as F(2, n-1) rather than chi-square: wider the fewer injections a class has. MetaboAnalyst offers both and draws chi-square by default." />
                   <TextBlock Classes="hint" Text="{Binding ScoreLabel}" VerticalAlignment="Center" />
                 </StackPanel>
                 <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,6,4,0" TextWrapping="Wrap"
                            Text="Replicates of a class should sit together and the classes apart. The ellipse is the 95 % confidence region of each class; an injection that lands among the wrong group, or far from everything, is the first to check." />
-                <c:ChartFrame HeadingText="SCORES · ONE POINT PER INJECTION"><c:ScatterChart Items="{Binding Scores}" XLabel="{Binding PcX}" YLabel="{Binding PcY}" YFromZero="False" ShowEllipses="True" ShowPointLabels="False" /></c:ChartFrame>
+                <c:ChartFrame HeadingText="SCORES · ONE POINT PER INJECTION"><c:ScatterChart Items="{Binding Scores}" XLabel="{Binding PcX}" YLabel="{Binding PcY}" YFromZero="False" ShowEllipses="True" EllipseMethod="{Binding RegionMethod}" ShowPointLabels="False" /></c:ChartFrame>
               </DockPanel>
             </Border>
             <GridSplitter Grid.Column="1" Grid.Row="0" Grid.RowSpan="3" Classes="vertical" ResizeDirection="Columns" />
@@ -391,7 +393,7 @@
                 <Border Grid.Column="0" Classes="panel">
                   <DockPanel Margin="6">
                     <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,6,4,0" Text="{Binding PlsScoreLabel}" />
-                    <c:ChartFrame HeadingText="SCORES · ONE POINT PER INJECTION"><c:ScatterChart Items="{Binding PlsScores}" XLabel="Component 1" YLabel="Component 2" YFromZero="False" ShowEllipses="True" /></c:ChartFrame>
+                    <c:ChartFrame HeadingText="SCORES · ONE POINT PER INJECTION"><c:ScatterChart EllipseMethod="{Binding RegionMethod}" Items="{Binding PlsScores}" XLabel="Component 1" YLabel="Component 2" YFromZero="False" ShowEllipses="True" /></c:ChartFrame>
                   </DockPanel>
                 </Border>
                 <GridSplitter Grid.Column="1" Classes="vertical" ResizeDirection="Columns" />
@@ -440,7 +442,7 @@
                 <Border Grid.Column="0" Classes="panel">
                   <DockPanel Margin="6">
                     <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="4,6,4,0" TextWrapping="Wrap" Text="{Binding OplsScoreLabel}" />
-                    <c:ChartFrame HeadingText="SCORES · THE SEPARATION ON ONE AXIS"><c:ScatterChart Items="{Binding OplsScores}" XLabel="Predictive" YLabel="Orthogonal" YFromZero="False" ShowEllipses="True" /></c:ChartFrame>
+                    <c:ChartFrame HeadingText="SCORES · THE SEPARATION ON ONE AXIS"><c:ScatterChart EllipseMethod="{Binding RegionMethod}" Items="{Binding OplsScores}" XLabel="Predictive" YLabel="Orthogonal" YFromZero="False" ShowEllipses="True" /></c:ChartFrame>
                   </DockPanel>
                 </Border>
                 <GridSplitter Grid.Column="1" Classes="vertical" ResizeDirection="Columns" />

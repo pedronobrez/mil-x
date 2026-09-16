@@ -81,6 +81,23 @@ are named; clicking any opens it in the ion table. The two boxes above the score
 components are drawn (**PC1** against **PC2** by default, up to PC5); the scree plot and the table
 underneath give the variance each component carries and the running total.
 
+**The 95 % region, and which one.** A class needs at least three injections to have one at all —
+with fewer, a covariance cannot be estimated, and the plot says so rather than drawing nothing in
+silence. Two definitions are offered, the same two MetaboAnalyst offers, so a figure made here can
+be compared with one a reader has seen:
+
+| | Radius | What it assumes |
+| --- | --- | --- |
+| default | `sqrt(χ²(2) at 95 %)` = 2.4477 | the large-sample region; it does not know how many injections the covariance came from, so four replicates and forty get the same radius. **This is what MetaboAnalyst draws unless told otherwise.** |
+| **F region** | `sqrt(2 · F(0.95; 2, n − 1))` | widens as the class gets smaller: about 1.4 times the default at six injections, and by thirty the two have nearly met |
+
+The **F region** box above the scores switches every score plot — principal components, PLS-DA and
+OPLS-DA — so the whole workspace tells one story.
+
+Neither is a test. An ellipse describes where a class sits; two that do not overlap are not
+thereby significantly different, and a model fitted to separate the classes will separate them
+whatever the ellipses do.
+
 The components are computed on the scaled dataset — auto-scaling by default, so every feature
 weighs the same; Pareto or centring only are on the **Data processing** page.
 

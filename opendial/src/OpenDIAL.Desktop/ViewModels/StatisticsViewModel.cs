@@ -72,6 +72,17 @@ public sealed partial class StatisticsViewModel : ViewModelBase
     [ObservableProperty] private bool _isBusy;
 
     // principal components
+    /// <summary>
+    /// Which 95 % region the score plots draw. Off is χ²(2), what MetaboAnalyst draws unless told
+    /// otherwise; on is F(2, n − 1), which widens as a class gets smaller and is the honest one
+    /// for the handful of replicates a metabolomics class usually has.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(RegionMethod))]
+    private bool _wideRegion;
+
+    public EllipseMethod RegionMethod => WideRegion ? EllipseMethod.F : EllipseMethod.ChiSquare;
+
     [ObservableProperty] private IReadOnlyList<ScatterPoint> _scores = Array.Empty<ScatterPoint>();
     [ObservableProperty] private IReadOnlyList<ScatterPoint> _loadings = Array.Empty<ScatterPoint>();
     [ObservableProperty] private ScatterPoint? _selectedLoading;
