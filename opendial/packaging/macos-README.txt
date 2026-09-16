@@ -8,14 +8,13 @@ First launch
     It will also ask for access to your Documents folder — say Allow, or the app cannot read your
     data where it lives.
 
-Native .wiff reading
-    The reader is in this build; SCIEX's Clearcore2 SDK is not, because its licence forbids passing
-    it on. Accept that licence, fetch the assemblies yourself, and put them in a plugins/sciex folder
-    beside the application: .wiff is then read natively, with nothing else installed — no Analyst,
-    no ProteoWizard. scripts/fetch-sciex-assemblies.sh (or .ps1 on Windows) in the source tree
-    fetches them from the alpharaw package, which redistributes them under SCIEX's own
-    redistribution licence.
-    Without them the application says so and .wiff goes through msconvert, when that is on PATH.
+Raw data
+    .wiff is read natively: SCIEX's redistributable Clearcore2 components travel in plugins/sciex,
+    under SCIEX's own redistribution licence, which is in SCIEX_LICENSE.txt beside them. Nothing
+    else has to be installed for it — no Analyst, no ProteoWizard. Those assemblies are SCIEX's
+    software, for research use only, and are not covered by this program's GPL licence.
+    mzML and mzXML are read directly. Other vendor formats go through ProteoWizard's msconvert when
+    it is on PATH.
 
 Manual
     Inside the application, menu Help, in English and Portuguese.

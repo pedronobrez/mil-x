@@ -13,11 +13,15 @@
 # installed first. What does not travel is the SCIEX Clearcore2 SDK — its licence forbids
 # redistribution — so .wiff reading is set up on the user's machine by scripts/fetch-sciex-assemblies.sh.
 #
-# The builds are made with OPENDIAL_SHIP_SCIEX=false, which compiles the native .wiff reader and
-# leaves SCIEX's assemblies out of the output. So the archives carry a reader that works the moment
-# somebody who has accepted SCIEX's licence puts the SDK in plugins/sciex on their own machine, and
-# they carry none of SCIEX's bytes. Without the SDK the reader says so and .wiff goes through
-# msconvert, which is what a machine without it did before.
+# The archives carry SCIEX's redistributable components, so .wiff is read natively out of the box.
+# Which files those are is not a judgement call: the SDK's own licence — "END USER BETA SOFTWARE
+# LICENSE AGREEMENT and REDISTRIBUTION LICENSE" — ends in an Appendix A that names them one by one,
+# and carry_sciex below reads that appendix rather than trusting a list kept here. Anything in
+# vendor/sciex that the appendix does not name stays behind, and the licence itself travels beside
+# the assemblies, which is what its clause 4(e) asks for.
+#
+# The application is built with OPENDIAL_SHIP_SCIEX=false and the components are added afterwards,
+# so that the build step never decides this and the check at the end has one place to look.
 #
 # The Windows and Linux builds are cross-compiled; the macOS one can only be built on macOS,
 # because the bundle needs codesign and iconutil.
@@ -55,13 +59,10 @@ carry_paperwork () { # <folder>
   cp "$REPO/NOTICE"  "$1/NOTICE.txt"
 }
 
-# The SCIEX Clearcore2 SDK is built into the local application whenever vendor/sciex is present,
-# and its licence forbids passing it on. A release archive is exactly the act of passing it on, so
-# the plugin folder is stripped here and the archives are searched for it again at the end.
-drop_sciex () { # <folder>
-  rm -rf "$1/plugins/sciex"
-  rmdir "$1/plugins" 2>/dev/null || true
-}
+# SCIEX's redistributable components into a staged application; the appendix of their own licence
+# decides which, and scripts/carry-sciex.sh is the one place that reads it, so the workflow that
+# builds the Windows and Linux artifacts does exactly the same thing.
+carry_sciex () { "$HERE/carry-sciex.sh" "$1"; }
 
 # One text per platform, kept in packaging/ so the GitHub workflow that builds the Windows and
 # Linux artifacts ships the same words as a local build.
@@ -81,7 +82,7 @@ linux_archive () { # <runtime identifier> <name in the archive>
   mkdir -p "$stage"
   cp -R "$src"/. "$stage/"
   chmod +x "$stage/OpenDIAL"
-  drop_sciex "$stage"
+  carry_sciex "$stage"
   carry_paperwork "$stage"
   readme linux "$stage/README.txt"
   ( cd "$(dirname "$stage")" && tar -czf "$OUT/OpenDIAL-$VERSION-$arch.tar.gz" "$(basename "$stage")" )
@@ -100,7 +101,7 @@ if wanted windows; then
   STAGE="$(mktemp -d)/OpenDIAL-$VERSION-windows-x64"
   mkdir -p "$STAGE"
   cp -R "$SRC"/. "$STAGE/"
-  drop_sciex "$STAGE"
+  carry_sciex "$STAGE"
   carry_paperwork "$STAGE"
 
   readme windows "$STAGE/README.txt"
@@ -124,8 +125,8 @@ macos_dmg () { # <runtime identifier> <name in the archive>
   local stage; stage="$(mktemp -d)/OpenDIAL $VERSION"
   mkdir -p "$stage"
   ditto "$ROOT/dist/OpenDIAL.app" "$stage/OpenDIAL.app"
-  # taking files out of a signed bundle invalidates the signature, so it is signed again after
-  drop_sciex "$stage/OpenDIAL.app/Contents/MacOS"
+  # changing what is inside a signed bundle invalidates the signature, so it is signed again after
+  carry_sciex "$stage/OpenDIAL.app/Contents/MacOS"
   codesign --force --deep --sign - --timestamp=none "$stage/OpenDIAL.app" 2>/dev/null
   codesign --verify --deep "$stage/OpenDIAL.app" || { echo "the bundle lost its signature" >&2; exit 1; }
   ln -s /Applications "$stage/Applications"
@@ -145,10 +146,12 @@ else
   if wanted macos-intel; then macos_dmg osx-x64   macos-x86_64; fi
 fi
 
-# ---- nothing redistributable slipped in -------------------------------------------------------
+# ---- only what the appendix allows, and the licence with it -----------------------------------
 # Reads the archives back rather than trusting the staging folders: what ships is what is inside
-# these files, and a mistake here is a licence breach that cannot be taken back once it is public.
+# these files, and a file of SCIEX's that their appendix does not name is a licence breach that
+# cannot be taken back once it is public.
 echo "== checking the archives"
+LISTED="$(sed -n '/APPENDIX A/,$p' "$ROOT/vendor/sciex/SCIEX_LICENSE.txt" | sed -n 's/^[[:space:]]*\([A-Za-z0-9_.]*\.dll\)[[:space:]]*$/\1/p')"
 for f in "$OUT"/OpenDIAL-"$VERSION"-*.tar.gz "$OUT"/OpenDIAL-"$VERSION"-*.zip "$OUT"/OpenDIAL-"$VERSION"-*.dmg; do
   [ -e "$f" ] || continue
   case "$f" in
@@ -156,12 +159,29 @@ for f in "$OUT"/OpenDIAL-"$VERSION"-*.tar.gz "$OUT"/OpenDIAL-"$VERSION"-*.zip "$
     *.zip)    LIST=$(unzip -Z1 "$f") ;;
     *.dmg)    LIST=$(hdiutil imageinfo "$f" >/dev/null 2>&1 && { MP=$(mktemp -d); hdiutil attach -quiet -nobrowse -readonly -mountpoint "$MP" "$f"; find "$MP" -print; hdiutil detach -quiet "$MP"; rmdir "$MP" 2>/dev/null; }) ;;
   esac
-  if printf '%s' "$LIST" | grep -q -i -E "clearcore2|plugins/sciex"; then
-    echo "REFUSING: $(basename "$f") carries the SCIEX SDK, which must not be redistributed" >&2
+  # every SCIEX file inside has to be one the appendix names
+  BAD=""
+  while read -r entry; do
+    name="$(basename "$entry")"
+    case "$name" in
+      Clearcore2.*|Sciex.*|SciexToolKit.dll|Wiff*.dll) ;;
+      *) continue ;;
+    esac
+    printf '%s\n' "$LISTED" | grep -qx "$name" || BAD="$BAD $name"
+  done < <(printf '%s\n' "$LIST")
+  if [ -n "$BAD" ]; then
+    echo "REFUSING: $(basename "$f") carries SCIEX files Appendix A does not name:$BAD" >&2
     rm -f "$f"
     exit 1
   fi
-  echo "   $(basename "$f"): clean"
+  # and the licence has to be beside them
+  if printf '%s' "$LIST" | grep -q -i "clearcore2" && ! printf '%s' "$LIST" | grep -q "SCIEX_LICENSE.txt"; then
+    echo "REFUSING: $(basename "$f") carries the components without the licence they are granted by" >&2
+    rm -f "$f"
+    exit 1
+  fi
+  n=$(printf '%s\n' "$LIST" | grep -c -i "clearcore2" || true)
+  echo "   $(basename "$f"): $n SCIEX components, all named in Appendix A, licence included"
 done
 
 # ---- checksums --------------------------------------------------------------------------------

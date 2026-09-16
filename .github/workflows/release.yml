@@ -95,10 +95,14 @@ jobs:
           cp LICENSE "stage/OpenDIAL-$V-windows-x64/LICENSE.txt"
           cp NOTICE  "stage/OpenDIAL-$V-windows-x64/NOTICE.txt"
           sed "s/@VERSION@/$V/g" opendial/packaging/windows-README.txt > "stage/OpenDIAL-$V-windows-x64/README.txt"
-          # belt and braces: these builds have no vendor/sciex, so this can only fail if something changed
-          if find stage -iname "*clearcore*" | grep -q .; then
-            echo "the SCIEX SDK must not be redistributed" >&2; exit 1
-          fi
+          # SCIEX's redistributable components, chosen by the appendix of their own licence
+          opendial/scripts/carry-sciex.sh "stage/OpenDIAL-$V-windows-x64"
+          # what travels must be named in Appendix A, and the licence must travel with it
+          listed=$(sed -n '/APPENDIX A/,$p' opendial/vendor/sciex/SCIEX_LICENSE.txt | sed -n 's/^[[:space:]]*\([A-Za-z0-9_.]*\.dll\)[[:space:]]*$/\1/p')
+          for f in $(find stage -name "Clearcore2.*.dll" -o -name "Sciex*.dll" -o -name "SciexToolKit.dll"); do
+            grep -qx "$(basename "$f")" <<< "$listed" || { echo "$f is not named in Appendix A" >&2; exit 1; }
+          done
+          test -f "$(find stage -name SCIEX_LICENSE.txt | head -1)" || { echo "the components must travel with their licence" >&2; exit 1; }
 
       - name: Zip
         shell: pwsh
@@ -227,9 +231,13 @@ jobs:
           cp LICENSE "stage/OpenDIAL-$V-linux-x86_64/LICENSE.txt"
           cp NOTICE  "stage/OpenDIAL-$V-linux-x86_64/NOTICE.txt"
           sed "s/@VERSION@/$V/g" opendial/packaging/linux-README.txt > "stage/OpenDIAL-$V-linux-x86_64/README.txt"
-          if find stage -iname "*clearcore*" | grep -q .; then
-            echo "the SCIEX SDK must not be redistributed" >&2; exit 1
-          fi
+          # SCIEX's redistributable components, chosen by the appendix of their own licence
+          opendial/scripts/carry-sciex.sh "stage/OpenDIAL-$V-linux-x86_64"
+          listed=$(sed -n '/APPENDIX A/,$p' opendial/vendor/sciex/SCIEX_LICENSE.txt | sed -n 's/^[[:space:]]*\([A-Za-z0-9_.]*\.dll\)[[:space:]]*$/\1/p')
+          for f in $(find stage -name "Clearcore2.*.dll" -o -name "Sciex*.dll" -o -name "SciexToolKit.dll"); do
+            grep -qx "$(basename "$f")" <<< "$listed" || { echo "$f is not named in Appendix A" >&2; exit 1; }
+          done
+          test -f "$(find stage -name SCIEX_LICENSE.txt | head -1)" || { echo "the components must travel with their licence" >&2; exit 1; }
           tar -czf "dist/OpenDIAL-$V-linux-x86_64.tar.gz" -C stage "OpenDIAL-$V-linux-x86_64"
 
       - uses: actions/upload-artifact@v4
@@ -300,9 +308,13 @@ jobs:
           cp LICENSE "stage/OpenDIAL-$V-linux-arm64/LICENSE.txt"
           cp NOTICE  "stage/OpenDIAL-$V-linux-arm64/NOTICE.txt"
           sed "s/@VERSION@/$V/g" opendial/packaging/linux-README.txt > "stage/OpenDIAL-$V-linux-arm64/README.txt"
-          if find stage -iname "*clearcore*" | grep -q .; then
-            echo "the SCIEX SDK must not be redistributed" >&2; exit 1
-          fi
+          # SCIEX's redistributable components, chosen by the appendix of their own licence
+          opendial/scripts/carry-sciex.sh "stage/OpenDIAL-$V-linux-arm64"
+          listed=$(sed -n '/APPENDIX A/,$p' opendial/vendor/sciex/SCIEX_LICENSE.txt | sed -n 's/^[[:space:]]*\([A-Za-z0-9_.]*\.dll\)[[:space:]]*$/\1/p')
+          for f in $(find stage -name "Clearcore2.*.dll" -o -name "Sciex*.dll" -o -name "SciexToolKit.dll"); do
+            grep -qx "$(basename "$f")" <<< "$listed" || { echo "$f is not named in Appendix A" >&2; exit 1; }
+          done
+          test -f "$(find stage -name SCIEX_LICENSE.txt | head -1)" || { echo "the components must travel with their licence" >&2; exit 1; }
           tar -czf "dist/OpenDIAL-$V-linux-arm64.tar.gz" -C stage "OpenDIAL-$V-linux-arm64"
 
       - uses: actions/upload-artifact@v4
