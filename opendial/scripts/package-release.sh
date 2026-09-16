@@ -62,6 +62,12 @@ drop_sciex () { # <folder>
   rmdir "$1/plugins" 2>/dev/null || true
 }
 
+# One text per platform, kept in packaging/ so the GitHub workflow that builds the Windows and
+# Linux artifacts ships the same words as a local build.
+readme () { # <platform> <destination>
+  sed "s/@VERSION@/$VERSION/g" "$ROOT/packaging/$1-README.txt" > "$2"
+}
+
 # ---- Linux ------------------------------------------------------------------------------------
 if wanted linux; then
   echo "== linux-x64"
@@ -74,34 +80,7 @@ if wanted linux; then
   drop_sciex "$STAGE"
   carry_paperwork "$STAGE"
 
-  cat > "$STAGE/README.txt" <<EOF
-OpenDIAL $VERSION — Linux x86_64
-
-    ./OpenDIAL
-
-That is the whole installation: the .NET runtime is inside this folder, so nothing else has to be
-installed. If the file lost its permission bit in transit, put it back with  chmod +x OpenDIAL .
-
-What the distribution has to provide is the X11 client libraries and fontconfig, which any desktop
-Linux already has. On a bare container or a server image, install them first:
-
-    Debian/Ubuntu   apt-get install -y libx11-6 libice6 libsm6 libfontconfig1 libicu-dev
-    Fedora/RHEL     dnf install -y libX11 libICE libSM fontconfig libicu
-
-Raw data
-    mzML and mzXML are read directly. Vendor formats go through msconvert (ProteoWizard), which
-    OpenDIAL calls when it finds it on PATH — on Linux that usually means the ProteoWizard docker
-    image or a wine install.
-    Native .wiff reading needs the SCIEX Clearcore2 SDK, which cannot be redistributed. Accept
-    SCIEX's licence and fetch it yourself with scripts/fetch-sciex-assemblies.sh from the source
-    tree; the files land in plugins/sciex next to this README.
-
-Manual
-    Inside the application, menu Help, in English and Portuguese.
-
-Licence
-    GPL-3.0 — see LICENSE.txt. What was changed in the MS-DIAL upstream is listed in NOTICE.txt.
-EOF
+  readme linux "$STAGE/README.txt"
 
   ( cd "$(dirname "$STAGE")" && tar -czf "$OUT/OpenDIAL-$VERSION-linux-x86_64.tar.gz" "$(basename "$STAGE")" )
   rm -rf "$(dirname "$STAGE")"
@@ -119,38 +98,7 @@ if wanted windows; then
   drop_sciex "$STAGE"
   carry_paperwork "$STAGE"
 
-  cat > "$STAGE/README.txt" <<EOF
-OpenDIAL $VERSION — Windows x64
-
-    OpenDIAL.exe
-
-That is the whole installation: the .NET runtime is inside this folder, so nothing else has to be
-installed. There is no installer and nothing is written to the registry; move the folder wherever
-you keep your tools and make a shortcut to OpenDIAL.exe.
-
-SmartScreen
-    The build is not signed with a Windows code-signing certificate, so the first launch shows
-    "Windows protected your PC". More info > Run anyway. Unblock the zip before extracting
-    (right-click the .zip > Properties > Unblock) and Windows will stop marking every file inside.
-
-Raw data
-    mzML and mzXML are read directly. Vendor formats go through msconvert (ProteoWizard) when it is
-    on PATH — on Windows that is the normal ProteoWizard install.
-    Native .wiff reading needs the SCIEX Clearcore2 SDK, which cannot be redistributed. Accept
-    SCIEX's licence and fetch it yourself with scripts/fetch-sciex-assemblies.sh from the source
-    tree; the files belong in plugins\\sciex next to this README.
-
-Note
-    MS-DIAL 5 itself runs on Windows, and on Windows it does more than this port does — ion
-    mobility and imaging among it. This build exists so a Windows machine can open and continue a
-    review started on a Mac or on Linux, and so a mixed lab shares one set of files.
-
-Manual
-    Inside the application, menu Help, in English and Portuguese.
-
-Licence
-    GPL-3.0 — see LICENSE.txt. What was changed in the MS-DIAL upstream is listed in NOTICE.txt.
-EOF
+  readme windows "$STAGE/README.txt"
 
   ( cd "$(dirname "$STAGE")" && zip -q -r "$OUT/OpenDIAL-$VERSION-windows-x64.zip" "$(basename "$STAGE")" )
   rm -rf "$(dirname "$STAGE")"
@@ -177,28 +125,7 @@ if wanted macos; then
     codesign --verify --deep "$STAGE/OpenDIAL.app" || { echo "the bundle lost its signature" >&2; exit 1; }
     ln -s /Applications "$STAGE/Applications"
     carry_paperwork "$STAGE"
-    cat > "$STAGE/README.txt" <<EOF
-OpenDIAL $VERSION — macOS (Apple silicon)
-
-Drag OpenDIAL.app onto the Applications folder beside it.
-
-First launch
-    The build is ad-hoc signed, not notarised, so double-clicking gives "unidentified developer".
-    Right-click the app > Open, once. macOS remembers the answer.
-    It will also ask for access to your Documents folder — say Allow, or the app cannot read your
-    data where it lives.
-
-Raw data
-    .wiff is read natively once the SCIEX Clearcore2 SDK is in place; its licence forbids
-    redistribution, so fetch it yourself with scripts/fetch-sciex-assemblies.sh from the source
-    tree. mzML is read directly, and other vendor formats go through msconvert when it is on PATH.
-
-Manual
-    Inside the application, menu Help, in English and Portuguese.
-
-Licence
-    GPL-3.0 — see LICENSE.txt. What was changed in the MS-DIAL upstream is listed in NOTICE.txt.
-EOF
+    readme macos "$STAGE/README.txt"
     DMG="$OUT/OpenDIAL-$VERSION-macos-arm64.dmg"
     rm -f "$DMG"
     hdiutil create -quiet -volname "OpenDIAL $VERSION" -srcfolder "$STAGE" -ov -format UDZO "$DMG"

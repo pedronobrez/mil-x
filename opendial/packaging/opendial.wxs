@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Windows installer, built from the published win-x64 folder.
+
+  The zip beside it in every release is the same application; this exists for
+  the machines where software is expected to arrive as an installer: a Start
+  menu entry, a version in Add or remove programs, and an upgrade that replaces
+  the previous install instead of sitting beside it.
+
+  It installs per user, into LocalAppData, so no administrator is involved.
+  That is deliberate in a lab: the person analysing the data is often not the
+  person with the admin password.
+
+  Unsigned. SmartScreen will show "Windows protected your PC" on the first run
+  and the reader has to choose More info, then Run anyway. Only a code signing
+  certificate removes that.
+
+  The whole application directory is taken as it stands rather than each file
+  being listed: a self contained .NET publish is 250 files and no hand kept
+  list survives a dependency change.
+
+  Build with WiX 5, installed as a dotnet tool. Pinned: WiX 7 refuses to run
+  without accepting a paid maintenance fee EULA.
+
+      dotnet tool install wix -g ; version 5.0.2
+      wix build packaging/opendial.wxs -d Version=0.9.0 \
+        -d BundleDir="$PWD/dist/opendial-desktop-win-x64" \
+        -d IconFile="$PWD/packaging/icons/OpenDIAL.ico" \
+        -o dist/release/OpenDIAL-0.9.0-windows-x64.msi
+
+  BundleDir and IconFile are absolute on purpose: a relative path resolves
+  against the working directory rather than against this file, and a glob that
+  matches nothing is not an error in WiX. It produces a small installer and
+  reports success, so scripts/package-release.sh checks the size afterwards.
+
+  (written without a double hyphen anywhere: XML forbids one inside a comment,
+  and WiX reports it as an invalid source file rather than a comment problem)
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="OpenDIAL"
+           Manufacturer="OpenDIAL"
+           Version="$(Version)"
+           UpgradeCode="6b1f4d28-9c53-4e77-a1b0-5d2e8f37c904"
+           Scope="perUser"
+           Compressed="yes">
+
+    <!-- an upgrade replaces the previous version rather than sitting beside it -->
+    <MajorUpgrade DowngradeErrorMessage="A newer version of OpenDIAL is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- the executable carries its own icon for Explorer and the taskbar; the
+         Start menu entry and Add or remove programs are told separately -->
+    <Icon Id="OpenDialIcon" SourceFile="$(IconFile)" />
+    <Property Id="ARPPRODUCTICON" Value="OpenDialIcon" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/pedronobrez/mil-x" />
+    <Property Id="ARPNOREPAIR" Value="1" />
+
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="INSTALLFOLDER" Name="OpenDIAL" />
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ShortcutFolder" Name="OpenDIAL" />
+    </StandardDirectory>
+
+    <Feature Id="Main" Title="OpenDIAL" Level="1">
+      <ComponentGroupRef Id="ApplicationFiles" />
+      <ComponentGroupRef Id="Shortcuts" />
+    </Feature>
+
+    <ComponentGroup Id="ApplicationFiles" Directory="INSTALLFOLDER">
+      <Files Include="$(BundleDir)\**" />
+    </ComponentGroup>
+
+    <ComponentGroup Id="Shortcuts" Directory="ShortcutFolder">
+      <Component Id="StartMenuShortcut" Guid="*">
+        <Shortcut Id="OpenDialShortcut"
+                  Name="OpenDIAL"
+                  Description="Untargeted metabolomics and lipidomics: MS-DIAL 5, ported"
+                  Target="[INSTALLFOLDER]OpenDIAL.exe"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="OpenDialIcon" />
+        <RemoveFolder Id="RemoveShortcutFolder" Directory="ShortcutFolder"
+                      On="uninstall" />
+        <RegistryValue Root="HKCU" Key="Software\OpenDIAL"
+                       Name="installed" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+  </Package>
+</Wix>

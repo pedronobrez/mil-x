@@ -1,0 +1,181 @@
+# Builds the downloadable Windows and Linux artifacts, on Windows and on Linux.
+#
+# The macOS disk image is built locally by opendial/scripts/package-release.sh, because a bundle
+# needs codesign and iconutil. Everything else is built here for two reasons: the MSI cannot be
+# built anywhere but Windows (WiX 5 validates directory names with Windows path rules and rejects
+# every name on macOS), and a Windows runner is the only place this application has ever been
+# started on Windows at all. That start is a step below, not a comment.
+#
+# Nothing here has the SCIEX Clearcore2 SDK, which is what makes these builds redistributable:
+# vendor/sciex only exists on a machine where somebody accepted SCIEX's licence and fetched it.
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to attach the artifacts to (e.g. v0.9.0). Leave empty to only build."
+        required: false
+        default: ""
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Read the version
+        id: v
+        shell: bash
+        run: echo "version=$(sed -n 's/.*<Version>\([^<]*\)<\/Version>.*/\1/p' opendial/Directory.Build.props | head -1)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish
+        shell: bash
+        run: |
+          dotnet publish opendial/src/OpenDIAL.Desktop/OpenDIAL.Desktop.csproj \
+            -c Release -r win-x64 --self-contained \
+            -p:UseOpenRawData=true -p:SkipLibraryDownload=true \
+            -p:DebugType=None -p:DebugSymbols=false -p:ErrorOnDuplicatePublishOutputFiles=false \
+            -o publish/win-x64
+
+      # The point of a Windows runner. The application writes what its window is showing to the
+      # file named by OPENDIAL_UI_PROBE; if that file appears, Avalonia started, the window was
+      # created and the view models are alive. Until this ran, "works on Windows" was a guess.
+      - name: It starts on Windows
+        shell: pwsh
+        run: |
+          $env:OPENDIAL_UI_PROBE = "$PWD\probe.json"
+          $app = Start-Process -FilePath "publish\win-x64\OpenDIAL.exe" -PassThru
+          for ($i = 0; $i -lt 60; $i++) {
+            if ((Test-Path probe.json) -and (Get-Item probe.json).Length -gt 0) { break }
+            Start-Sleep -Seconds 1
+          }
+          if (-not (Test-Path probe.json) -or (Get-Item probe.json).Length -eq 0) {
+            Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue
+            throw "the window never reported itself after 60s"
+          }
+          Write-Host "started in ${i}s; the window reports:"
+          Get-Content probe.json -Raw | Select-Object -First 1
+          Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue
+
+      - name: Stage
+        shell: bash
+        run: |
+          V="${{ steps.v.outputs.version }}"
+          mkdir -p "stage/OpenDIAL-$V-windows-x64"
+          cp -R publish/win-x64/. "stage/OpenDIAL-$V-windows-x64/"
+          cp LICENSE "stage/OpenDIAL-$V-windows-x64/LICENSE.txt"
+          cp NOTICE  "stage/OpenDIAL-$V-windows-x64/NOTICE.txt"
+          sed "s/@VERSION@/$V/g" opendial/packaging/windows-README.txt > "stage/OpenDIAL-$V-windows-x64/README.txt"
+          # belt and braces: these builds have no vendor/sciex, so this can only fail if something changed
+          if find stage -iname "*clearcore*" | grep -q .; then
+            echo "the SCIEX SDK must not be redistributed" >&2; exit 1
+          fi
+
+      - name: Zip
+        shell: pwsh
+        run: |
+          $v = "${{ steps.v.outputs.version }}"
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Compress-Archive -Path "stage\OpenDIAL-$v-windows-x64" -DestinationPath "dist\OpenDIAL-$v-windows-x64.zip"
+
+      - name: MSI
+        shell: pwsh
+        run: |
+          dotnet tool install --global wix --version 5.0.2
+          $v = "${{ steps.v.outputs.version }}"
+          wix build opendial/packaging/opendial.wxs -d Version=$v `
+            -d BundleDir="$PWD\stage\OpenDIAL-$v-windows-x64" `
+            -d IconFile="$PWD\opendial\packaging\icons\OpenDIAL.ico" `
+            -o "dist\OpenDIAL-$v-windows-x64.msi"
+
+      # WiX treats a glob that matches nothing as success and writes a tiny installer. Every build
+      # here carries a .NET runtime and Avalonia; anything under 30 MB is an empty one.
+      - name: The installer is not empty
+        shell: bash
+        run: |
+          for f in dist/*.msi dist/*.zip; do
+            size=$(wc -c < "$f")
+            echo "$f $size bytes"
+            [ "$size" -gt 31457280 ] || { echo "$f is too small to hold an application" >&2; exit 1; }
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: dist/*
+
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Read the version
+        id: v
+        run: echo "version=$(sed -n 's/.*<Version>\([^<]*\)<\/Version>.*/\1/p' opendial/Directory.Build.props | head -1)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish
+        run: |
+          dotnet publish opendial/src/OpenDIAL.Desktop/OpenDIAL.Desktop.csproj \
+            -c Release -r linux-x64 --self-contained \
+            -p:UseOpenRawData=true -p:SkipLibraryDownload=true \
+            -p:DebugType=None -p:DebugSymbols=false -p:ErrorOnDuplicatePublishOutputFiles=false \
+            -o publish/linux-x64
+
+      - name: It starts on Linux
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb libx11-6 libice6 libsm6 libfontconfig1
+          chmod +x publish/linux-x64/OpenDIAL
+          export OPENDIAL_UI_PROBE="$PWD/probe.json"
+          xvfb-run -a --server-args="-screen 0 1600x1000x24" publish/linux-x64/OpenDIAL &
+          for i in $(seq 1 60); do [ -s probe.json ] && break; sleep 1; done
+          [ -s probe.json ] || { echo "the window never reported itself after 60s" >&2; exit 1; }
+          echo "started in ${i}s"
+          head -c 200 probe.json
+
+      - name: Tarball
+        run: |
+          V="${{ steps.v.outputs.version }}"
+          mkdir -p "stage/OpenDIAL-$V-linux-x86_64" dist
+          cp -R publish/linux-x64/. "stage/OpenDIAL-$V-linux-x86_64/"
+          chmod +x "stage/OpenDIAL-$V-linux-x86_64/OpenDIAL"
+          cp LICENSE "stage/OpenDIAL-$V-linux-x86_64/LICENSE.txt"
+          cp NOTICE  "stage/OpenDIAL-$V-linux-x86_64/NOTICE.txt"
+          sed "s/@VERSION@/$V/g" opendial/packaging/linux-README.txt > "stage/OpenDIAL-$V-linux-x86_64/README.txt"
+          if find stage -iname "*clearcore*" | grep -q .; then
+            echo "the SCIEX SDK must not be redistributed" >&2; exit 1
+          fi
+          tar -czf "dist/OpenDIAL-$V-linux-x86_64.tar.gz" -C stage "OpenDIAL-$V-linux-x86_64"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: dist/*
+
+  attach:
+    needs: [windows, linux]
+    # on a tag push there is no input at all, so the event decides; a manual run has to name the tag
+    if: github.event_name == 'push' || inputs.tag != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { path: in }
+      - name: Attach to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          find in -type f -print
+          gh release upload "$TAG" $(find in -type f) --clobber --repo "${{ github.repository }}"
