@@ -7,6 +7,8 @@ on it:
   milx         the cow's head, face on, in white: the MIL-X mark since 1.0. The drawing is
                docs/brand/mil-x-front.svg, reproduced here shape by shape so the icon is built
                without an SVG rasteriser.
+  milq         the same head inside a ring, on the MIL-Q green tile: docs/brand/mil-q-front.svg.
+               A targeted assay is not a different animal.
   untargeted   a white chromatographic peak with a whole chromatogram behind it: OpenDIAL's mark,
                the one this program carried until 1.0.
   targeted     one co-eluting peak showing through the front one: OpenQuant's mark.
@@ -27,6 +29,8 @@ from PIL import Image, ImageDraw, ImageFilter
 
 ACCENT_TOP = (58, 111, 191)      # #3a6fbf
 ACCENT_BOTTOM = (26, 58, 110)    # #1a3a6e
+Q_TOP = (30, 138, 121)           # #1e8a79, the MIL-Q green, lit
+Q_BOTTOM = (11, 76, 67)          # #0b4c43
 REAR_PEAK = (143, 182, 234)      # #8fb6ea
 WHITE = (255, 255, 255)
 
@@ -114,11 +118,12 @@ def _ellipse_points(cx, cy, rx, ry, angle=0.0, steps=96):
     return out
 
 
-def cow_mask(s, box, side):
-    """The MIL-X mark as an 8-bit mask on a canvas of `s` pixels, centred in the tile's box."""
+def cow_mask(s, box, side, shrink=1.0, ring=False):
+    """The MIL-X mark as an 8-bit mask on a canvas of `s` pixels, centred in the tile's box.
+    MIL-Q draws the same head at 0.74 of the size with a ring around it, as its SVG does."""
     span_x = MARK_BOX[2] - MARK_BOX[0]
     span_y = MARK_BOX[3] - MARK_BOX[1]
-    scale = side * 0.66 / span_x
+    scale = side * 0.66 / span_x * shrink
     ox = box[0] + (side - span_x * scale) / 2 - MARK_BOX[0] * scale
     oy = box[1] + (side - span_y * scale) / 2 - MARK_BOX[1] * scale
 
@@ -150,8 +155,19 @@ def cow_mask(s, box, side):
     k.rounded_rectangle((x0, y0, x1, y1), radius=mr * scale, fill=255)
     mark = Image.composite(Image.new("L", (s, s), 0), mark, knock)
 
+    d = ImageDraw.Draw(mark)   # composite() returned a new image; draw on that one
     for cx, cy, rx, ry in NOSTRILS:
         d.polygon(T(_ellipse_points(cx, cy, rx, ry)), fill=255)
+    if ring:
+        # the SVG's ring: radius 29.5 and stroke 3 on the 64 grid, around the tile's centre
+        unit = side * 0.66 / span_x     # one grid unit at full size, which the ring is drawn at
+        cx, cy = box[0] + side / 2, box[1] + side / 2
+        r_out, r_in = 31.0 * unit, 28.0 * unit
+        d.ellipse((cx - r_out, cy - r_out, cx + r_out, cy + r_out), fill=255)
+        d.ellipse((cx - r_in, cy - r_in, cx + r_in, cy + r_in), fill=0)
+        # the head was knocked out by the inner disc: draw it once more on top
+        head = cow_mask(s, box, side, shrink=shrink, ring=False)
+        mark = Image.composite(Image.new("L", (s, s), 255), mark, head)
     return mark
 
 
@@ -174,15 +190,16 @@ def render(size: int, variant: str = "untargeted") -> Image.Image:
     img = Image.new("RGBA", (s, s), (0, 0, 0, 0))
     box, side, radius, left, right, baseline, span, sigma = geometry(s)
 
-    # vertical gradient inside the squircle
+    # vertical gradient inside the squircle: blue for MIL-X and the old marks, green for MIL-Q
+    top, bottom = (Q_TOP, Q_BOTTOM) if variant == "milq" else (ACCENT_TOP, ACCENT_BOTTOM)
     grad = Image.new("RGBA", (1, side), (0, 0, 0, 0))
     gp = grad.load()
     for y in range(side):
         t = y / max(1, side - 1)
         gp[0, y] = (
-            int(ACCENT_TOP[0] + (ACCENT_BOTTOM[0] - ACCENT_TOP[0]) * t),
-            int(ACCENT_TOP[1] + (ACCENT_BOTTOM[1] - ACCENT_TOP[1]) * t),
-            int(ACCENT_TOP[2] + (ACCENT_BOTTOM[2] - ACCENT_TOP[2]) * t),
+            int(top[0] + (bottom[0] - top[0]) * t),
+            int(top[1] + (bottom[1] - top[1]) * t),
+            int(top[2] + (bottom[2] - top[2]) * t),
             255,
         )
     grad = grad.resize((side, side), Image.BILINEAR)
@@ -200,9 +217,10 @@ def render(size: int, variant: str = "untargeted") -> Image.Image:
     img.alpha_composite(Image.composite(hi, Image.new("RGBA", (s, s), (0, 0, 0, 0)), mask))
 
     # ---- the mark ------------------------------------------------------------------------
-    if variant == "milx":
+    if variant in ("milx", "milq"):
         white = Image.new("RGBA", (s, s), WHITE + (255,))
-        img.alpha_composite(Image.composite(white, Image.new("RGBA", (s, s), (0, 0, 0, 0)), cow_mask(s, box, side)))
+        mask_ = cow_mask(s, box, side) if variant == "milx" else cow_mask(s, box, side, shrink=0.74, ring=True)
+        img.alpha_composite(Image.composite(white, Image.new("RGBA", (s, s), (0, 0, 0, 0)), mask_))
         return img.resize((size, size), Image.LANCZOS)
 
     art = Image.new("RGBA", (s, s), (0, 0, 0, 0))
@@ -250,6 +268,27 @@ def svg(variant: str, size: int = 1024) -> str:
         '<rect x="%d" y="%d" width="%d" height="%d" rx="%d" fill="url(#hi)"/>' % (box[0], box[1], side, int(side * 0.5), radius),
         '<g clip-path="url(#c)">',
     ]
+    if variant == "milq":
+        parts[2] = '<linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1e8a79"/><stop offset="1" stop-color="#0b4c43"/></linearGradient>'
+        span_x = MARK_BOX[2] - MARK_BOX[0]
+        scale = side * 0.66 / span_x
+        ox = box[0] + (side - 64 * scale) / 2
+        oy = box[1] + (side - 64 * scale) / 2
+        parts.append('<g transform="translate(%.2f %.2f) scale(%.4f)">' % (ox, oy, scale))
+        parts.append('<mask id="knock" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">'
+                     '<rect width="64" height="64" fill="#fff"/>'
+                     '<clipPath id="body"><path d="%s"/></clipPath>' % HEAD +
+                     '<ellipse cx="%s" cy="%s" rx="%s" ry="%s" transform="rotate(%s %s %s)" fill="#000" clip-path="url(#body)"/>' % (PATCH[0], PATCH[1], PATCH[2], PATCH[3], PATCH[4], PATCH[0], PATCH[1]) +
+                     ''.join('<circle cx="%s" cy="%s" r="%s" fill="#000"/>' % e for e in EYES) +
+                     '<rect x="%s" y="%s" width="%s" height="%s" rx="%s" fill="#000"/>' % MUZZLE +
+                     ''.join('<ellipse cx="%s" cy="%s" rx="%s" ry="%s" fill="#fff"/>' % n for n in NOSTRILS) +
+                     '</mask>')
+        parts.append('<g transform="translate(32,32) scale(0.74) translate(-32,-32)"><g mask="url(#knock)" fill="#ffffff">')
+        for cx, cy, rx, ry, rot in (EAR_L, EAR_R):
+            parts.append('<ellipse cx="%s" cy="%s" rx="%s" ry="%s" transform="rotate(%s %s %s)"/>' % (cx, cy, rx, ry, rot, cx, cy))
+        parts.append('<path d="%s"/><path d="%s"/><path d="%s"/>' % (HORN_L, HORN_R, HEAD))
+        parts.append('</g></g><circle cx="32" cy="32" r="29.5" fill="none" stroke="#ffffff" stroke-width="3"/></g></g></svg>')
+        return "\n".join(parts)
     if variant == "milx":
         span_x = MARK_BOX[2] - MARK_BOX[0]
         span_y = MARK_BOX[3] - MARK_BOX[1]
@@ -315,12 +354,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", help="one PNG")
     ap.add_argument("--size", type=int, default=1024)
-    ap.add_argument("--variant", choices=["milx", "targeted", "untargeted"], default="milx")
+    ap.add_argument("--variant", choices=["milx", "milq", "targeted", "untargeted"], default="milx")
     ap.add_argument("--export", metavar="DIR", help="every form of the mark into DIR")
     ap.add_argument("--name", help="file stem for --export (default: the variant's app)")
     a = ap.parse_args()
     if a.export:
-        export(a.export, a.variant, a.name or {"targeted": "OpenQuant", "untargeted": "OpenDIAL"}.get(a.variant, "MIL-X"))
+        export(a.export, a.variant, a.name or {"targeted": "OpenQuant", "untargeted": "OpenDIAL", "milq": "MIL-Q"}.get(a.variant, "MIL-X"))
     if a.out:
         os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
         render(a.size, a.variant).save(a.out)
