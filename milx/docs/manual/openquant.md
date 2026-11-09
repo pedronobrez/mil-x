@@ -7,12 +7,15 @@ summary: What MIL-X shares with MIL-Q — today's OpenQuant — importing one of
 
 # MIL-Q (OpenQuant)
 
-**MIL-Q** is the targeted half of the family — today's OpenQuant, which takes the MIL-Q name at its
-own 1.0. The buttons already say MIL-Q; the file formats (`.oqproj`, the component CSV) are
-OpenQuant's and do not change. OpenQuant is a targeted-quantitation application; MIL-X is untargeted processing on the
-MS-DIAL engine. They are meant to feel like two workspaces of one suite — the same palette, the
-same shell of tabs and bands, the same native `.wiff` reading — and the workflow between them is
-*discover in MIL-X, quantify in OpenQuant*.
+**MIL-Q** is the targeted half of the family: the application that was OpenQuant until its 1.0,
+now at 1.0.x under its own name. The buttons say MIL-Q; the file formats (`.oqproj`, the component
+CSV) were defined under the OpenQuant name and have not changed, which is why the interop code and
+some file names still carry it. MIL-Q is a targeted-quantitation application; MIL-X is untargeted
+processing on the MS-DIAL engine. They are meant to feel like two workspaces of one suite — the
+same palette, the same shell of tabs and bands, the same native `.wiff` reading, the same mass
+calculator and the same signal-to-noise convention — and the workflow between them is *discover in
+MIL-X, quantify in MIL-Q*. The two also share a [[command-line]] contract, so a script can ask
+either for the same chromatogram and parse the same answer.
 
 ## Importing an OpenQuant batch
 
@@ -53,9 +56,13 @@ The options:
 
 Each feature becomes one row: `name` (the annotation, or `m/z 760.5851 @ 11.40 min` for an
 unknown), `group` (the ontology, `annotated`, or `unknown`), `precursor`, `fragment`, `rt`,
-`window`, `tolerance`, `unit`, `formula`, `adduct`, `response` (`area`), and the remaining
-OpenQuant columns (`is`, `internal_standard`, `concentration_unit`, `qualifier_of`, `ion_ratio`,
-`ion_ratio_tolerance`, `regression`, `weighting`, `lm_id`) left empty for OpenQuant to fill.
+`window`, `tolerance`, `unit`, `formula`, `adduct`, `response` (`area`), `provenance` (`MIL-X
+alignment feature 17`, so MIL-Q's audit trail says where the component came from), and the
+remaining MIL-Q columns (`is`, `internal_standard`, `concentration_unit`, `qualifier_of`,
+`ion_ratio`, `ion_ratio_tolerance`, `regression`, `weighting`, `lm_id`, `min_response`) left
+empty for MIL-Q to fill. The header is every column MIL-Q's component reader has at 1.0.6; a test
+holds it to MIL-Q's own list, and loads an exported file through MIL-Q's reader when a checkout is
+at hand (`MILQ_REPO`).
 
 Filter first: the list is what the table shows, so a class filter or **Confirmed** in the review
 state gives a component list of exactly the features you vouched for.

@@ -30,6 +30,10 @@ public sealed class OpenQuantComponent
     public string Regression { get; set; } = string.Empty;
     public string Weighting { get; set; } = string.Empty;
     public string LmId { get; set; } = string.Empty;
+    /// <summary>MIL-Q's floor on the component's absolute response, read by its QC charts and acceptance (its "min_response" column).</summary>
+    public double? MinResponse { get; set; }
+    /// <summary>Where the component came from, in MIL-Q's words ("provenance"): here, the MIL-X feature it was exported from.</summary>
+    public string Provenance { get; set; } = string.Empty;
 }
 
 /// <summary>Options for turning MS-DIAL alignment spots into OpenQuant components.</summary>
@@ -49,16 +53,17 @@ public sealed class OpenQuantExportOptions
 }
 
 /// <summary>
-/// Writes OpenQuant's component CSV (headers exactly as OpenQuant's <c>components.save_components</c>
-/// writes and <c>load_components</c> reads), so a discovery list from MIL-X becomes a targeted
-/// method in OpenQuant in one step.
+/// Writes MIL-Q's component CSV (headers exactly as <c>components.save_components</c> writes and
+/// <c>load_components</c> reads, every column MIL-Q has as of 1.0.6), so a discovery list from MIL-X
+/// becomes a targeted method in MIL-Q in one step. A test holds the header to MIL-Q's and, when a MIL-Q
+/// checkout is at hand, loads the file through MIL-Q's own reader.
 /// </summary>
 public static class OpenQuantComponentCsv
 {
     public static readonly string[] Header = {
         "name", "group", "precursor", "fragment", "rt", "window", "tolerance", "unit", "formula", "adduct", "is",
         "internal_standard", "response", "concentration_unit", "qualifier_of", "ion_ratio", "ion_ratio_tolerance",
-        "regression", "weighting", "lm_id",
+        "regression", "weighting", "lm_id", "min_response", "provenance",
     };
 
     private static string Fmt(double? value) => value is null ? string.Empty : value.Value.ToString("G12", CultureInfo.InvariantCulture);
@@ -76,6 +81,7 @@ public static class OpenQuantComponentCsv
                 Escape(c.Unit), Escape(c.Formula), Escape(c.Adduct), c.IsInternalStandard ? "yes" : string.Empty,
                 Escape(c.InternalStandard), Escape(c.Response), Escape(c.ConcentrationUnit), Escape(c.QualifierOf),
                 Fmt(c.IonRatio), Fmt(c.IonRatioTolerance), Escape(c.Regression), Escape(c.Weighting), Escape(c.LmId),
+                Fmt(c.MinResponse), Escape(c.Provenance),
             };
             writer.WriteLine(string.Join(",", fields));
         }
@@ -111,6 +117,7 @@ public static class OpenQuantComponentCsv
                 Formula = spot.Formula?.FormulaString ?? string.Empty,
                 Adduct = spot.AdductType?.AdductIonName ?? string.Empty,
                 Response = "area",
+                Provenance = $"MIL-X alignment feature {spot.MasterAlignmentID}",
             };
             if (options.UseFragment && msdecResults != null && i < msdecResults.Count && msdecResults[i]?.Spectrum is { Count: > 0 } spectrum) {
                 var best = spectrum

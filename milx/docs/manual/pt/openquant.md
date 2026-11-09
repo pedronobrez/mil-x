@@ -7,12 +7,16 @@ summary: O que o MIL-X partilha com o MIL-Q — o OpenQuant de hoje —, importa
 
 # MIL-Q (OpenQuant)
 
-**MIL-Q** é a metade dirigida da família — o OpenQuant de hoje, que assume o nome MIL-Q na sua
-própria 1.0. Os botões já dizem MIL-Q; os formatos de arquivo (`.oqproj`, o CSV de componentes) são
-do OpenQuant e não mudam. O OpenQuant é uma aplicação de quantificação dirigida; o MIL-X é processamento untargeted sobre
-o motor do MS-DIAL. Foram feitos para parecer duas áreas de trabalho de uma só suíte — a mesma
-paleta, a mesma janela de abas e faixas, a mesma leitura nativa de `.wiff` — e o fluxo entre eles
-é *descobrir no MIL-X, quantificar no OpenQuant*.
+**MIL-Q** é a metade dirigida da família: a aplicação que foi o OpenQuant até a sua 1.0, hoje em
+1.0.x sob o próprio nome. Os botões dizem MIL-Q; os formatos de arquivo (`.oqproj`, o CSV de
+componentes) foram definidos sob o nome OpenQuant e não mudaram, e é por isso que o código de
+interoperação e alguns nomes de arquivo ainda o carregam. O MIL-Q é uma aplicação de quantificação
+dirigida; o MIL-X é processamento untargeted sobre o motor do MS-DIAL. Foram feitos para parecer
+duas áreas de trabalho de uma só suíte — a mesma paleta, a mesma janela de abas e faixas, a mesma
+leitura nativa de `.wiff`, a mesma calculadora de massas e a mesma convenção de sinal-ruído — e o
+fluxo entre eles é *descobrir no MIL-X, quantificar no MIL-Q*. Os dois também partilham um contrato
+de [[command-line]], de modo que um script pode pedir a qualquer um o mesmo cromatograma e
+interpretar a mesma resposta.
 
 ## Importar um lote do OpenQuant
 
@@ -55,8 +59,11 @@ Cada feature vira uma linha: `name` (a anotação, ou `m/z 760.5851 @ 11.40 min`
 desconhecido), `group` (a ontologia, `annotated`, ou `unknown`), `precursor`, `fragment`, `rt`,
 `window`, `tolerance`, `unit`, `formula`, `adduct`, `response` (`area`), e as restantes colunas do
 OpenQuant (`is`, `internal_standard`, `concentration_unit`, `qualifier_of`, `ion_ratio`,
-`ion_ratio_tolerance`, `regression`, `weighting`, `lm_id`) deixadas vazias para o OpenQuant
-preencher.
+`ion_ratio_tolerance`, `regression`, `weighting`, `lm_id`, `min_response`) deixadas vazias para o
+MIL-Q preencher, e `provenance` (`MIL-X alignment feature 17`, para que a trilha de auditoria do
+MIL-Q diga de onde veio o componente). O cabeçalho tem toda coluna que o leitor de componentes do
+MIL-Q tem na 1.0.6; um teste mantém-no igual à lista do próprio MIL-Q, e carrega um arquivo
+exportado pelo leitor do MIL-Q quando há um checkout à mão (`MILQ_REPO`).
 
 Filtre primeiro: a lista é o que a tabela mostra, de modo que um filtro de classe ou **Confirmed**
 no estado da revisão dá uma lista de componentes com exatamente as features por que você
