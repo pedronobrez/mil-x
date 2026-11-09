@@ -29,6 +29,8 @@ public abstract class ChartCanvas
     public abstract void DrawEllipse(IBrush? brush, IPen? pen, Point center, double radiusX, double radiusY);
     public abstract void DrawGeometry(IBrush? brush, IPen? pen, Geometry geometry);
     public abstract void DrawText(FormattedText text, Point origin);
+    /// <summary>A raster — the contour's surface — stretched into a rectangle, cell edges kept sharp.</summary>
+    public abstract void DrawImage(Avalonia.Media.Imaging.Bitmap image, Rect destination);
     public abstract IDisposable PushClip(Rect rect);
     public abstract IDisposable PushTransform(Matrix matrix);
 
@@ -94,6 +96,13 @@ public sealed class AvaloniaCanvas : ChartCanvas
     public override void DrawEllipse(IBrush? brush, IPen? pen, Point center, double radiusX, double radiusY) => _context.DrawEllipse(brush, pen, center, radiusX, radiusY);
     public override void DrawGeometry(IBrush? brush, IPen? pen, Geometry geometry) => _context.DrawGeometry(brush, pen, geometry);
     public override void DrawText(FormattedText text, Point origin) => _context.DrawText(text, origin);
+    public override void DrawImage(Avalonia.Media.Imaging.Bitmap image, Rect destination)
+    {
+        using (_context.PushRenderOptions(new RenderOptions { BitmapInterpolationMode = Avalonia.Media.Imaging.BitmapInterpolationMode.None }))
+        {
+            _context.DrawImage(image, new Rect(image.Size), destination);
+        }
+    }
     public override IDisposable PushClip(Rect rect) => new State(_context.PushClip(rect));
     public override IDisposable PushTransform(Matrix matrix) => new State(_context.PushTransform(matrix));
 
@@ -171,6 +180,15 @@ public sealed class SvgCanvas : ChartCanvas
         var styleAttribute = style == FontStyle.Italic ? " font-style=\"italic\"" : string.Empty;
         _svg.Append(CultureInfo.InvariantCulture,
             $"<text x=\"{F(origin.X)}\" y=\"{F(origin.Y + text.Baseline)}\" font-size=\"{F(size)}\"{weightAttribute}{styleAttribute}{Fill(brush)}>{Escape(content)}</text>\n");
+    }
+
+    public override void DrawImage(Avalonia.Media.Imaging.Bitmap image, Rect destination)
+    {
+        using var stream = new MemoryStream();
+        image.Save(stream);
+        var data = Convert.ToBase64String(stream.ToArray());
+        _svg.Append(CultureInfo.InvariantCulture,
+            $"<image x=\"{F(destination.X)}\" y=\"{F(destination.Y)}\" width=\"{F(destination.Width)}\" height=\"{F(destination.Height)}\" preserveAspectRatio=\"none\" style=\"image-rendering:pixelated\" href=\"data:image/png;base64,{data}\"/>\n");
     }
 
     public override IDisposable PushClip(Rect rect)

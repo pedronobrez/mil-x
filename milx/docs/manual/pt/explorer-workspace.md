@@ -48,6 +48,7 @@ A barra de ferramentas:
 | **Clear range** | descarta a seleção |
 | **Normalise** | escala todo traço a 100 %; o eixo Y passa a intensidade relativa |
 | **Stack** | desenha cada traço na sua própria faixa horizontal |
+| **Contour** | substitui o cromatograma pelo canal ativo como superfície — veja [[explorer-workspace#O contorno]] |
 | **m/z labels** | rotula os oito picos mais intensos do espectro com o seu m/z |
 | **RT labels** | rotula o ápice de cada traço em vista com o seu tempo de retenção |
 | **Legend** | |
@@ -61,6 +62,44 @@ para uma dica.
 
 Clicar no cromatograma mostra a varredura mais próxima do canal ativo no painel de espectro e põe
 um marcador no seu tempo de retenção.
+
+## O contorno
+
+**Contour** na barra de ferramentas, ou **View ▸ Explorer: contour view**, desenha o canal ativo
+como superfície: tempo de retenção na horizontal, m/z na vertical, intensidade como cor. Um
+cromatograma soma o eixo de massa para fora e um espectro soma o eixo de tempo para fora; o
+contorno são os mesmos dados sem nenhuma das somas, de modo que uma interferência ao lado de um
+alvo, ou uma crista que corre a corrida inteira numa massa, fica visível em vez de inferida.
+
+Cada varredura do canal é uma linha e cada bin de m/z uma coluna. O eixo de massa é dividido em
+cerca de 1.400 bins — mais ou menos um por pixel da tela num intervalo largo. Uma corrida longa
+tem mais varreduras do que a tela tem linhas, e as varreduras além do limite de cerca de 900 linhas
+são **médias na sua linha, não puladas**: amostrar cada k-ésima varredura perde por completo um
+pico de uma varredura, que é o contrário do que uma figura dos dados serve. A média e não a soma,
+porque o último grupo costuma ser curto e uma linha mais escura só por isso seria uma mentira sobre
+os dados. A faixa acima da superfície diz quantas linhas e bins foram construídos, de quantas
+varreduras, e quanto tempo levou.
+
+| Controle | Efeito |
+| --- | --- |
+| **Intensity** | como as intensidades viram cor: *sqrt* (padrão), *log* ou *linear*. Uma rampa linear sobre quatro décadas mostra o pico-base e mais nada; a raiz quadrada ergue os íons menores à vista sem o achatamento que deixa um gráfico log uniformemente cinza |
+| **Colours** | a paleta: inferno, viridis, magma, turbo, greys |
+| **m/z … to** | o intervalo de massa da próxima construção; 0 e 0 é o intervalo do próprio canal |
+| **Rebuild** | reconstrói a grade sobre o intervalo de tempo na tela e o intervalo de m/z digitado, em resolução plena para esse intervalo |
+| **Extract this view** | o cromatograma e o espectro do retângulo na tela — ambos lidos do leitor, não da grade: o XIC da faixa de m/z entra na lista do Manual XIC e o espectro médio do intervalo de tempo preenche o painel de espectro, e a vista volta ao cromatograma para mostrá-los |
+| clique | o espectro da varredura sob o cursor, no painel de espectro |
+| passar o mouse | o tempo de retenção, o m/z e a intensidade sob o cursor |
+
+O topo da escala de cor é o percentil 99,7 das células não nulas, não o máximo: uma única
+varredura saturada ou com um pico espúrio fixaria a escala para todo o resto e deixaria a
+superfície preta. A barra de cor nomeia a lei e o topo. Arraste para ampliar o eixo de tempo, roda
+para ampliar, arraste com o botão direito para deslocar, clique duplo para ajustar, como em todo
+gráfico; a figura sai como SVG ou PNG pelo menu do botão direito do próprio gráfico, veja
+[[chart-export]].
+
+Nada é quantificado a partir do contorno: os seus bins de m/z são mais largos do que os passos do
+instrumento e as suas linhas podem ser várias varreduras em média, portanto é uma figura, de
+propósito. *Extract this view* volta ao leitor tanto para o XIC quanto para o espectro.
 
 ## O espectro
 

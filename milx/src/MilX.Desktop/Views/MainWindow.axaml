@@ -113,6 +113,7 @@
           <MenuItem Header="Explorer: uncheck all channels" Command="{Binding Explorer.UncheckAllCommand}" />
           <MenuItem Header="Explorer: show TIC of every sample" Command="{Binding Explorer.CheckAllTicCommand}" />
           <MenuItem Header="Explorer: collapse tree" Command="{Binding Explorer.CollapseAllCommand}" />
+          <MenuItem Header="Explorer: contour view" Command="{Binding Explorer.ToggleContourCommand}" />
         </MenuItem>
         <MenuItem Header="_Process">
           <MenuItem Header="Process batch" Command="{Binding ProcessBatchCommand}" InputGesture="Cmd+R" />

@@ -74,7 +74,9 @@ public sealed partial class ManualXic : ViewModelBase
     [ObservableProperty] private double _mz;
     [ObservableProperty] private double _tolerance;
     [ObservableProperty] private string _unit = "Da";
-    public string Label => $"m/z {Mz.ToString("F4", CultureInfo.InvariantCulture)} ± {Tolerance.ToString("0.###", CultureInfo.InvariantCulture)} {Unit}";
+    public string Label => Unit == "view"
+        ? $"m/z {(Mz - Tolerance).ToString("F2", CultureInfo.InvariantCulture)}–{(Mz + Tolerance).ToString("F2", CultureInfo.InvariantCulture)} (contour view)"
+        : $"m/z {Mz.ToString("F4", CultureInfo.InvariantCulture)} ± {Tolerance.ToString("0.###", CultureInfo.InvariantCulture)} {Unit}";
     public double ToleranceDa => Unit == "ppm" ? RawExplorer.PpmToDa(Mz, Tolerance) : Tolerance;
 }
 
@@ -154,6 +156,18 @@ public sealed partial class ExplorerViewModel : ViewModelBase
     public IReadOnlyList<PeakFeatureRow> FilteredPeaks => string.IsNullOrWhiteSpace(PeakFilter)
         ? Peaks
         : Peaks.Where(p => p.Name.Contains(PeakFilter, StringComparison.OrdinalIgnoreCase) || p.Mz.ToString("F3", CultureInfo.InvariantCulture).Contains(PeakFilter, StringComparison.Ordinal)).ToList();
+
+    // contour view (View ▸ Contour): the active channel as RT × m/z × intensity
+    public static string[] ContourIntensityScales => ContourChart.IntensityScales;
+    public static string[] ContourColourMaps => ContourChart.ColourMaps;
+    [ObservableProperty] private bool _showContour;
+    [ObservableProperty] private ContourGrid? _contour;
+    [ObservableProperty] private string _contourScale = "sqrt";
+    [ObservableProperty] private string _contourColours = "inferno";
+    [ObservableProperty] private double _contourMzFrom;
+    [ObservableProperty] private double _contourMzTo;
+    [ObservableProperty] private string _contourStatus = string.Empty;
+    private int _contourVersion;
 
     // manual XIC form
     [ObservableProperty] private string _xicMzText = string.Empty;
@@ -297,6 +311,80 @@ public sealed partial class ExplorerViewModel : ViewModelBase
             }
         }
         _ = RefreshTracesAsync();
+        if (ShowContour) _ = RebuildContourAsync(null, null);
+    }
+
+    // ---------------------------------------------------------------- contour
+
+    partial void OnShowContourChanged(bool value)
+    {
+        if (value && Contour is null) _ = RebuildContourAsync(null, null);
+    }
+
+    [RelayCommand]
+    private void ToggleContour() => ShowContour = !ShowContour;
+
+    /// <summary>
+    /// Builds the surface of the active channel over a time range (null: the whole run) and the m/z range
+    /// typed beside the view (0 and 0: the channel's own range). Runs off the interface thread; a newer
+    /// request supersedes an older one.
+    /// </summary>
+    public async Task RebuildContourAsync(double? rtLo, double? rtHi)
+    {
+        var node = ActiveChannel;
+        if (node?.Sample?.Raw is null || node.Channel is null)
+        {
+            Contour = null;
+            ContourStatus = "Select a channel to draw its surface.";
+            return;
+        }
+        var version = ++_contourVersion;
+        var raw = node.Sample.Raw;
+        var indices = node.IsTicLeaf ? node.Sample.Ms1?.SpectrumIndices ?? node.Channel.SpectrumIndices : node.Channel.SpectrumIndices;
+        (double, double)? rtRange = rtLo is { } a && rtHi is { } b && b > a ? (a, b) : null;
+        (double, double)? mzRange = ContourMzTo > ContourMzFrom && ContourMzTo > 0 ? (ContourMzFrom, ContourMzTo) : null;
+        var label = node.IsTicLeaf ? "MS1" : node.Label;
+        ContourStatus = $"Building the surface of {label}…";
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        var grid = await Task.Run(() => ContourGrid.Build(raw, indices, rtRange, mzRange));
+        if (version != _contourVersion) return;
+        Contour = grid;
+        var (lo, hi) = grid.MzRange;
+        ContourStatus = grid.IsEmpty
+            ? grid.Note
+            : $"{node.Sample.Name} · {label}: {grid.Rows} rows × {grid.Bins} bins, {grid.Scans} scans, m/z {lo:F1}–{hi:F1}, built in {watch.Elapsed.TotalSeconds:F1} s" + (grid.Note.Length > 0 ? $" · {grid.Note}" : string.Empty);
+    }
+
+    /// <summary>A click on the surface: the spectrum of the scan under the cursor.</summary>
+    public void ContourClicked(double rt) => ShowScanAt(rt);
+
+    /// <summary>
+    /// The chromatogram and the spectrum of the rectangle on screen — both read from the reader, not from
+    /// the grid: the XIC over the m/z band across the channel's scans, as a manual XIC entry, and the
+    /// average spectrum over the time range, in the spectrum pane. The view switches back to the
+    /// chromatogram so the trace is in sight.
+    /// </summary>
+    public async Task ExtractContourViewAsync(double rtLo, double rtHi)
+    {
+        var node = ActiveChannel;
+        if (node?.Sample?.Raw is null || node.Channel is null || Contour is not { IsEmpty: false } grid) return;
+        var raw = node.Sample.Raw;
+        var indices = node.IsTicLeaf ? node.Sample.Ms1?.SpectrumIndices ?? node.Channel.SpectrumIndices : node.Channel.SpectrumIndices;
+        var (mzLo, mzHi) = grid.MzRange;
+        if (rtHi < rtLo) (rtLo, rtHi) = (rtHi, rtLo);
+        var centre = (mzLo + mzHi) / 2;
+        var half = (mzHi - mzLo) / 2;
+        var spectrum = await Task.Run(() => RawExplorer.AverageSpectrum(raw, indices, rtLo, rtHi));
+        var existing = XicEntries.FirstOrDefault(x => x.Unit == "view");
+        if (existing is not null) XicEntries.Remove(existing);
+        XicSourceName = "Active channel";
+        XicEntries.Add(new ManualXic { Mz = centre, Tolerance = half, Unit = "view" });
+        SelectionStart = rtLo;
+        SelectionEnd = rtHi;
+        MarkerRt = double.NaN;
+        SetSpectrum(spectrum, $"{node.Sample.Name} · {node.Label} · {spectrum.Label} · m/z {mzLo:F2}–{mzHi:F2}", double.NaN, null);
+        ShowContour = false;
+        Status = $"Extracted this view from the reader: XIC of m/z {mzLo:F2}–{mzHi:F2} on {node.Label}, and the average of RT {rtLo:F3}–{rtHi:F3} min.";
     }
 
     partial void OnFilterTextChanged(string value) => ApplyFilter();

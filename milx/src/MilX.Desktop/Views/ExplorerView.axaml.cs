@@ -20,6 +20,25 @@ public partial class ExplorerView : UserControl
         {
             if (DataContext is ExplorerViewModel vm) vm.ShowScanAt(e.X);
         };
+        Contour.PointClicked += (_, e) =>
+        {
+            if (DataContext is ExplorerViewModel vm) vm.ContourClicked(e.X);
+        };
+    }
+
+    private async void OnRebuildContour(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (Vm is null) return;
+        var (lo, hi) = Contour.ViewWindow;
+        await Vm.RebuildContourAsync(double.IsNaN(lo) ? null : lo, double.IsNaN(hi) ? null : hi);
+    }
+
+    private async void OnExtractContourView(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (Vm is null) return;
+        var (lo, hi) = Contour.ViewWindow;
+        if (double.IsNaN(lo) || double.IsNaN(hi)) return;
+        await Vm.ExtractContourViewAsync(lo, hi);
     }
 
     private ExplorerViewModel? Vm => DataContext as ExplorerViewModel;

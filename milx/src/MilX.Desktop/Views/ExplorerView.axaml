@@ -16,6 +16,7 @@
         <Rectangle Classes="vsep" />
         <ToggleButton Classes="tool" Content="Normalise" IsChecked="{Binding Normalize}" />
         <ToggleButton Classes="tool" Content="Stack" IsChecked="{Binding Stack}" />
+        <ToggleButton Classes="tool" Content="Contour" IsChecked="{Binding ShowContour}" ToolTip.Tip="The active channel as retention time × m/z × intensity (View ▸ Explorer: contour view)" />
         <Rectangle Classes="vsep" />
         <ToggleButton Classes="tool" Content="m/z labels" IsChecked="{Binding ShowMzLabels}" />
         <ToggleButton Classes="tool" Content="RT labels" IsChecked="{Binding ShowRtLabels}" />
@@ -77,10 +78,30 @@
           </DockPanel>
         </Border>
         <Border Grid.Row="1" Classes="panel">
-          <c:LineChart x:Name="Chromatogram" Series="{Binding Series}" Title="{Binding ChromatogramTitle}" MarkerX="{Binding MarkerRt}" Windows="{Binding Windows}"
-                       Stack="{Binding Stack}" ShowLegend="{Binding ShowLegend}" ShowRtLabels="{Binding ShowRtLabels}" RangeSelectionMode="{Binding RangeSelectionMode}"
-                       SelectionStart="{Binding SelectionStart, Mode=TwoWay}" SelectionEnd="{Binding SelectionEnd, Mode=TwoWay}" AutoZoomToHighlight="False"
-                       YLabel="{Binding Normalize, Converter={x:Static views:ExplorerView.YLabelFor}}" />
+          <Grid>
+            <c:LineChart x:Name="Chromatogram" Series="{Binding Series}" Title="{Binding ChromatogramTitle}" MarkerX="{Binding MarkerRt}" Windows="{Binding Windows}"
+                         Stack="{Binding Stack}" ShowLegend="{Binding ShowLegend}" ShowRtLabels="{Binding ShowRtLabels}" RangeSelectionMode="{Binding RangeSelectionMode}"
+                         SelectionStart="{Binding SelectionStart, Mode=TwoWay}" SelectionEnd="{Binding SelectionEnd, Mode=TwoWay}" AutoZoomToHighlight="False"
+                         YLabel="{Binding Normalize, Converter={x:Static views:ExplorerView.YLabelFor}}" IsVisible="{Binding !ShowContour}" />
+            <DockPanel IsVisible="{Binding ShowContour}">
+              <Border DockPanel.Dock="Top" Classes="hairline-bottom" Padding="8,4">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <TextBlock Classes="label" Text="Intensity" />
+                  <ComboBox Classes="compact" ItemsSource="{x:Static vm:ExplorerViewModel.ContourIntensityScales}" SelectedItem="{Binding ContourScale}" Width="86" />
+                  <TextBlock Classes="label" Text="Colours" Margin="8,0,0,0" />
+                  <ComboBox Classes="compact" ItemsSource="{x:Static vm:ExplorerViewModel.ContourColourMaps}" SelectedItem="{Binding ContourColours}" Width="96" />
+                  <TextBlock Classes="label" Text="m/z" Margin="8,0,0,0" />
+                  <NumericUpDown Classes="small" Value="{Binding ContourMzFrom}" Minimum="0" Increment="10" FormatString="0.##" Width="108" ToolTip.Tip="Lower m/z of the surface; 0 for the channel's own range" />
+                  <TextBlock Classes="label" Text="to" />
+                  <NumericUpDown Classes="small" Value="{Binding ContourMzTo}" Minimum="0" Increment="10" FormatString="0.##" Width="108" ToolTip.Tip="Upper m/z of the surface; 0 for the channel's own range" />
+                  <Button Classes="tool" Content="Rebuild" Click="OnRebuildContour" ToolTip.Tip="Rebuild the grid over the time range on screen and the m/z range typed here, at full resolution" />
+                  <Button Classes="tool" Content="Extract this view" Click="OnExtractContourView" ToolTip.Tip="The chromatogram and the spectrum of the rectangle on screen, read from the reader" />
+                  <TextBlock Classes="hint" Text="{Binding ContourStatus}" VerticalAlignment="Center" Margin="8,0,0,0" />
+                </StackPanel>
+              </Border>
+              <c:ContourChart x:Name="Contour" Grid="{Binding Contour}" IntensityScale="{Binding ContourScale}" Colours="{Binding ContourColours}" MarkerRt="{Binding MarkerRt}" Title="{Binding ContourStatus}" />
+            </DockPanel>
+          </Grid>
         </Border>
         <GridSplitter Grid.Row="2" Classes="horizontal" ResizeDirection="Rows" />
         <Border Grid.Row="3" Padding="2,4,2,6">

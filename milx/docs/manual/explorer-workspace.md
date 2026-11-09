@@ -48,6 +48,7 @@ The toolbar:
 | **Clear range** | drops the selection |
 | **Normalise** | scales every trace to 100 %; the Y axis reads relative intensity |
 | **Stack** | draws each trace in its own horizontal band |
+| **Contour** | replaces the chromatogram with the active channel as a surface — see [[explorer-workspace#The contour]] |
 | **m/z labels** | labels the eight most intense peaks of the spectrum with their m/z |
 | **RT labels** | labels the apex of each trace in view with its retention time |
 | **Legend** | |
@@ -60,6 +61,42 @@ select, hover for a tooltip.
 
 Clicking the chromatogram shows the nearest scan of the active channel in the spectrum pane and
 puts a marker at its retention time.
+
+## The contour
+
+**Contour** on the toolbar, or **View ▸ Explorer: contour view**, draws the active channel as a
+surface: retention time across, m/z up, intensity as colour. A chromatogram sums the mass axis
+away and a spectrum sums the time axis away; the contour is the same data with neither summed, so
+an interference sitting beside a target, or a ridge running down the whole run at one mass, is
+visible rather than inferred.
+
+Each scan of the channel is a row and each m/z bin a column. The mass axis is divided into about
+1,400 bins — roughly one per screen pixel across a wide range. A long run has more scans than a
+screen has rows, and the scans over the limit of about 900 rows are **averaged into their row, not
+skipped**: sampling every k-th scan loses a one-scan peak entirely, which is the opposite of what a
+picture of the data is for. The average rather than the sum, because the last group is usually
+short and a row that is dimmer only for that would be a lie about the data. The band above the
+surface says how many rows and bins were built, from how many scans, and how long it took.
+
+| Control | Effect |
+| --- | --- |
+| **Intensity** | how intensities become colour: *sqrt* (default), *log* or *linear*. A linear ramp over four decades shows the base peak and nothing else; square root lifts the minor ions into view without the flattening that makes a log plot look uniformly grey |
+| **Colours** | the palette: inferno, viridis, magma, turbo, greys |
+| **m/z … to** | the mass range of the next build; 0 and 0 is the channel's own range |
+| **Rebuild** | rebuild the grid over the time range on screen and the m/z range typed, at full resolution for that range |
+| **Extract this view** | the chromatogram and the spectrum of the rectangle on screen — both read from the reader, not from the grid: the XIC of the m/z band joins the Manual XIC list and the average spectrum of the time range fills the spectrum pane, and the view returns to the chromatogram to show them |
+| click | the spectrum of the scan under the cursor, in the spectrum pane |
+| hover | the retention time, m/z and intensity under the cursor |
+
+The top of the colour scale is the 99.7th percentile of the non-zero cells, not the maximum: a
+single saturated or spiking scan would otherwise set the scale for everything else and leave the
+rest of the surface black. The colour bar names the law and the top. Drag to zoom the time axis,
+wheel to zoom, right-drag to pan, double-click to fit, as on every chart; the picture leaves as SVG
+or PNG through the chart's own right-click menu, see [[chart-export]].
+
+Nothing is quantified from the contour: its m/z bins are wider than the instrument's steps and its
+rows may be several scans averaged, so it is a picture, deliberately. *Extract this view* goes back
+to the reader for both the XIC and the spectrum.
 
 ## The spectrum
 
