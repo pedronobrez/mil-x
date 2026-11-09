@@ -14,6 +14,8 @@ dotnet test "$ROOT/tests/MilX.RawData.Tests/MilX.RawData.Tests.csproj" -c Releas
 echo "[test] OpenQuant interop + SCIEX plugin tests"
 dotnet test "$ROOT/tests/MilX.Interop.OpenQuant.Tests/MilX.Interop.OpenQuant.Tests.csproj" -c Release --nologo -v minimal -p:UseOpenRawData=true
 dotnet test "$ROOT/tests/MilX.Plugins.SciexWiff.Tests/MilX.Plugins.SciexWiff.Tests.csproj" -c Release --nologo -v minimal
+echo "[test] the shared command line (milx)"
+dotnet test "$ROOT/tests/MilX.Cli.Tests/MilX.Cli.Tests.csproj" -c Release --nologo -v minimal -p:UseOpenRawData=true
 echo "[test] headless interface tests (the real views, no display)"
 dotnet test "$ROOT/tests/MilX.Desktop.Tests/MilX.Desktop.Tests.csproj" -c Release --nologo -v minimal -p:UseOpenRawData=true
 

@@ -15,7 +15,7 @@ bash milx/scripts/fetch-sciex-assemblies.sh   # optional: the SCIEX SDK, for nat
 bash milx/scripts/build-gui.sh            # -> milx/dist/milx-desktop-<rid>/
 bash milx/scripts/make-app-bundle.sh      # -> milx/dist/MIL-X.app
 ditto milx/dist/MIL-X.app /Applications/MIL-X.app
-bash milx/scripts/build-cli.sh            # -> milx/dist/milx-cli-<rid>/
+bash milx/scripts/build-cli.sh            # -> milx/dist/milx-cli-<rid>/ (milx and milx-cli)
 ```
 
 Every build passes `-p:UseOpenRawData=true`, the switch that replaces the closed reader with the
@@ -55,6 +55,7 @@ bash milx/scripts/test.sh
 | `MilX.Desktop.Tests` | the real views, headless: the review workspace, the statistics workspace, the gestures, the fonts, the probe, the manual in both languages, and the visual regression frames |
 | `MilX.Interop.OpenQuant.Tests` | the component CSV and the batch import |
 | `MilX.Plugins.SciexWiff.Tests` | the native reader, on a real `.wiff` when `MILX_TEST_WIFF` names one |
+| `MilX.Cli.Tests` | the shared command line: every subcommand on the synthetic study and its IDA-like variant, the inbox server with the contract's four requests, the mzML round trip, and the cross-check against `milq` when `MILQ_CLI` names it — see [[command-line#The contract test]] |
 
 `test.sh` then generates a synthetic LC-MS/MS DDA study and a GC-MS one and runs the console over
 each end to end. The upstream suites also pass on Apple Silicon with the open reader, apart from

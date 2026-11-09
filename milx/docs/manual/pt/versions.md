@@ -2,7 +2,7 @@
 title: Versões
 section: Help
 order: 61
-summary: O que cada versão trouxe, do OpenDIAL 0.1 ao MIL-X 1.0; as notas são atualizadas com toda versão.
+summary: O que cada versão trouxe, do OpenDIAL 0.1 ao MIL-X 1.1; as notas são atualizadas com toda versão.
 ---
 
 # Versões
@@ -10,6 +10,51 @@ summary: O que cada versão trouxe, do OpenDIAL 0.1 ao MIL-X 1.0; as notas são 
 A versão mostrada em **Help ▸ About MIL-X** e na sonda da janela é a carimbada em
 `milx/Directory.Build.props`. Esta página nomeia-a, e um teste falha a construção quando não
 nomeia.
+
+## 1.1.0 — novembro de 2026
+
+A versão atual. Acompanha o MS-DIAL 5.5.260817.
+
+**A linha de comando que o MIL-X partilha com o MIL-Q.** O `milx` implementa o contrato da suíte
+(`docs/CLI-CONTRACT.md`, `mil-cli/1`, byte a byte idêntico nos dois repositórios): `selftest`,
+`info`, `scans`, `xic`, `spectrum`, `isotopes`, `batch-xic`, `convert`, `export`, `serve`, e os
+fluxos do próprio MS-DIAL com `--acquisition-type`, `--library` e um JSON `--summary`. Resumos
+primeiro, só JSON ou TSV, os mesmos bytes para a mesma entrada, erros em JSON com os códigos de
+saída do contrato. `serve --inbox` é a fila de arquivos pela qual um agente chega ao Mac: pedidos
+entram, respostas saem, uma lista de permissão em vez de um shell, caminhos contidos nas raízes
+permitidas, um trabalho por vez, um tempo limite, `STATUS.json`, `log.jsonl`, `STOP`. Medido numa
+aquisição IDA real e no estudo sintético; veja [[command-line]].
+
+**Paridade com o MIL-Q, onde os dois fazem a mesma coisa e o MIL-Q fazia melhor:**
+
+- **Manual XIC de qualquer fonte** — vírgulas além de espaços na lista de massas, e uma fonte: MS1,
+  o canal ativo, todo canal marcado, todo MS2, ou **com portão pelo precursor** — as varreduras MS2
+  cujo próprio precursor está a uma tolerância de uma massa, de qualquer slot IDA, fundidas por tempo
+  de retenção. Novo nas duas aplicações; o painel de espectro nomeia o precursor que a varredura
+  mostrada isolou. Veja [[explorer-workspace#Os painéis]].
+- **A vista de contorno** — o canal ativo como tempo de retenção × m/z × intensidade, escala de cor
+  em raiz quadrada, varreduras além do limite de linhas em média em vez de puladas, clique para um
+  espectro, *Extract this view* lido do leitor. Veja [[explorer-workspace#O contorno]].
+- **A calculadora de massas** — fórmula em massas, RDBE, m/z de aduto, padrão isotópico e ppm, com
+  as tabelas do MIL-Q; um teste mantém as duas aplicações nos mesmos números. Veja
+  [[explorer-workspace#Os painéis]].
+- **S/N por região de ruído na grade de revisão** — altura sobre o ruído de um trecho de linha de
+  base que o revisor sombreou, pico a pico ou desvio padrão, nomeado ao lado do S/N do próprio
+  MS-DIAL. Veja [[evidence-panels#Sinal-ruído sobre uma região de ruído]].
+- **Rótulos do espectro por um orçamento por região**, para que um trecho lotado não gaste todo
+  rótulo. Veja [[explorer-workspace#O cromatograma]].
+- **Conferência de pasta antes de qualquer leitura** — um `.wiff` sem o seu `.wiff.scan`, um `.scan`
+  solto com a renomeação de que pode precisar, arquivos `.wiff2`, formatos de outros fabricantes, nas
+  palavras do MIL-Q. Veja [[samples-workspace#Conferir os arquivos antes de lê-los]].
+- **Export to MIL-Q grava toda coluna que o MIL-Q 1.0.6 lê**, `min_response` e `provenance`
+  incluídas, e carrega pelo leitor do próprio MIL-Q num teste. A página do MIL-Q diz que o MIL-Q é
+  1.0.
+
+Também: a importação de MSP do MS-DIAL é mantida a guardar a carga de registros peptídicos 2+ e 3+,
+para as bibliotecas que o MIL-Q escreve; `make_synthetic_mzml.py --ida` dispõe o estudo sintético
+como slots IDA; a decisão DDA/DIA da árvore de canais compara o grupo típico com o número de
+varreduras de survey, de modo que um estudo pequeno não aparece mais como doze janelas de
+isolamento; a tela de gráficos desenha rasters, e a exportação SVG carrega-os.
 
 ## 1.0.1 — setembro de 2026
 

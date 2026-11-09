@@ -15,7 +15,7 @@ bash milx/scripts/fetch-sciex-assemblies.sh   # opcional: o SDK da SCIEX, para .
 bash milx/scripts/build-gui.sh            # -> milx/dist/milx-desktop-<rid>/
 bash milx/scripts/make-app-bundle.sh      # -> milx/dist/MIL-X.app
 ditto milx/dist/MIL-X.app /Applications/MIL-X.app
-bash milx/scripts/build-cli.sh            # -> milx/dist/milx-cli-<rid>/
+bash milx/scripts/build-cli.sh            # -> milx/dist/milx-cli-<rid>/ (milx and milx-cli)
 ```
 
 Toda construção passa `-p:UseOpenRawData=true`, o interruptor que substitui o leitor fechado pelo
@@ -52,6 +52,7 @@ bash milx/scripts/test.sh
 | `MilX.Pipeline.Tests` | o depósito de curadoria, o editor de picos, a busca na biblioteca, os caches, a estatística (com testes de equivalência entre a validação cruzada simples e a rápida), a corrida sintética ponta a ponta, e testes com dados reais que correm quando `MILX_TEST_ALIGNMENT` aponta para um resultado real |
 | `MilX.Desktop.Tests` | as vistas reais, sem tela: a área de revisão, a área de estatística, os gestos, as fontes, a sonda, o manual nos dois idiomas, e os quadros de regressão visual |
 | `MilX.Interop.OpenQuant.Tests` | o CSV de componentes e a importação de lote |
+| `MilX.Cli.Tests` | a linha de comando partilhada: todo subcomando sobre o estudo sintético e a sua variante IDA, o servidor de caixa de entrada com os quatro pedidos do contrato, a ida e volta do mzML, e a comparação com o `milq` quando `MILQ_CLI` o nomeia — veja [[command-line#O teste do contrato]] |
 | `MilX.Plugins.SciexWiff.Tests` | o leitor nativo, sobre um `.wiff` real quando `MILX_TEST_WIFF` nomeia um |
 
 `test.sh` gera depois um estudo sintético LC-MS/MS DDA e um GC-MS e corre o console sobre cada um

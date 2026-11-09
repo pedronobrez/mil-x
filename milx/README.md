@@ -18,6 +18,10 @@ unchanged; the Windows-only pieces are replaced:
 * **`MilX.Interop.OpenQuant`** – export aligned features as an OpenQuant component table and import
   an OpenQuant `.oqproj` batch, so discovery in MIL-X flows into targeted quantitation in OpenQuant.
 * **`MilX.Pipeline`** – headless orchestration library shared by the GUI and tests.
+* **`milx`** (`MilX.Cli`) – the command line MIL-X shares with MIL-Q ([docs/CLI-CONTRACT.md](docs/CLI-CONTRACT.md)):
+  `info`, `scans`, `xic` with precursor-gated sources, `spectrum`, `isotopes`, `batch-xic`, `convert`,
+  `export`, the MS-DIAL workflows with a JSON summary, and `serve --inbox`, a file-queue server an
+  agent reaches the Mac through. JSON out, summaries first, the same bytes for the same input.
 
 Everything is verified end to end on Apple Silicon with a synthetic LC-MS/MS DDA study
 (`tools/make_synthetic_mzml.py`): 12/12 compounds annotated, alignment across 3 samples,
@@ -25,7 +29,7 @@ identical results to the Windows reader.
 
 ```bash
 bash milx/scripts/setup-macos.sh     # .NET 8 SDK (no sudo) + NuGet source
-bash milx/scripts/build-cli.sh       # -> milx/dist/milx-cli-osx-arm64/milx-cli
+bash milx/scripts/build-cli.sh       # -> milx/dist/milx-cli-osx-arm64/milx (the shared mil-cli/1 contract) and milx-cli
 bash milx/scripts/test.sh            # unit tests + end-to-end synthetic run
 milx/scripts/smoke-ui.py --project X # drive the installed app and check it really works
 milx/scripts/smoke-ui.py --process DIR --library L.msp   # …and process, review, save and export a real batch

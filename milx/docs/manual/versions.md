@@ -2,7 +2,7 @@
 title: Versions
 section: Help
 order: 61
-summary: What each version brought, from OpenDIAL 0.1 to MIL-X 1.0; the notes are updated with every release.
+summary: What each version brought, from OpenDIAL 0.1 to MIL-X 1.1; the notes are updated with every release.
 ---
 
 # Versions
@@ -10,9 +10,53 @@ summary: What each version brought, from OpenDIAL 0.1 to MIL-X 1.0; the notes ar
 The version shown in **Help ▸ About MIL-X** and in the window's probe is the one stamped in
 `milx/Directory.Build.props`. This page names it, and a test fails the build when it does not.
 
-## 1.0.1 — September 2026
+## 1.1.0 — November 2026
 
 The current version. It tracks MS-DIAL 5.5.260817.
+
+**The command line MIL-X shares with MIL-Q.** `milx` implements the suite's contract
+(`docs/CLI-CONTRACT.md`, `mil-cli/1`, byte-identical in both repositories): `selftest`, `info`,
+`scans`, `xic`, `spectrum`, `isotopes`, `batch-xic`, `convert`, `export`, `serve`, and MS-DIAL's
+own workflows with `--acquisition-type`, `--library` and a `--summary` JSON. Summaries first, JSON
+or TSV only, the same bytes for the same input, errors as JSON with the contract's exit codes.
+`serve --inbox` is the file queue an agent reaches the Mac through: requests in, answers out, an
+allow-list rather than a shell, paths held inside the allowed roots, one job at a time, a timeout,
+`STATUS.json`, `log.jsonl`, `STOP`. Measured on a real IDA acquisition and on the synthetic study;
+see [[command-line]].
+
+**Parity with MIL-Q, where both do the same thing and MIL-Q did it better:**
+
+- **Manual XIC from any source** — commas as well as spaces in the mass list, and a source: MS1,
+  the active channel, every checked channel, all MS2, or **gated by precursor** — the MS2 scans whose
+  own precursor is within a tolerance of a mass, from any IDA slot, merged by retention time. New to
+  both applications; the spectrum pane names the precursor the shown scan isolated. See
+  [[explorer-workspace#The panels]].
+- **The contour view** — the active channel as retention time × m/z × intensity, square-root colour
+  scale, scans over the row limit averaged rather than skipped, click for a spectrum, *Extract this
+  view* read from the reader. See [[explorer-workspace#The contour]].
+- **The mass calculator** — formula to masses, RDBE, adduct m/z, isotope pattern and ppm, with
+  MIL-Q's tables; a test holds the two applications to the same numbers. See
+  [[explorer-workspace#The panels]].
+- **Noise-region S/N in the review grid** — height over the noise of a baseline stretch the reviewer
+  shaded, peak-to-peak or standard deviation, named beside MS-DIAL's own S/N. See
+  [[evidence-panels#Signal-to-noise over a noise region]].
+- **Spectrum labels by a budget per region**, so a crowded stretch does not spend every label. See
+  [[explorer-workspace#The chromatogram]].
+- **Folder checks before anything is read** — a `.wiff` without its `.wiff.scan`, a stray `.scan`
+  with the rename it may need, `.wiff2` files, other vendors' formats, in MIL-Q's words. See
+  [[samples-workspace#Checking files before they are read]].
+- **Export to MIL-Q writes every column MIL-Q 1.0.6 reads**, `min_response` and `provenance`
+  included, and loads through MIL-Q's own reader in a test. The MIL-Q page says MIL-Q is 1.0.
+
+Also: MS-DIAL's MSP import is held to keeping the charge of 2+ and 3+ peptide records, for the
+libraries MIL-Q writes; `make_synthetic_mzml.py --ida` lays the synthetic study out as IDA slots;
+the DDA/DIA decision of the channel tree holds the typical group against the number of survey
+scans, so a small study is no longer shown as twelve isolation windows; the chart canvas draws
+rasters, and the SVG export carries them.
+
+## 1.0.1 — September 2026
+
+Tracks MS-DIAL 5.5.260817.
 
 **The buttons say MIL-Q.** **Export to MIL-Q…** on the Analytics toolbar and in the Process menu,
 **Import MIL-Q batch…** in the Samples workspace, and the export dialog with them: the family name
