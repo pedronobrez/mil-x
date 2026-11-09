@@ -178,6 +178,11 @@
                       <Rectangle Classes="vsep" />
                       <Button x:Name="SplitIsomer" Classes="tool" Content="Split isomer" Command="{Binding SplitIsomerCommand}" ToolTip.Tip="Copy the feature so two co-eluting compounds can be integrated and named apart" />
                       <TextBlock Classes="hint" Text="{Binding IntegrationHint}" VerticalAlignment="Center" Margin="8,0,0,0" TextTrimming="CharacterEllipsis" />
+                      <Rectangle Classes="vsep" />
+                      <TextBlock Classes="label" Text="Noise as" VerticalAlignment="Center" ToolTip.Tip="How the noise of the chosen baseline region is measured; the method is named beside every S/N it gives" />
+                      <ComboBox Classes="compact" ItemsSource="{x:Static vm:AnalyticsViewModel.NoiseModes}" SelectedItem="{Binding NoiseMode}" Width="150" VerticalAlignment="Center" />
+                      <Button Classes="tool" Content="Clear noise region" Command="{Binding ClearNoiseRegionCommand}" ToolTip.Tip="Forget the baseline region chosen for this feature; set one by shading a stretch of baseline on a panel and right-clicking it" />
+                      <TextBlock Classes="hint" Text="{Binding NoiseRegionLabel}" VerticalAlignment="Center" Margin="8,0,0,0" TextTrimming="CharacterEllipsis" />
                     </StackPanel>
                   </Border>
                   <Panel>
@@ -192,7 +197,7 @@
                           <Border Margin="3" BorderBrush="{DynamicResource OdLine}" BorderThickness="1" CornerRadius="6" ClipToBounds="True">
                             <c:LineChart Compact="True" Series="{Binding Series}" Windows="{Binding Windows}" Title="{Binding Title}" MarkerX="{Binding MarkerRt}"
                                          FixedXMin="{Binding FixedXMin}" FixedXMax="{Binding FixedXMax}" FixedYMax="{Binding FixedYMax}" IsHighlighted="{Binding IsSelected}"
-                                         AutoZoomToHighlight="False" ShowLegend="False" PointClicked="OnPanelClicked" ChartDoubleClicked="OnPanelDoubleClicked" RangeSelected="OnRangeSelected" />
+                                         AutoZoomToHighlight="False" ShowLegend="False" PointClicked="OnPanelClicked" ChartDoubleClicked="OnPanelDoubleClicked" RangeSelected="OnRangeSelected" Loaded="OnPanelChartLoaded" />
                           </Border>
                         </DataTemplate>
                       </ItemsControl.ItemTemplate>
@@ -231,7 +236,7 @@
                 <TextBlock Classes="title" Text="{Binding Title}" VerticalAlignment="Center" />
               </DockPanel>
             </Border>
-            <c:LineChart Series="{Binding Series}" Windows="{Binding Windows}" MarkerX="{Binding MarkerRt}" FixedXMin="{Binding FixedXMin}" FixedXMax="{Binding FixedXMax}" AutoZoomToHighlight="False" ShowLegend="False" Margin="4" RangeSelected="OnRangeSelected" />
+            <c:LineChart Series="{Binding Series}" Windows="{Binding Windows}" MarkerX="{Binding MarkerRt}" FixedXMin="{Binding FixedXMin}" FixedXMax="{Binding FixedXMax}" AutoZoomToHighlight="False" ShowLegend="False" Margin="4" RangeSelected="OnRangeSelected" Loaded="OnPanelChartLoaded" />
           </DockPanel>
         </Border>
       </Panel>

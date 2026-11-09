@@ -67,7 +67,7 @@ public static class ChartExportFlow
     {
         var item = new MenuItem { Header = "Export as a picture…" };
         item.Click += async (_, _) => await RunAsync(chart, heading());
-        return new MenuFlyout { ItemsSource = new[] { item } };
+        return new MenuFlyout { ItemsSource = new System.Collections.ObjectModel.ObservableCollection<object> { item } };
     }
 
     /// <summary>The same menu, opened by the system's own context gesture.</summary>

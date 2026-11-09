@@ -20,7 +20,7 @@ feature exist, is it integrated the same way everywhere, is it aligned.
 Each panel draws the extracted ion chromatogram of the feature's m/z at the method's centroid
 tolerance, with the expected retention window shaded lightly (the feature's retention time ± five
 times the alignment tolerance), the peak's own integration window shaded warmly, and a marker at
-the apex. The title reads `sample · 1.23E5 · S/N 40`, with `not detected` for a gap-filled or
+the apex. The title reads `sample · 1.23E5 · S/N 40 (MS-DIAL)`, with `not detected` for a gap-filled or
 missing peak and `gap-filled` when it was. The selected injection's panel is framed in the accent
 colour.
 
@@ -36,6 +36,27 @@ Clicking a panel selects its injection (in the Samples tab and the Trend plot to
 across one draws an integration window — see [[reintegration]] for the strip above the grid. The
 panels are loaded one injection at a time from the survey-scan cache; a thin bar shows while they
 are still coming.
+
+### Signal-to-noise over a noise region
+
+MS-DIAL's S/N is the one its peak picking estimated, and the title says so: `S/N 40 (MS-DIAL)`.
+MIL-Q's convention is kept beside it, never in its place: the peak's height divided by the noise
+of a stretch of baseline the reviewer chose. Shade a stretch of baseline on a panel (`⇧`-drag),
+right-click it and choose **Set noise region from the shaded range**; every panel of the feature
+then also reads `S/N 8.3 (noise region, p-p)`. **Noise as** picks the measure — *peak-to-peak*
+takes the full swing of the region and is the stricter, more conservative reading; *standard
+deviation* is the gentler one — and the line beside it states the region and the method, because
+both are in use in laboratories and a number without its method is not comparable. **Clear noise
+region** forgets it. The region belongs to the feature: another feature elutes elsewhere and needs
+its own baseline.
+
+The noise is deliberately not measured inside the retention window: that stretch is mostly peak,
+and its point-to-point spread reports the peak's own slope. When the region holds nothing to
+measure — a trace of exact zeros, as a baseline below the instrument's reporting threshold
+produces — the panel says `S/N — (noise region, p-p: not measured)` rather than inventing a
+ratio to nothing. The strip's `from`/`to` boxes carry the shaded range too, since shading is also
+how an integration window is drawn; nothing is re-integrated until **Apply to all** or **This
+sample** is pressed.
 
 ## MS/MS
 

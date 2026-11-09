@@ -20,7 +20,7 @@ existe, está integrada da mesma forma em todo lado, está alinhada.
 Cada painel desenha o cromatograma de íon extraído do m/z da feature à tolerância de centroide do
 método, com a janela de retenção esperada sombreada de leve (o tempo de retenção da feature ± cinco
 vezes a tolerância de alinhamento), a janela de integração do próprio pico sombreada em tom
-quente, e um marcador no ápice. O título diz `sample · 1.23E5 · S/N 40`, com `not detected` para
+quente, e um marcador no ápice. O título diz `sample · 1.23E5 · S/N 40 (MS-DIAL)`, com `not detected` para
 um pico preenchido ou ausente e `gap-filled` quando foi preenchido. O painel da injeção
 selecionada tem moldura na cor de destaque.
 
@@ -36,6 +36,27 @@ Clicar num painel seleciona a sua injeção (na aba Samples e no gráfico Trend 
 `⇧`-arrastar sobre um desenha uma janela de integração — veja [[reintegration]] para a faixa
 acima da grade. Os painéis são carregados uma injeção de cada vez a partir do cache de varreduras
 de survey; uma barra fina aparece enquanto ainda estão chegando.
+
+### Sinal-ruído sobre uma região de ruído
+
+O S/N do MS-DIAL é o que a sua detecção de picos estimou, e o título diz isso: `S/N 40 (MS-DIAL)`.
+A convenção do MIL-Q fica ao lado, nunca no lugar: a altura do pico dividida pelo ruído de um
+trecho de linha de base que o revisor escolheu. Sombreie um trecho de linha de base num painel
+(`⇧`-arrastar), clique nele com o botão direito e escolha **Set noise region from the shaded
+range**; todo painel da feature passa a dizer também `S/N 8.3 (noise region, p-p)`. **Noise as**
+escolhe a medida — *peak-to-peak* toma a oscilação inteira da região e é a leitura mais estrita,
+mais conservadora; *standard deviation* é a mais branda — e a linha ao lado declara a região e o
+método, porque os dois estão em uso nos laboratórios e um número sem o seu método não é
+comparável. **Clear noise region** esquece-a. A região pertence à feature: outra feature elui em
+outro lugar e precisa da sua própria linha de base.
+
+O ruído deliberadamente não é medido dentro da janela de retenção: esse trecho é quase todo pico,
+e a sua dispersão ponto a ponto relata a inclinação do próprio pico. Quando a região não tem nada
+a medir — um traço de zeros exatos, como produz uma linha de base abaixo do limiar de registro do
+instrumento — o painel diz `S/N — (noise region, p-p: not measured)` em vez de inventar uma razão
+para nada. As caixas `from`/`to` da faixa carregam o intervalo sombreado também, já que sombrear é
+também como se desenha uma janela de integração; nada é reintegrado até **Apply to all** ou **This
+sample** ser pressionado.
 
 ## MS/MS
 

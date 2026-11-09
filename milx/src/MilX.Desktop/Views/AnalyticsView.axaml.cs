@@ -117,6 +117,29 @@ public partial class AnalyticsView : UserControl
         Vm.SetIntegrationWindow(e.Start, e.End);
     }
 
+    /// <summary>
+    /// Each peak panel's right-click menu gets MIL-Q's command: the shaded range becomes the stretch of
+    /// baseline the noise is measured over. Added once per chart, when it joins the tree.
+    /// </summary>
+    private void OnPanelChartLoaded(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not LineChart chart || chart.Tag is "noise-menu") return;
+        chart.Tag = "noise-menu";
+        var item = new MenuItem { Header = "Set noise region from the shaded range" };
+        item.Click += (_, _) =>
+        {
+            if (Vm is null) return;
+            if (double.IsNaN(chart.SelectionStart) || double.IsNaN(chart.SelectionEnd) || chart.SelectionEnd <= chart.SelectionStart)
+            {
+                Vm.IntegrationHint = "Shade a stretch of baseline first: ⇧-drag across the panel, then right-click it.";
+                return;
+            }
+            if (chart.DataContext is ReviewPanelViewModel panel) Vm.SelectSample(panel.Sample.FileId);
+            Vm.SetNoiseRegion(chart.SelectionStart, chart.SelectionEnd);
+        };
+        chart.AddMenuItem(item);
+    }
+
     private void OnMagnifySelected(object? sender, RoutedEventArgs e)
     {
         if (Vm is null) return;

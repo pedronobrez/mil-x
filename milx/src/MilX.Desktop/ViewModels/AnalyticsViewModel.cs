@@ -47,6 +47,8 @@ public sealed partial class ReviewPanelViewModel : ViewModelBase
     [ObservableProperty] private bool _isSelected;
     public IReadOnlyList<Point> FullTrace { get; set; } = Array.Empty<Point>();
     public double PeakMax { get; set; }
+    /// <summary>The noise-region signal-to-noise of this panel, in words, or empty when no region is set.</summary>
+    [ObservableProperty] private string _noiseSignalToNoise = string.Empty;
 }
 
 /// <summary>One line of the match-score breakdown beside the mirror plot.</summary>
@@ -96,6 +98,11 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
     private bool _suspendFilter;
 
     public static string[] ZoomModes { get; } = { "Expected window", "Peak", "Full trace" };
+    /// <summary>How the noise of the chosen region is measured; MIL-Q's two conventions, named beside every number they give.</summary>
+    public static string[] NoiseModes { get; } = { "peak-to-peak", "standard deviation" };
+    [ObservableProperty] private string _noiseMode = "peak-to-peak";
+    [ObservableProperty] private string _noiseRegionLabel = string.Empty;
+    private readonly Dictionary<int, (double Start, double End)> _noiseRegions = new();
     public static string[] MetricColumns { get; } = { "Height", "Area", "RT", "m/z", "S/N" };
     public static string[] MetricXColumns { get; } = { "Analytical order", "Height", "Area", "RT", "m/z", "S/N" };
 
@@ -1621,11 +1628,74 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
         panel.MarkerRt = p.HasPeak ? p.Rt : double.NaN;
         panel.Series = new[] { new TraceSeries(p.FileName, panel.FullTrace, null, true) };
         var height = p.Height > 0 ? ChartBase.FormatIntensity(p.Height) : "not detected";
-        var sn = p.SignalToNoise > 0 ? $" · S/N {p.SignalToNoise:F0}" : string.Empty;
+        // MS-DIAL's own S/N, from peak picking, stays and is labelled; the noise-region one is MIL-Q's convention
+        var sn = p.SignalToNoise > 0 ? $" · S/N {p.SignalToNoise:F0} (MS-DIAL)" : string.Empty;
         var gap = p.IsGapFilled ? " · gap-filled" : string.Empty;
-        panel.Title = $"{p.FileName} · {height}{sn}{gap}";
+        panel.NoiseSignalToNoise = NoiseRegionSn(panel, spot);
+        var region = panel.NoiseSignalToNoise.Length > 0 ? $" · {panel.NoiseSignalToNoise}" : string.Empty;
+        panel.Title = $"{p.FileName} · {height}{sn}{region}{gap}";
         (panel.FixedXMin, panel.FixedXMax) = XRange(spot, p);
     }
+
+    // ---------------------------------------------------------------- noise region
+
+    private NoiseMode CurrentNoiseMode => NoiseMode == "standard deviation" ? MilX.Pipeline.Results.NoiseMode.StandardDeviation : MilX.Pipeline.Results.NoiseMode.PeakToPeak;
+
+    private string NoiseRegionSn(ReviewPanelViewModel panel, AlignmentSpotRow spot)
+    {
+        if (!_noiseRegions.TryGetValue(spot.Id, out var region) || panel.FullTrace.Count == 0) return string.Empty;
+        var trace = panel.FullTrace.Select(q => new ChromatogramPoint(q.X, q.Y)).ToList();
+        var noise = SignalToNoise.Measure(trace, region.Start, region.End, CurrentNoiseMode);
+        var ratio = SignalToNoise.Ratio(panel.Sample.Height, noise);
+        var method = CurrentNoiseMode == MilX.Pipeline.Results.NoiseMode.PeakToPeak ? "p-p" : "SD";
+        return ratio is null ? $"S/N — (noise region, {method}: not measured)" : $"S/N {ratio.Value.ToString(ratio < 10 ? "F1" : "F0", CultureInfo.InvariantCulture)} (noise region, {method})";
+    }
+
+    /// <summary>
+    /// Takes the shaded range of a panel as the stretch of baseline the noise is measured over, for this
+    /// feature, and recomputes every panel's noise-region S/N. The region is the reviewer's: it is never
+    /// guessed from the trace.
+    /// </summary>
+    public void SetNoiseRegion(double from, double to)
+    {
+        var spot = SelectedSpot;
+        if (spot is null || double.IsNaN(from) || double.IsNaN(to) || to <= from) return;
+        _noiseRegions[spot.Id] = (from, to);
+        RefreshNoise();
+    }
+
+    [RelayCommand]
+    private void ClearNoiseRegion()
+    {
+        var spot = SelectedSpot;
+        if (spot is null) return;
+        _noiseRegions.Remove(spot.Id);
+        RefreshNoise();
+    }
+
+    partial void OnNoiseModeChanged(string value) => RefreshNoise();
+
+    private void RefreshNoise()
+    {
+        var spot = SelectedSpot;
+        if (spot is null) { NoiseRegionLabel = string.Empty; return; }
+        if (_noiseRegions.TryGetValue(spot.Id, out var region))
+        {
+            var method = CurrentNoiseMode == MilX.Pipeline.Results.NoiseMode.PeakToPeak ? "peak-to-peak" : "standard deviation";
+            NoiseRegionLabel = $"Noise region {region.Start.ToString("F2", CultureInfo.InvariantCulture)}–{region.End.ToString("F2", CultureInfo.InvariantCulture)} min, {method}: height over the region's noise, beside MS-DIAL's own S/N.";
+        }
+        else
+        {
+            NoiseRegionLabel = string.Empty;
+        }
+        foreach (var panel in _allPanels.Values)
+        {
+            if (panel.FullTrace.Count > 0) ApplyPanelView(panel, spot);
+        }
+    }
+
+    /// <summary>The noise region set for a feature, or null; the tests and the probe ask.</summary>
+    public (double Start, double End)? NoiseRegionOf(int spotId) => _noiseRegions.TryGetValue(spotId, out var r) ? r : null;
 
     private (double Min, double Max) XRange(AlignmentSpotRow spot, AlignedSamplePeak p)
     {

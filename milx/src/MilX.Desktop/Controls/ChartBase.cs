@@ -100,6 +100,15 @@ public abstract class ChartBase : Control, Charts.IChartRenderable
     /// <summary>Whether the export menu is showing; the tests ask, since a flyout is not in this tree.</summary>
     internal bool ExportMenuIsOpen => _exportMenu.IsOpen;
 
+    /// <summary>Adds a command to the chart's right-click menu, above the export; a view uses it for what only that chart can do.</summary>
+    public void AddMenuItem(MenuItem item)
+    {
+        if (_exportMenu.ItemsSource is System.Collections.ObjectModel.ObservableCollection<object> items) items.Insert(Math.Max(0, items.Count - 1), item);
+    }
+
+    /// <summary>The right-click menu's entries, for the tests.</summary>
+    internal IEnumerable<object> MenuItems => _exportMenu.ItemsSource as IEnumerable<object> ?? Array.Empty<object>();
+
     /// <summary>What a figure made of this chart is called: its own title, or the panel's heading.</summary>
     private string? Heading() =>
         !string.IsNullOrWhiteSpace(Title) ? Title
