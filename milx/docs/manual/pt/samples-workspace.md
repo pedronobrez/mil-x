@@ -29,6 +29,26 @@ As linhas selecionam-se com um clique, `⇧`-clique para um intervalo, `⌘`-cli
 uma. A mensagem ao lado da barra de ferramentas relata o que a última ação fez — quantas foram
 adicionadas, que arquivos foram ignorados por não suportados, um `.wiff` que não pôde ser aberto.
 
+## Conferir os arquivos antes de lê-los
+
+A maior parte do que dá errado numa pasta de aquisições está visível nos nomes dos arquivos, antes
+de qualquer coisa ser lida, por isso adicionar arquivos olha primeiro e diz o que encontrou na linha
+de mensagem — a mesma conferência, nas mesmas palavras, do *Check a folder* do MIL-Q. Nada é
+decodificado: ela lista a pasta e pergunta se cada arquivo existe e pode ser lido.
+
+| Achado | O que significa | O que fazer |
+| --- | --- | --- |
+| um `.wiff` sem o seu `.wiff.scan` ao lado | a aquisição abre e parece inteira — método, canais, cromatogramas — e todo espectro, cromatograma de íon extraído e a própria corrida falham nele | reponha o companheiro; se a pasta tem um `.scan` solto, a mensagem nomeia a renomeação de que ele pode precisar |
+| um `.scan` que não pertence a nenhum `.wiff` da pasta | em geral o companheiro de um destes arquivos, renomeado à mão: `name.wiff_mix1.scan` ao lado de `name_mix1.wiff` | renomeie-o para o nome que o `.wiff` procura — a mensagem diz qual, como palpite a partir dos dois nomes, que é tudo o que há para se apoiar |
+| arquivos `.wiff2` | o método da aquisição e os hashes dos seus dois companheiros, sem nenhum espectro; lidos pelo `.wiff` de mesmo nome | nada, quando o `.wiff` está ao lado; um `.wiff2` sozinho passa pelo msconvert, e não pode substituir o `.wiff` |
+| arquivos de um formato de outro fabricante para o qual esta build não tem leitor (`.tdf`, `.baf`, `.mzXML`, …) | não lidos aqui | converta-os para mzML com o `msconvert` do ProteoWizard |
+| um arquivo já no lote, ou dado duas vezes | adicioná-lo de novo poria uma segunda cópia de toda amostra no lote | fica de fora |
+| um arquivo que não pode ser lido, ou que não está lá | permissões, ou um arquivo que se moveu desde que foi nomeado | conserte as permissões, ou adicione-o de novo de onde está agora |
+
+O `.wiff` cujo companheiro falta é adicionado mesmo assim, como o MIL-Q também o abre: os seus
+cromatogramas valem a olhada, e a corrida relata por que os seus espectros não puderam ser lidos. A
+mesma conferência corre no `batch-xic` e no `selftest` da linha de comando, veja [[command-line]].
+
 ## As colunas
 
 | Coluna | Significado |

@@ -28,6 +28,26 @@ Rows are selected with a click, `⇧`-click for a range, `⌘`-click to add one.
 the toolbar reports what the last action did — how many were added, which files were skipped as
 unsupported, a `.wiff` that could not be opened.
 
+## Checking files before they are read
+
+Most of what goes wrong with a folder of acquisitions is visible in the names of the files, before
+anything is read, so adding files looks first and says what it found in the message line — the
+same check, in the same words, as MIL-Q's *Check a folder*. Nothing is decoded: it lists the
+folder and asks whether each file exists and can be read.
+
+| Finding | What it means | What to do |
+| --- | --- | --- |
+| a `.wiff` with no `.wiff.scan` beside it | the acquisition opens and looks whole — method, channels, chromatograms — and every spectrum, extracted ion chromatogram and the run itself fails on it | put the companion back; if the folder holds a stray `.scan`, the message names the rename it may need |
+| a `.scan` belonging to no `.wiff` in the folder | usually the companion of one of these files, renamed by hand: `name.wiff_mix1.scan` beside `name_mix1.wiff` | rename it to the name the `.wiff` is looking for — the message says which, as a guess from the two names, which is all there is to go on |
+| `.wiff2` files | the acquisition's method and the hashes of its two companions, holding no spectrum; read through the `.wiff` of the same name | nothing, when the `.wiff` is beside it; a `.wiff2` on its own goes through msconvert, and cannot stand in for the `.wiff` |
+| files of another vendor's format this build has no reader for (`.tdf`, `.baf`, `.mzXML`, …) | not read here | convert them to mzML with ProteoWizard's `msconvert` |
+| a file already in the batch, or given twice | adding it again would put a second copy of every sample in the batch | it is left out |
+| a file that cannot be read, or is not there | permissions, or a file that moved since it was named | fix the permissions, or add it again from where it is now |
+
+The `.wiff` whose companion is missing is still added, as MIL-Q opens it too: its chromatograms
+are worth looking at, and the run reports why its spectra could not be read. The same check runs
+on the command line's `batch-xic` and `selftest`, see [[command-line]].
+
 ## The columns
 
 | Column | Meaning |

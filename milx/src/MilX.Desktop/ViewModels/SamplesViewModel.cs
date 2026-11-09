@@ -84,14 +84,29 @@ public sealed partial class SamplesViewModel : ViewModelBase
         if (folder is null) return;
         var files = FileFormats.EnumerateRawFiles(folder).ToList();
         if (files.Count == 0) { Message = $"No supported raw files found in {folder}."; return; }
-        AddPaths(files);
+        // the folder was given, so its .wiff2 files and other vendors' files are reported as well
+        AddPaths(files, FolderCheck.Check(new[] { folder }, Samples.Select(f => f.Path)));
     }
 
-    public int AddPaths(IEnumerable<string> paths)
+    /// <summary>
+    /// What the names in a folder say before anything is read — a .wiff without its .wiff.scan, a stray
+    /// .scan, a .wiff2, another vendor's files — in MIL-Q's words, for the message line. The .wiff without
+    /// its companion is still added, as MIL-Q opens it too: its chromatograms are worth looking at, and the
+    /// run will say why its spectra cannot be read.
+    /// </summary>
+    public static IEnumerable<string> Describe(FolderReport report) => report.Findings
+        .Where(f => f.Kind is not FolderFindingKind.Duplicate)
+        .Select(f => f.Renameable ? $"{f.Finding}; {f.Action}" : $"{f.Finding}; {f.Action}");
+
+    public int AddPaths(IEnumerable<string> paths) => AddPaths(paths, null);
+
+    public int AddPaths(IEnumerable<string> paths, FolderReport? report)
     {
         var added = 0;
         var problems = new List<string>();
         var wanted = paths.ToList();
+        report ??= FolderCheck.Check(wanted, Samples.Select(f => f.Path));
+        problems.AddRange(Describe(report));
         foreach (var path in wanted)
         {
             if (Samples.Any(f => string.Equals(f.Path, path, StringComparison.OrdinalIgnoreCase))) continue;

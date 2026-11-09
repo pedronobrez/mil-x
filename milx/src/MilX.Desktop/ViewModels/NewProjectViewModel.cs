@@ -113,13 +113,15 @@ public sealed partial class NewProjectViewModel : ViewModelBase
     {
         var folder = await _dialogs.PickFolderAsync("Add all raw files in a folder", _settings.Current.LastInputFolder);
         if (folder is null) return;
-        AddPaths(FileFormats.EnumerateRawFiles(folder));
+        AddPaths(FileFormats.EnumerateRawFiles(folder), FolderCheck.Check(new[] { folder }, Samples.Select(s => s.Path)));
     }
 
-    /// <summary>Adds files to the wizard batch; a .wiff batch becomes one row per sample.</summary>
-    private void AddPaths(IEnumerable<string> paths)
+    /// <summary>Adds files to the wizard batch; a .wiff batch becomes one row per sample. The folder check speaks first.</summary>
+    private void AddPaths(IEnumerable<string> paths, FolderReport? report = null)
     {
-        var problems = new List<string>();
+        var list = paths.ToList();
+        paths = list;
+        var problems = new List<string>(SamplesViewModel.Describe(report ?? FolderCheck.Check(list, Samples.Select(s => s.Path))));
         foreach (var f in paths)
         {
             if (Samples.Any(s => string.Equals(s.Path, f, StringComparison.OrdinalIgnoreCase)) || !FileFormats.IsSupported(f)) continue;
