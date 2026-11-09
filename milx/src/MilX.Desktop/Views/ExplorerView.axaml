@@ -92,6 +92,7 @@
             <NumericUpDown x:Name="ScanBox" Value="{Binding ScanNumber, Mode=OneWay}" Minimum="1" Increment="1" FormatString="0" Width="124" MinHeight="26" ValueChanged="OnScanChanged" />
             <Button Classes="icon" Content="▶" Command="{Binding NextScanCommand}" />
             <TextBlock Classes="muted" Text="{Binding ScanCount, StringFormat=of {0}}" VerticalAlignment="Center" Margin="6,0,0,0" />
+            <TextBlock Classes="muted" Text="{Binding ScanPrecursorLabel}" VerticalAlignment="Center" Margin="14,0,0,0" ToolTip.Tip="The precursor this scan isolated — per scan, for IDA slots and DDA events" />
           </DockPanel>
         </Border>
         <Border Grid.Row="4" Classes="panel">
@@ -125,10 +126,10 @@
             <TabItem Header="Manual XIC">
               <DockPanel Margin="0,6,0,0">
                 <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,8">
-                  <TextBlock Classes="hint" Text="Extract ion chromatograms from the MS1 channel of the active sample." TextWrapping="Wrap" Margin="4,0" />
+                  <TextBlock Classes="hint" Text="Extract ion chromatograms of the active sample from the source below: MS1, a channel, every MS2 scan, or only the MS2 scans whose precursor was a given m/z." TextWrapping="Wrap" Margin="4,0" />
                   <DockPanel>
                     <Button DockPanel.Dock="Right" Content="Add" Command="{Binding AddXicCommand}" Margin="6,0,0,0" MinWidth="60" />
-                    <TextBox Text="{Binding XicMzText}" Watermark="m/z (space separated for several)" />
+                    <TextBox Text="{Binding XicMzText}" Watermark="m/z, comma or space separated (183.1391, 313.2384)" />
                   </DockPanel>
                   <StackPanel Orientation="Horizontal" Spacing="6">
                     <TextBlock Classes="label" Text="Tolerance ±" />
@@ -136,6 +137,17 @@
                     <ComboBox Classes="compact" ItemsSource="{x:Static vm:ExplorerViewModel.ToleranceUnits}" SelectedItem="{Binding XicUnit}" Width="72" />
                     <Button Classes="tool" Content="Clear all" Command="{Binding ClearXicsCommand}" />
                   </StackPanel>
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Classes="label" Text="Source" />
+                    <ComboBox Classes="compact" ItemsSource="{x:Static vm:ExplorerViewModel.XicSourceNames}" SelectedItem="{Binding XicSourceName}" Width="178" />
+                  </StackPanel>
+                  <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding XicIsGated}">
+                    <TextBlock Classes="label" Text="Precursor m/z" />
+                    <NumericUpDown Classes="small" Value="{Binding XicGateMz}" Minimum="0" Increment="0.01" FormatString="0.####" Width="130" />
+                    <TextBlock Classes="label" Text="± Da" />
+                    <NumericUpDown Classes="small" Value="{Binding XicGateTolerance}" Minimum="0.001" Increment="0.01" FormatString="0.###" Width="96" />
+                  </StackPanel>
+                  <TextBlock Classes="hint" Text="{Binding XicSourceNote}" TextWrapping="Wrap" Margin="4,0" IsVisible="{Binding XicSourceNote, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                 </StackPanel>
                 <ListBox ItemsSource="{Binding XicEntries}">
                   <ListBox.ItemTemplate>

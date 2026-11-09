@@ -64,7 +64,9 @@ puts a marker at its retention time.
 ## The spectrum
 
 The scan the marker sits on, as a stick spectrum normalised to 100 %, with its precursor marked
-when it has one. **◀** and **▶** and the scan box step through the scans of the active channel;
+when it has one. For a product-ion scan the band above the pane names the precursor the scan
+itself isolated, its isolation window, the collision energy and, in a SCIEX IDA file, the slot it
+came from — per scan, never the slot's placeholder mass. **◀** and **▶** and the scan box step through the scans of the active channel;
 the count beside it is the number of scans in the channel. **Average selected range** replaces the
 scan with the mean spectrum over the selected retention-time range, which is how a weak product
 spectrum is read.
@@ -79,9 +81,26 @@ m/z, Height, Score. Selecting one draws its XIC as a manual entry, shades its in
 on the chromatogram, marks its apex, and shows its deconvoluted MS/MS. The title says how many
 peaks and how many are annotated; `No results for this sample` before a run.
 
-**Manual XIC** — extracted ion chromatograms from the MS1 channel of the active sample. Type one
-or more m/z values (space-separated), a tolerance in Da or ppm, and **Add**; each entry is drawn
-as a dashed trace and can be removed with its `✕` or all at once with **Clear all**.
+**Manual XIC** — extracted ion chromatograms of the active sample. Type one or more m/z values,
+separated by commas or spaces (`183.1391, 313.2384`), a tolerance in Da or ppm, and **Add**; each
+entry is drawn as a dashed trace and can be removed with its `✕` or all at once with **Clear all**.
+The **Source** chooses which scans the window is summed over:
+
+| Source | Scans |
+| --- | --- |
+| **MS1** | the survey channel of the active sample (the default) |
+| **Active channel** | the channel the spectrum pane reads from, whatever its kind |
+| **Every checked channel** | one trace per ticked channel, so the same mass is compared across slots or windows |
+| **All MS2** | every product-ion scan of the file, from every channel, merged by retention time |
+| **Gated by precursor** | only the MS2 scans whose own precursor is within **± Da** of the **Precursor m/z** typed beside it, from any IDA slot or DDA event, merged by retention time |
+
+The gated source is what a product ion's chromatogram needs on a data-dependent file: the
+instrument puts one precursor's spectra into whichever slot was free that cycle, and the slot's
+own label carries only the placeholder mass the method was written with. The gate reads the
+precursor each scan actually isolated — for SCIEX IDA that is the per-scan `ParentMZ` — so a
+precursor spread over twelve slots becomes one trace. A line under the form says how many scans
+the gate found and how many slots they came from. The same source is `gated:MZ[:TOL]` on the
+[[command-line]].
 
 **Spectrum peaks** — the spectrum in the pane as a table: m/z, intensity, relative intensity,
 most intense first.

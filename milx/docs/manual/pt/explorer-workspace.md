@@ -65,7 +65,9 @@ um marcador no seu tempo de retenção.
 ## O espectro
 
 A varredura em que o marcador está, como espectro de barras normalizado a 100 %, com o seu
-precursor marcado quando tem um. **◀** e **▶** e a caixa de varredura percorrem as varreduras do
+precursor marcado quando tem um. Para uma varredura de íons-produto, a faixa acima do painel nomeia
+o precursor que a própria varredura isolou, a sua janela de isolamento, a energia de colisão e, num
+arquivo IDA da SCIEX, o slot de que veio — por varredura, nunca a massa de preenchimento do slot. **◀** e **▶** e a caixa de varredura percorrem as varreduras do
 canal ativo; a contagem ao lado é o número de varreduras no canal. **Average selected range**
 substitui a varredura pelo espectro médio sobre o intervalo de tempo de retenção selecionado, que
 é como se lê um espectro de produto fraco.
@@ -81,10 +83,26 @@ RT, m/z, Height, Score. Selecionar um desenha o seu XIC como entrada manual, som
 de integração no cromatograma, marca o seu ápice e mostra o seu MS/MS deconvoluído. O título diz
 quantos picos e quantos estão anotados; `No results for this sample` antes de uma corrida.
 
-**Manual XIC** — cromatogramas de íon extraído do canal MS1 da amostra ativa. Digite um ou mais
-valores de m/z (separados por espaço), uma tolerância em Da ou ppm, e **Add**; cada entrada é
-desenhada como traço tracejado e pode ser removida com o seu `✕` ou todas de uma vez com **Clear
-all**.
+**Manual XIC** — cromatogramas de íon extraído da amostra ativa. Digite um ou mais valores de
+m/z, separados por vírgulas ou espaços (`183.1391, 313.2384`), uma tolerância em Da ou ppm, e
+**Add**; cada entrada é desenhada como traço tracejado e pode ser removida com o seu `✕` ou todas
+de uma vez com **Clear all**. O **Source** escolhe sobre que varreduras a janela é somada:
+
+| Source | Varreduras |
+| --- | --- |
+| **MS1** | o canal de survey da amostra ativa (o padrão) |
+| **Active channel** | o canal de que o painel de espectro lê, seja qual for o seu tipo |
+| **Every checked channel** | um traço por canal marcado, para comparar a mesma massa entre slots ou janelas |
+| **All MS2** | toda varredura de íons-produto do arquivo, de todos os canais, fundidas por tempo de retenção |
+| **Gated by precursor** | só as varreduras MS2 cujo próprio precursor está a **± Da** do **Precursor m/z** digitado ao lado, de qualquer slot IDA ou evento DDA, fundidas por tempo de retenção |
+
+A fonte com portão é o que o cromatograma de um íon-produto precisa num arquivo dependente de
+dados: o instrumento põe os espectros de um precursor no slot que estava livre naquele ciclo, e o
+rótulo do slot carrega só a massa de preenchimento com que o método foi escrito. O portão lê o
+precursor que cada varredura de fato isolou — na IDA da SCIEX, o `ParentMZ` por varredura — e
+assim um precursor espalhado por doze slots vira um traço. Uma linha sob o formulário diz quantas
+varreduras o portão encontrou e de quantos slots vieram. A mesma fonte é `gated:MZ[:TOL]` na
+[[command-line]].
 
 **Spectrum peaks** — o espectro do painel como tabela: m/z, intensidade, intensidade relativa,
 mais intenso primeiro.

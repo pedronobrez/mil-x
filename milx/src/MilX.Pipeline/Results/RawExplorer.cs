@@ -294,12 +294,31 @@ public static class RawExplorer
         return left;
     }
 
+    /// <summary>
+    /// The precursor a scan isolated, in words: "precursor 829.5614 (isolation ± 0.50), CE 35, slot 3". For
+    /// a SCIEX IDA dependent scan this is the per-scan ParentMZ, never the slot's placeholder; empty for MS1.
+    /// </summary>
+    public static string DescribePrecursor(RawMeasurement raw, int spectrumIndex)
+    {
+        var s = raw.SpectrumList[spectrumIndex];
+        var parent = XicSources.ParentMz(s);
+        if (s.MsLevel <= 1 || parent <= 0) return string.Empty;
+        var text = $"precursor {parent:F4}";
+        var lower = s.Precursor?.IsolationWindowLowerOffset ?? 0;
+        var upper = s.Precursor?.IsolationWindowUpperOffset ?? 0;
+        if (lower > 0 || upper > 0) text += Math.Abs(lower - upper) < 1e-9 ? $" (isolation ± {lower:F2})" : $" (isolation −{lower:F2}/+{upper:F2})";
+        var ce = s.CollisionEnergy != 0 ? s.CollisionEnergy : (s.Precursor?.CollisionEnergy ?? 0);
+        if (ce != 0) text += $", CE {ce:F0}";
+        if (s.ExperimentID > 0) text += $", slot {s.ExperimentID}";
+        return text;
+    }
+
     /// <summary>The centroid peaks of one spectrum.</summary>
     public static MsSpectrum Spectrum(RawMeasurement raw, int spectrumIndex)
     {
         var s = raw.SpectrumList[spectrumIndex];
         var peaks = (s.Spectrum ?? Array.Empty<RawPeakElement>()).Where(p => p.Intensity > 0).Select(p => new SpectrumPeakPoint(p.Mz, p.Intensity)).ToList();
-        var precursor = s.Precursor?.SelectedIonMz ?? 0;
+        var precursor = XicSources.ParentMz(s);
         var label = s.MsLevel > 1 ? $"Scan {spectrumIndex} · MS{s.MsLevel} · precursor {precursor:F4} · RT {RtMinutes(s):F3}" : $"Scan {spectrumIndex} · MS1 · RT {RtMinutes(s):F3}";
         return new MsSpectrum(label, precursor, peaks);
     }

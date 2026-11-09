@@ -95,6 +95,8 @@ public sealed partial class ExplorerViewModel : ViewModelBase
 
     public static string[] ChromatogramKinds { get; } = { "TIC", "BPC" };
     public static string[] ToleranceUnits { get; } = { "Da", "ppm" };
+    /// <summary>Where a manual XIC is read from; the last two are new to both applications of the suite.</summary>
+    public static string[] XicSourceNames { get; } = { "MS1", "Active channel", "Every checked channel", "All MS2", "Gated by precursor" };
 
     public ExplorerViewModel(RawDataCache cache)
     {
@@ -140,6 +142,8 @@ public sealed partial class ExplorerViewModel : ViewModelBase
     [ObservableProperty] private int _scanCount;
     [ObservableProperty] private IReadOnlyList<SpectrumPeakRow> _spectrumTable = Array.Empty<SpectrumPeakRow>();
     [ObservableProperty] private string _selectionLabel = "No range selected";
+    /// <summary>The precursor the shown scan actually isolated (per scan, for IDA slots and DDA events), or empty for MS1.</summary>
+    [ObservableProperty] private string _scanPrecursorLabel = string.Empty;
     public bool HasSelection => !double.IsNaN(SelectionStart) && !double.IsNaN(SelectionEnd);
 
     // peaks panel
@@ -155,6 +159,11 @@ public sealed partial class ExplorerViewModel : ViewModelBase
     [ObservableProperty] private string _xicMzText = string.Empty;
     [ObservableProperty] private double _xicTolerance = 0.01;
     [ObservableProperty] private string _xicUnit = "Da";
+    [ObservableProperty] private string _xicSourceName = "MS1";
+    [ObservableProperty] private double _xicGateMz;
+    [ObservableProperty] private double _xicGateTolerance = XicSources.DefaultGateTolerance;
+    public bool XicIsGated => XicSourceName == "Gated by precursor";
+    [ObservableProperty] private string _xicSourceNote = string.Empty;
 
     public int TopLabels => ShowMzLabels ? 8 : 0;
 
@@ -358,13 +367,17 @@ public sealed partial class ExplorerViewModel : ViewModelBase
         var version = ++_traceVersion;
         var checkedLeaves = Leaves().Where(l => l.IsChecked && l.Sample?.Raw is not null).ToList();
         var xics = XicEntries.ToList();
-        var active = ActiveChannel?.Sample;
+        var activeNode = ActiveChannel;
+        var active = activeNode?.Sample;
         var kind = ChromatogramKind;
         var sigma = SmoothSigma;
         var baseline = BaselineWindow;
         var normalize = Normalize;
+        var sourceName = XicSourceName;
+        var gateMz = XicGateMz;
+        var gateTol = XicGateTolerance > 0 ? XicGateTolerance : XicSources.DefaultGateTolerance;
 
-        var series = await Task.Run(() =>
+        var (series, note) = await Task.Run(() =>
         {
             var list = new List<TraceSeries>();
             foreach (var leaf in checkedLeaves)
@@ -375,18 +388,62 @@ public sealed partial class ExplorerViewModel : ViewModelBase
                 var label = leaf.IsTicLeaf ? $"{leaf.Sample.Name} · TIC" : $"{leaf.Sample.Name} · {leaf.Label} ({kind})";
                 list.Add(new TraceSeries(label, Post(chrom.Points, sigma, baseline, normalize)));
             }
-            if (active?.Raw is not null && active.Ms1 is { } ms1)
+            var sourceNote = string.Empty;
+            if (xics.Count > 0)
             {
-                foreach (var x in xics)
+                // every (sample, scan set) an XIC is read from, by the source chosen in the panel
+                var targets = new List<(ExplorerSample Sample, string Label, IReadOnlyList<int> Indices)>();
+                switch (sourceName)
                 {
-                    var chrom = RawExplorer.Xic(active.Raw, ms1.SpectrumIndices, x.Mz, x.ToleranceDa);
-                    list.Add(new TraceSeries($"{active.Name} · XIC {x.Mz:F4}", Post(chrom.Points, sigma, baseline, normalize), null, false, true));
+                    case "Every checked channel":
+                        foreach (var leaf in checkedLeaves.Where(l => !l.IsTicLeaf)) targets.Add((leaf.Sample!, leaf.Label, leaf.Channel!.SpectrumIndices));
+                        if (targets.Count == 0) sourceNote = "No channel is checked; tick the channels to extract from.";
+                        break;
+                    case "Active channel":
+                        if (activeNode?.Channel is { } ac && active?.Raw is not null) targets.Add((active, activeNode.IsTicLeaf ? "MS1" : activeNode.Label, activeNode.IsTicLeaf ? active.Ms1?.SpectrumIndices ?? ac.SpectrumIndices : ac.SpectrumIndices));
+                        break;
+                    case "All MS2":
+                        if (active?.Raw is not null)
+                        {
+                            var idx = XicSources.Ms2All(active.Raw);
+                            targets.Add((active, "all MS2", idx));
+                            sourceNote = $"{idx.Count} MS2 scans across every channel.";
+                        }
+                        break;
+                    case "Gated by precursor":
+                        if (active?.Raw is not null)
+                        {
+                            if (gateMz <= 0) sourceNote = "Enter the precursor m/z to gate on.";
+                            else
+                            {
+                                var idx = XicSources.Gated(active.Raw, gateMz, gateTol);
+                                var slots = idx.Select(i => active.Raw.SpectrumList[i].ExperimentID).Distinct().Count();
+                                targets.Add((active, XicSource.GatedBy(gateMz, gateTol).Label, idx));
+                                sourceNote = idx.Count == 0
+                                    ? $"No MS2 scan isolated {gateMz.ToString("F4", CultureInfo.InvariantCulture)} ± {gateTol.ToString("0.###", CultureInfo.InvariantCulture)}."
+                                    : $"{idx.Count} MS2 scans whose precursor is {gateMz.ToString("F4", CultureInfo.InvariantCulture)} ± {gateTol.ToString("0.###", CultureInfo.InvariantCulture)}, from {slots} slot(s)/channel(s), merged by RT.";
+                            }
+                        }
+                        break;
+                    default:
+                        if (active?.Raw is not null) targets.Add((active, "MS1", XicSources.Ms1(active.Raw, active.Channels)));
+                        break;
+                }
+                foreach (var (sample, label, indices) in targets)
+                {
+                    foreach (var x in xics)
+                    {
+                        var chrom = RawExplorer.Xic(sample.Raw!, indices, x.Mz, x.ToleranceDa);
+                        var name = label == "MS1" ? $"{sample.Name} · XIC {x.Mz:F4}" : $"{sample.Name} · {label} · XIC {x.Mz:F4}";
+                        list.Add(new TraceSeries(name, Post(chrom.Points, sigma, baseline, normalize), null, false, true));
+                    }
                 }
             }
-            return (IReadOnlyList<TraceSeries>)list;
+            return ((IReadOnlyList<TraceSeries>)list, sourceNote);
         });
         if (version != _traceVersion) return;
         Series = series;
+        XicSourceNote = note;
         ChromatogramTitle = series.Count == 0 ? "Chromatogram" : series.Count <= 3 ? string.Join("  ·  ", series.Select(s => s.Label)) : $"{series.Count} traces";
     }
 
@@ -398,6 +455,9 @@ public sealed partial class ExplorerViewModel : ViewModelBase
     }
 
     partial void OnNormalizeChanged(bool value) => _ = RefreshTracesAsync();
+    partial void OnXicSourceNameChanged(string value) { OnPropertyChanged(nameof(XicIsGated)); _ = RefreshTracesAsync(); }
+    partial void OnXicGateMzChanged(double value) => _ = RefreshTracesAsync();
+    partial void OnXicGateToleranceChanged(double value) => _ = RefreshTracesAsync();
 
     // ---------------------------------------------------------------- spectra
 
@@ -423,6 +483,7 @@ public sealed partial class ExplorerViewModel : ViewModelBase
         ScanNumber = positionInChannel + 1;
         MarkerRt = RawExplorer.RtMinutes(raw.SpectrumList[indices[positionInChannel]]);
         SetSpectrum(spectrum, $"{node.Sample.Name} · {spectrum.Label}", spectrum.PrecursorMz > 0 ? spectrum.PrecursorMz : double.NaN, null);
+        ScanPrecursorLabel = RawExplorer.DescribePrecursor(raw, indices[positionInChannel]);
     }
 
     private void SetSpectrum(MsSpectrum spectrum, string title, double precursor, IReadOnlyList<Point>? reference)
@@ -553,18 +614,20 @@ public sealed partial class ExplorerViewModel : ViewModelBase
     [RelayCommand]
     private void AddXic()
     {
-        var text = (XicMzText ?? string.Empty).Replace(',', ' ').Replace(';', ' ');
-        var added = 0;
-        foreach (var token in text.Split(' ', StringSplitOptions.RemoveEmptyEntries))
-        {
-            if (double.TryParse(token, NumberStyles.Float, CultureInfo.InvariantCulture, out var mz) && mz > 0)
-            {
-                XicEntries.Add(new ManualXic { Mz = mz, Tolerance = XicTolerance, Unit = XicUnit });
-                added++;
-            }
-        }
-        if (added > 0) XicMzText = string.Empty;
-        else Status = "Enter one or more m/z values (e.g. 313.2 or 313.2 401.1).";
+        // commas, semicolons or spaces separate the masses: "183.1391, 313.2384" as MIL-Q takes it
+        var masses = XicSources.ParseMzList(XicMzText, out var rejected);
+        foreach (var mz in masses) XicEntries.Add(new ManualXic { Mz = mz, Tolerance = XicTolerance, Unit = XicUnit });
+        if (masses.Count > 0) XicMzText = string.Empty;
+        if (masses.Count == 0) Status = "Enter one or more m/z values, separated by commas or spaces (e.g. 183.1391, 313.2384).";
+        else if (rejected.Count > 0) Status = $"Skipped what is not a mass: {string.Join(", ", rejected)}.";
+    }
+
+    /// <summary>Gates the XICs on a precursor from outside the panel (a spectrum's precursor, a peak).</summary>
+    public void GateOn(double precursorMz)
+    {
+        if (precursorMz <= 0) return;
+        XicGateMz = precursorMz;
+        XicSourceName = "Gated by precursor";
     }
 
     [RelayCommand]
