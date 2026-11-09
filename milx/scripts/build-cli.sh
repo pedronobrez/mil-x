@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
-# Builds the MS-DIAL 5 console (MSDIALCUI) with the open MilX.RawData reader and publishes
-# a self-contained binary for the current (or given) runtime.
-#   scripts/build-cli.sh              -> dist/milx-cli-<rid>/
+# Builds the MIL-X command line: milx (the shared mil-cli/1 contract, docs/CLI-CONTRACT.md, with the
+# MS-DIAL workflows run in-process) and the MS-DIAL 5 console (MSDIALCUI, as milx-cli) with the open
+# MilX.RawData reader, published self-contained for the current (or given) runtime.
+#   scripts/build-cli.sh              -> dist/milx-cli-<rid>/milx and dist/milx-cli-<rid>/milx-cli
 #   scripts/build-cli.sh osx-arm64    -> explicit runtime identifier (osx-arm64, osx-x64, linux-x64, linux-arm64, win-x64)
+#   linux-arm64 is the Ubuntu 22.04 aarch64 target of the contract: a VM with ~3 GB RAM and no .NET; the
+#   publish is self-contained so nothing has to be installed, and milx selftest says whether .wiff reads there.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
@@ -22,6 +25,11 @@ if [ -z "$RID" ]; then
 fi
 CONFIG="${CONFIG:-Release}"
 OUT="$ROOT/dist/milx-cli-$RID"
+echo "[build-cli] publishing milx ($CONFIG, $RID) -> $OUT"
+dotnet publish "$ROOT/src/MilX.Cli/MilX.Cli.csproj" \
+  --configuration "$CONFIG" --runtime "$RID" --self-contained \
+  -p:UseOpenRawData=true -p:SkipLibraryDownload=true -p:DebugType=None -p:DebugSymbols=false \
+  -p:ErrorOnDuplicatePublishOutputFiles=false -o "$OUT"
 echo "[build-cli] publishing MSDIALCUI ($CONFIG, $RID) with the open reader -> $OUT"
 dotnet publish "$UPSTREAM/tests/MSDIAL5/MsdialCoreTestApp/MsdialCoreTestApp.csproj" \
   --configuration "$CONFIG" --framework net8 --runtime "$RID" --self-contained \
@@ -44,6 +52,11 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
 exec "$HERE/MSDIALCUI" "$@"
 EOF
-chmod +x "$OUT/milx-cli" "$OUT/MSDIALCUI" 2>/dev/null || true
-echo "[build-cli] done: $OUT/milx-cli --version"
-"$OUT/milx-cli" --version
+chmod +x "$OUT/milx-cli" "$OUT/MSDIALCUI" "$OUT/milx" 2>/dev/null || true
+echo "[build-cli] done: $OUT/milx --version · $OUT/milx-cli --version"
+# a cross-published binary cannot run here; say so instead of failing the build
+case "$RID" in
+  osx-*) [ "$(uname -s)" = Darwin ] && "$OUT/milx" --version || echo "[build-cli] built for $RID; run milx selftest on that machine" ;;
+  linux-*) [ "$(uname -s)" = Linux ] && "$OUT/milx" --version || echo "[build-cli] built for $RID; run milx selftest on that machine" ;;
+  *) echo "[build-cli] built for $RID" ;;
+esac
