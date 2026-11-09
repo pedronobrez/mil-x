@@ -117,7 +117,7 @@
           </DockPanel>
         </Border>
         <Border Grid.Row="4" Classes="panel">
-          <c:SpectrumChart x:Name="Spectrum" Peaks="{Binding SpectrumPeaks}" ReferencePeaks="{Binding ReferencePeaks}" PrecursorMz="{Binding PrecursorMz}" Title="{Binding SpectrumTitle}" TopLabels="{Binding TopLabels}" />
+          <c:SpectrumChart x:Name="Spectrum" Peaks="{Binding SpectrumPeaks}" ReferencePeaks="{Binding ReferencePeaks}" OverlayPeaks="{Binding OverlayPeaks}" PrecursorMz="{Binding PrecursorMz}" Title="{Binding SpectrumTitle}" TopLabels="{Binding TopLabels}" />
         </Border>
       </Grid>
       <GridSplitter Grid.Column="3" Classes="vertical" ResizeDirection="Columns" />
@@ -180,6 +180,44 @@
                     </DataTemplate>
                   </ListBox.ItemTemplate>
                 </ListBox>
+              </DockPanel>
+            </TabItem>
+            <TabItem Header="Mass calc">
+              <DockPanel Margin="0,6,0,0">
+                <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,8">
+                  <TextBlock Classes="hint" Text="A formula into the numbers a mass spectrometrist needs, and a measured mass into an error. Groups, multipliers and single isotopes are read: C6H4(NO2)2, [13C]6H12O6, C18H30D4O4." TextWrapping="Wrap" Margin="4,0" />
+                  <DockPanel>
+                    <ComboBox DockPanel.Dock="Right" Classes="compact" ItemsSource="{x:Static vm:ExplorerViewModel.AdductNames}" SelectedItem="{Binding AdductName}" Width="118" Margin="6,0,0,0" />
+                    <TextBox Text="{Binding FormulaText}" Watermark="Formula (C18H34O4)" />
+                  </DockPanel>
+                  <TextBlock Classes="hint" Text="{Binding FormulaStatus}" TextWrapping="Wrap" Margin="4,0" IsVisible="{Binding FormulaStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                  <ItemsControl ItemsSource="{Binding MassSummary}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:MassSummaryRow">
+                        <DockPanel Margin="4,1">
+                          <TextBlock DockPanel.Dock="Right" Text="{Binding Value}" FontFamily="{StaticResource OdMonoFont}" />
+                          <TextBlock Classes="muted" Text="{Binding Name}" />
+                        </DockPanel>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <DockPanel>
+                    <Button DockPanel.Dock="Right" Classes="tool" Content="Measured from spectrum" Command="{Binding MeasuredFromSpectrumCommand}" Margin="6,0,0,0" ToolTip.Tip="Take the measured m/z from the spectrum pane: the peak nearest the theoretical ion" />
+                    <TextBlock DockPanel.Dock="Left" Classes="label" Text="Measured m/z" />
+                    <TextBox Text="{Binding MeasuredMzText}" Watermark="measured m/z" Margin="6,0,0,0" />
+                  </DockPanel>
+                  <TextBlock Text="{Binding MassError}" FontFamily="{StaticResource OdMonoFont}" Margin="4,0" />
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <Button Classes="tool" Content="Overlay on spectrum" Command="{Binding OverlayIsotopesCommand}" ToolTip.Tip="Draw the theoretical isotope pattern on the spectrum pane, scaled to the measured peak nearest the monoisotopic m/z" />
+                    <Button Classes="tool" Content="Clear overlay" Command="{Binding ClearOverlayCommand}" />
+                  </StackPanel>
+                </StackPanel>
+                <DataGrid ItemsSource="{Binding IsotopeRows}" AutoGenerateColumns="False" IsReadOnly="True" RowHeight="24">
+                  <DataGrid.Columns>
+                    <DataGridTextColumn Header="m/z" Binding="{Binding Mz, StringFormat={}{0:F5}}" Width="*" />
+                    <DataGridTextColumn Header="Rel. %" Binding="{Binding Abundance, StringFormat={}{0:F2}}" Width="80" />
+                  </DataGrid.Columns>
+                </DataGrid>
               </DockPanel>
             </TabItem>
             <TabItem Header="Spectrum peaks">

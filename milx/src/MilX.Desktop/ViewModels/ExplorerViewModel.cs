@@ -10,6 +10,7 @@ using CompMs.Common.DataObj;
 using CompMs.MsdialCore.DataObj;
 using MilX.Desktop.Controls;
 using MilX.Desktop.Services;
+using MilX.Pipeline.Chemistry;
 using MilX.Pipeline.Results;
 
 namespace MilX.Desktop.ViewModels;
@@ -81,6 +82,12 @@ public sealed partial class ManualXic : ViewModelBase
 }
 
 public sealed record SpectrumPeakRow(double Mz, double Intensity, double Relative);
+
+/// <summary>A line of the mass calculator's summary.</summary>
+public sealed record MassSummaryRow(string Name, string Value);
+
+/// <summary>One isotope of the theoretical pattern: m/z and relative abundance in percent.</summary>
+public sealed record IsotopeRow(double Mz, double Abundance);
 
 /// <summary>
 /// Qualitative review of the raw files: a tree of samples and channels, an overlay chromatogram, a spectrum pane
@@ -168,6 +175,19 @@ public sealed partial class ExplorerViewModel : ViewModelBase
     [ObservableProperty] private double _contourMzTo;
     [ObservableProperty] private string _contourStatus = string.Empty;
     private int _contourVersion;
+
+    // mass calculator (MIL-Q's chemistry, same tables): formula → masses, adduct m/z, isotope pattern, ppm
+    public static IReadOnlyList<string> AdductNames => Adduct.Names;
+    [ObservableProperty] private string _formulaText = string.Empty;
+    [ObservableProperty] private string _adductName = "[M+H]+";
+    [ObservableProperty] private string _measuredMzText = string.Empty;
+    [ObservableProperty] private IReadOnlyList<MassSummaryRow> _massSummary = Array.Empty<MassSummaryRow>();
+    [ObservableProperty] private IReadOnlyList<IsotopeRow> _isotopeRows = Array.Empty<IsotopeRow>();
+    [ObservableProperty] private string _massError = "—";
+    [ObservableProperty] private string _formulaStatus = string.Empty;
+    [ObservableProperty] private IReadOnlyList<Point>? _overlayPeaks;
+    private double _theoreticalMz = double.NaN;
+    private IReadOnlyList<(double Mz, double Abundance)> _pattern = Array.Empty<(double, double)>();
 
     // manual XIC form
     [ObservableProperty] private string _xicMzText = string.Empty;
@@ -577,6 +597,7 @@ public sealed partial class ExplorerViewModel : ViewModelBase
     private void SetSpectrum(MsSpectrum spectrum, string title, double precursor, IReadOnlyList<Point>? reference)
     {
         ++_spectrumVersion;
+        OverlayPeaks = null;
         SpectrumPeaks = spectrum.Peaks.Select(p => new Point(p.Mz, p.Intensity)).ToList();
         ReferencePeaks = reference;
         PrecursorMz = precursor;
@@ -695,6 +716,89 @@ public sealed partial class ExplorerViewModel : ViewModelBase
         }
         var reference = ResultLoader.FindReference(_library, name, mz);
         return reference is null ? null : ResultLoader.ToSpectrum(reference);
+    }
+
+    // ---------------------------------------------------------------- mass calculator
+
+    partial void OnFormulaTextChanged(string value) => Recompute();
+    partial void OnAdductNameChanged(string value) => Recompute();
+    partial void OnMeasuredMzTextChanged(string value) => UpdateMassError();
+
+    private void Recompute()
+    {
+        _pattern = Array.Empty<(double, double)>();
+        _theoreticalMz = double.NaN;
+        var text = (FormulaText ?? string.Empty).Trim();
+        if (text.Length == 0)
+        {
+            MassSummary = Array.Empty<MassSummaryRow>();
+            IsotopeRows = Array.Empty<IsotopeRow>();
+            FormulaStatus = string.Empty;
+            UpdateMassError();
+            return;
+        }
+        IReadOnlyList<KeyValuePair<string, int>> counts;
+        try { counts = Formula.Parse(text); }
+        catch (FormulaException ex)
+        {
+            FormulaStatus = ex.Message;
+            MassSummary = Array.Empty<MassSummaryRow>();
+            IsotopeRows = Array.Empty<IsotopeRow>();
+            UpdateMassError();
+            return;
+        }
+        FormulaStatus = string.Empty;
+        var adduct = Adduct.ByName(AdductName) ?? Adduct.All[5];
+        var mono = Formula.MonoisotopicMass(counts);
+        _theoreticalMz = adduct.Mz(mono);
+        MassSummary = new[]
+        {
+            new MassSummaryRow("Formula", Formula.Format(counts)),
+            new MassSummaryRow("Monoisotopic", mono.ToString("F5", CultureInfo.InvariantCulture)),
+            new MassSummaryRow("Average", Formula.AverageMass(counts).ToString("F4", CultureInfo.InvariantCulture)),
+            new MassSummaryRow("RDBE", Formula.Rdbe(counts).ToString("0.#", CultureInfo.InvariantCulture)),
+            new MassSummaryRow($"Ion m/z {adduct.Name}", _theoreticalMz.ToString("F5", CultureInfo.InvariantCulture)),
+        };
+        _pattern = Formula.IsotopePattern(counts, adduct, minAbundance: 0.001, maxPeaks: 12);
+        IsotopeRows = _pattern.Select(p => new IsotopeRow(p.Mz, p.Abundance * 100)).ToList();
+        UpdateMassError();
+    }
+
+    private void UpdateMassError()
+    {
+        var text = (MeasuredMzText ?? string.Empty).Trim().Replace(',', '.');
+        if (double.IsNaN(_theoreticalMz) || text.Length == 0 || !double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var measured))
+        {
+            MassError = "—";
+            return;
+        }
+        var mda = Formula.MassErrorMda(measured, _theoreticalMz);
+        var ppm = Formula.MassErrorPpm(measured, _theoreticalMz);
+        MassError = $"{mda.ToString("+0.00;-0.00", CultureInfo.InvariantCulture)} mDa    {ppm.ToString("+0.00;-0.00", CultureInfo.InvariantCulture)} ppm";
+    }
+
+    /// <summary>The theoretical pattern over the spectrum pane, as sticks scaled to the measured peak nearest the monoisotopic m/z.</summary>
+    [RelayCommand]
+    private void OverlayIsotopes()
+    {
+        if (_pattern.Count == 0 || SpectrumPeaks.Count == 0) { Status = "Type a formula and show a spectrum to overlay its isotope pattern."; return; }
+        var m = _pattern[0].Mz;
+        var nearest = SpectrumPeaks.OrderBy(p => Math.Abs(p.X - m)).First();
+        var scale = nearest.Y > 0 ? nearest.Y / _pattern[0].Abundance : SpectrumPeaks.Max(p => p.Y);
+        OverlayPeaks = _pattern.Select(p => new Point(p.Mz, p.Abundance * scale)).ToList();
+        Status = $"Isotope pattern of {FormulaText.Trim()} {AdductName} overlaid, scaled to the measured peak at {nearest.X:F4} ({Formula.MassErrorPpm(nearest.X, m):+0.0;-0.0} ppm from M).";
+    }
+
+    [RelayCommand]
+    private void ClearOverlay() => OverlayPeaks = null;
+
+    /// <summary>The measured m/z taken from the spectrum pane: the peak nearest the theoretical ion.</summary>
+    [RelayCommand]
+    private void MeasuredFromSpectrum()
+    {
+        if (double.IsNaN(_theoreticalMz) || SpectrumPeaks.Count == 0) { Status = "Type a formula and show a spectrum to read the measured m/z from it."; return; }
+        var nearest = SpectrumPeaks.OrderBy(p => Math.Abs(p.X - _theoreticalMz)).First();
+        MeasuredMzText = nearest.X.ToString("F4", CultureInfo.InvariantCulture);
     }
 
     // ---------------------------------------------------------------- manual XIC

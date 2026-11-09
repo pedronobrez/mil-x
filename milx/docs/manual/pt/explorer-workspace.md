@@ -143,6 +143,33 @@ assim um precursor espalhado por doze slots vira um traço. Uma linha sob o form
 varreduras o portão encontrou e de quantos slots vieram. A mesma fonte é `gated:MZ[:TOL]` na
 [[command-line]].
 
+**Mass calc** — uma fórmula nos números de que um espectrometrista de massas precisa, e uma massa
+medida num erro; as tabelas e a aritmética são as do MIL-Q, de modo que as duas aplicações dão os
+mesmos números. Digite uma fórmula molecular: `C18H34O4`. Grupos com multiplicadores,
+`C6H4(NO2)2`, e isótopos isolados entre colchetes, `[13C]6H12O6`, são lidos, com `D` aceito para
+deutério, de modo que um padrão interno marcado como `C18H30D4O4` é digitado como se escreve. O
+painel informa a fórmula na ordem de Hill, a massa monoisotópica, a massa média, o equivalente de
+anéis e ligações duplas (RDBE) e o m/z do íon para o aduto escolhido ao lado da fórmula:
+
+| Negativo | Positivo |
+| --- | --- |
+| [M−H]⁻ | [M+H]⁺ |
+| [M+Cl]⁻ | [M+NH₄]⁺ |
+| [M+HCOO]⁻ | [M+Na]⁺ |
+| [M+CH₃COO]⁻ | [M+K]⁺ |
+| [M−2H]²⁻ | [M+2H]²⁺ |
+
+A massa do íon leva em conta o elétron: um cátion é mais leve do que a soma dos seus átomos em uma
+massa de elétron e um ânion mais pesado, o que importa na quarta casa. Digite um m/z medido sob o
+calculado — ou pressione **Measured from spectrum** para tomar o pico do painel de espectro mais
+próximo do íon teórico — e o erro aparece em mDa e em ppm. O padrão isotópico teórico do íon — m/z
+e abundância relativa de M, M+1, M+2 e assim por diante, até 0,1 % — é tabulado, e **Overlay on
+spectrum** desenha-o no painel de espectro como barras tracejadas na escala do pico medido mais
+próximo da massa monoisotópica, para comparar os satélites medidos com os esperados; **Clear
+overlay** remove-o, e mostrar outro espectro também. A sobreposição só faz sentido num espectro
+que carrega os satélites: uma varredura de íons-produto isola o precursor monoisotópico, portanto
+sobreponha no canal de survey.
+
 **Spectrum peaks** — o espectro do painel como tabela: m/z, intensidade, intensidade relativa,
 mais intenso primeiro.
 

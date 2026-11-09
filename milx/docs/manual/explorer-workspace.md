@@ -139,6 +139,33 @@ precursor spread over twelve slots becomes one trace. A line under the form says
 the gate found and how many slots they came from. The same source is `gated:MZ[:TOL]` on the
 [[command-line]].
 
+**Mass calc** — a formula into the numbers a mass spectrometrist needs, and a measured mass into
+an error; the tables and the arithmetic are MIL-Q's, so the two applications give the same
+numbers. Type a molecular formula: `C18H34O4`. Groups with multipliers, `C6H4(NO2)2`, and single
+isotopes in square brackets, `[13C]6H12O6`, are read, with `D` accepted for deuterium, so a
+labelled internal standard such as `C18H30D4O4` is typed as it is written. The panel reports the
+formula in Hill order, the monoisotopic mass, the average mass, the ring-and-double-bond equivalent
+(RDBE) and the m/z of the ion for the adduct chosen beside the formula:
+
+| Negative | Positive |
+| --- | --- |
+| [M−H]⁻ | [M+H]⁺ |
+| [M+Cl]⁻ | [M+NH₄]⁺ |
+| [M+HCOO]⁻ | [M+Na]⁺ |
+| [M+CH₃COO]⁻ | [M+K]⁺ |
+| [M−2H]²⁻ | [M+2H]²⁺ |
+
+The ion mass accounts for the electron: a cation is lighter than the sum of its atoms by one
+electron mass and an anion heavier, which matters at the fourth decimal. Type a measured m/z
+under the computed one — or press **Measured from spectrum** to take the peak of the spectrum
+pane nearest the theoretical ion — and the error is shown in mDa and in ppm. The theoretical
+isotope pattern of the ion — m/z and relative abundance of M, M+1, M+2 and so on, down to 0.1 % —
+is tabulated, and **Overlay on spectrum** draws it on the spectrum pane as dashed sticks scaled to
+the measured peak nearest the monoisotopic mass, so the measured satellites can be compared with
+the expected ones; **Clear overlay** removes it, and so does showing another spectrum. The overlay
+is only meaningful on a spectrum that carries the satellites: a product-ion scan isolates the
+monoisotopic precursor, so overlay on the survey channel.
+
 **Spectrum peaks** — the spectrum in the pane as a table: m/z, intensity, relative intensity,
 most intense first.
 

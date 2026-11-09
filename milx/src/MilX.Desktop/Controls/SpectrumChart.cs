@@ -13,13 +13,15 @@ public sealed class SpectrumChart : ChartBase
 {
     public static readonly StyledProperty<IReadOnlyList<Point>?> PeaksProperty = AvaloniaProperty.Register<SpectrumChart, IReadOnlyList<Point>?>(nameof(Peaks));
     public static readonly StyledProperty<IReadOnlyList<Point>?> ReferencePeaksProperty = AvaloniaProperty.Register<SpectrumChart, IReadOnlyList<Point>?>(nameof(ReferencePeaks));
+    /// <summary>A theoretical pattern drawn over the measured spectrum as hollow sticks, in the measured spectrum's units.</summary>
+    public static readonly StyledProperty<IReadOnlyList<Point>?> OverlayPeaksProperty = AvaloniaProperty.Register<SpectrumChart, IReadOnlyList<Point>?>(nameof(OverlayPeaks));
     public static readonly StyledProperty<int> TopLabelsProperty = AvaloniaProperty.Register<SpectrumChart, int>(nameof(TopLabels), 8);
     public static readonly StyledProperty<double> PrecursorMzProperty = AvaloniaProperty.Register<SpectrumChart, double>(nameof(PrecursorMz), double.NaN);
     public static readonly StyledProperty<bool> NormalizeProperty = AvaloniaProperty.Register<SpectrumChart, bool>(nameof(Normalize), true);
 
     static SpectrumChart()
     {
-        AffectsRender<SpectrumChart>(PeaksProperty, ReferencePeaksProperty, TopLabelsProperty, PrecursorMzProperty, NormalizeProperty);
+        AffectsRender<SpectrumChart>(PeaksProperty, ReferencePeaksProperty, OverlayPeaksProperty, TopLabelsProperty, PrecursorMzProperty, NormalizeProperty);
     }
 
     public SpectrumChart()
@@ -30,6 +32,7 @@ public sealed class SpectrumChart : ChartBase
 
     public IReadOnlyList<Point>? Peaks { get => GetValue(PeaksProperty); set => SetValue(PeaksProperty, value); }
     public IReadOnlyList<Point>? ReferencePeaks { get => GetValue(ReferencePeaksProperty); set => SetValue(ReferencePeaksProperty, value); }
+    public IReadOnlyList<Point>? OverlayPeaks { get => GetValue(OverlayPeaksProperty); set => SetValue(OverlayPeaksProperty, value); }
     public int TopLabels { get => GetValue(TopLabelsProperty); set => SetValue(TopLabelsProperty, value); }
     public double PrecursorMz { get => GetValue(PrecursorMzProperty); set => SetValue(PrecursorMzProperty, value); }
     public bool Normalize { get => GetValue(NormalizeProperty); set => SetValue(NormalizeProperty, value); }
@@ -107,6 +110,24 @@ public sealed class SpectrumChart : ChartBase
             var downY = plot.Bottom - down.Height - 4;
             ctx.DrawText(up, new Point(LabelX(plot, up.Width, upY, upY + up.Height, measuredInk), upY));
             ctx.DrawText(down, new Point(LabelX(plot, down.Width, downY, downY + down.Height, referenceInk), downY));
+        }
+
+        if (OverlayPeaks is { Count: > 0 } overlay && Peaks is { Count: > 0 } measured)
+        {
+            // the theoretical pattern, in the measured spectrum's scale: a hollow stick and a circle at each expected satellite
+            var scale = Scale(measured);
+            var color = WarningColor;
+            var pen = new Pen(new SolidColorBrush(color), 1.4, dashStyle: DashStyle.Dash);
+            foreach (var p in overlay)
+            {
+                if (p.X < xMin || p.X > xMax) continue;
+                var px0 = tx(p.X);
+                var py0 = ty(p.Y * scale);
+                ctx.DrawLine(pen, new Point(px0, zero), new Point(px0, py0));
+                ctx.DrawEllipse(null, new Pen(new SolidColorBrush(color), 1.2), new Point(px0, py0), 3.5, 3.5);
+            }
+            var tag = MakeText("theoretical pattern", 10, new SolidColorBrush(color));
+            ctx.DrawText(tag, new Point(plot.Right - tag.Width - 8, plot.Y + 4 + (HasReference ? 14 : 0)));
         }
 
         if (!double.IsNaN(PrecursorMz) && PrecursorMz >= xMin && PrecursorMz <= xMax)
