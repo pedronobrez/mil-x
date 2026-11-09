@@ -107,6 +107,7 @@
         <Border Grid.Row="3" Padding="2,4,2,6">
           <DockPanel>
             <Button DockPanel.Dock="Right" Content="Average selected range" Command="{Binding AverageSelectedRangeCommand}" IsEnabled="{Binding HasSelection}" />
+            <Button DockPanel.Dock="Right" Classes="tool" Content="XIC from selection" Command="{Binding XicFromSelectionCommand}" IsEnabled="{Binding HasSpectrumSelection}" Margin="0,0,8,0" ToolTip.Tip="Extract the m/z range shaded on the spectrum (⇧-drag) as an XIC, exactly as selected" />
             <TextBlock DockPanel.Dock="Right" Classes="muted" Text="{Binding SelectionLabel}" VerticalAlignment="Center" Margin="0,0,12,0" />
             <TextBlock Classes="label" Text="Scan" />
             <Button Classes="icon" Content="◀" Command="{Binding PreviousScanCommand}" />
@@ -117,7 +118,8 @@
           </DockPanel>
         </Border>
         <Border Grid.Row="4" Classes="panel">
-          <c:SpectrumChart x:Name="Spectrum" Peaks="{Binding SpectrumPeaks}" ReferencePeaks="{Binding ReferencePeaks}" OverlayPeaks="{Binding OverlayPeaks}" PrecursorMz="{Binding PrecursorMz}" Title="{Binding SpectrumTitle}" TopLabels="{Binding TopLabels}" />
+          <c:SpectrumChart x:Name="Spectrum" Peaks="{Binding SpectrumPeaks}" ReferencePeaks="{Binding ReferencePeaks}" OverlayPeaks="{Binding OverlayPeaks}" PrecursorMz="{Binding PrecursorMz}" Title="{Binding SpectrumTitle}" TopLabels="{Binding TopLabels}"
+                           SelectionStart="{Binding SpectrumSelectionStart, Mode=TwoWay}" SelectionEnd="{Binding SpectrumSelectionEnd, Mode=TwoWay}" />
         </Border>
       </Grid>
       <GridSplitter Grid.Column="3" Classes="vertical" ResizeDirection="Columns" />
@@ -221,7 +223,7 @@
               </DockPanel>
             </TabItem>
             <TabItem Header="Spectrum peaks">
-              <DataGrid Margin="0,6,0,0" ItemsSource="{Binding SpectrumTable}" AutoGenerateColumns="False" IsReadOnly="True" RowHeight="24">
+              <DataGrid Margin="0,6,0,0" ItemsSource="{Binding SpectrumTable}" AutoGenerateColumns="False" IsReadOnly="True" RowHeight="24" DoubleTapped="OnSpectrumPeakDoubleTapped" ToolTip.Tip="Double-click a row to extract its m/z as an XIC">
                 <DataGrid.Columns>
                   <DataGridTextColumn Header="m/z" Binding="{Binding Mz, StringFormat={}{0:F4}}" Width="*" />
                   <DataGridTextColumn Header="Intensity" Binding="{Binding Intensity, Converter={x:Static views:Converters.Number}, ConverterParameter=N0}" Width="100" />

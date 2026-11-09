@@ -113,7 +113,9 @@ substitui a varredura pelo espectro médio sobre o intervalo de tempo de retenç
 
 Quando um pico do painel Peaks é selecionado, o painel mostra em vez disso o seu MS/MS
 deconvoluído, espelhado contra a referência da biblioteca quando o pico está anotado: medido em
-cima, biblioteca embaixo.
+cima, biblioteca embaixo. `⇧`-arrastar sobre o próprio espectro seleciona um intervalo de m/z, e **XIC from selection**
+extrai-o como traço cuja janela é exatamente o intervalo selecionado — o *Extract XIC from
+selection* do MIL-Q.
 
 ## Os painéis
 
@@ -171,7 +173,8 @@ que carrega os satélites: uma varredura de íons-produto isola o precursor mono
 sobreponha no canal de survey.
 
 **Spectrum peaks** — o espectro do painel como tabela: m/z, intensidade, intensidade relativa,
-mais intenso primeiro.
+mais intenso primeiro. Clique duplo numa linha extrai a massa daquele pico como XIC com a tolerância
+definida na aba Manual XIC, como faz o MIL-Q.
 
 ## O que não faz
 

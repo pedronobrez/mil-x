@@ -26,6 +26,11 @@ public partial class ExplorerView : UserControl
         };
     }
 
+    private void OnSpectrumPeakDoubleTapped(object? sender, Avalonia.Input.TappedEventArgs e)
+    {
+        if (sender is DataGrid grid && grid.SelectedItem is SpectrumPeakRow row) Vm?.XicOfSpectrumPeak(row);
+    }
+
     private async void OnRebuildContour(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         if (Vm is null) return;

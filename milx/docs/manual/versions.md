@@ -40,6 +40,8 @@ see [[command-line]].
 - **Noise-region S/N in the review grid** — height over the noise of a baseline stretch the reviewer
   shaded, peak-to-peak or standard deviation, named beside MS-DIAL's own S/N. See
   [[evidence-panels#Signal-to-noise over a noise region]].
+- **XIC from the m/z range shaded on the spectrum**, and from a double-clicked row of the Spectrum peaks
+  table — MIL-Q's two ways of asking for a chromatogram from a spectrum.
 - **Spectrum labels by a budget per region**, so a crowded stretch does not spend every label. See
   [[explorer-workspace#The chromatogram]].
 - **Folder checks before anything is read** — a `.wiff` without its `.wiff.scan`, a stray `.scan`

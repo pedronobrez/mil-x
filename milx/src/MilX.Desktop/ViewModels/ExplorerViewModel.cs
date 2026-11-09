@@ -814,6 +814,32 @@ public sealed partial class ExplorerViewModel : ViewModelBase
         else if (rejected.Count > 0) Status = $"Skipped what is not a mass: {string.Join(", ", rejected)}.";
     }
 
+    // the m/z range shaded on the spectrum pane (⇧-drag), for "XIC from selection"
+    [ObservableProperty] private double _spectrumSelectionStart = double.NaN;
+    [ObservableProperty] private double _spectrumSelectionEnd = double.NaN;
+    public bool HasSpectrumSelection => !double.IsNaN(SpectrumSelectionStart) && !double.IsNaN(SpectrumSelectionEnd) && SpectrumSelectionEnd > SpectrumSelectionStart;
+    partial void OnSpectrumSelectionStartChanged(double value) => OnPropertyChanged(nameof(HasSpectrumSelection));
+    partial void OnSpectrumSelectionEndChanged(double value) => OnPropertyChanged(nameof(HasSpectrumSelection));
+
+    /// <summary>MIL-Q's "Extract XIC from selection": the m/z range shaded on the spectrum becomes the window, exactly as selected.</summary>
+    [RelayCommand]
+    private void XicFromSelection()
+    {
+        if (!HasSpectrumSelection) { Status = "Shade an m/z range on the spectrum first: ⇧-drag across it."; return; }
+        var lo = SpectrumSelectionStart;
+        var hi = SpectrumSelectionEnd;
+        XicEntries.Add(new ManualXic { Mz = (lo + hi) / 2, Tolerance = (hi - lo) / 2, Unit = "Da" });
+        Status = $"XIC of m/z {lo:F4}–{hi:F4} added, read from the {XicSourceName} source.";
+    }
+
+    /// <summary>A row of the Spectrum peaks table, double-clicked: that peak's mass with the Manual XIC tolerance.</summary>
+    public void XicOfSpectrumPeak(SpectrumPeakRow? row)
+    {
+        if (row is null) return;
+        XicEntries.Add(new ManualXic { Mz = row.Mz, Tolerance = XicTolerance, Unit = XicUnit });
+        Status = $"XIC of m/z {row.Mz:F4} ± {XicTolerance} {XicUnit} added.";
+    }
+
     /// <summary>Gates the XICs on a precursor from outside the panel (a spectrum's precursor, a peak).</summary>
     public void GateOn(double precursorMz)
     {

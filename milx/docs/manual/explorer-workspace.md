@@ -106,7 +106,9 @@ itself isolated, its isolation window, the collision energy and, in a SCIEX IDA 
 came from — per scan, never the slot's placeholder mass. **◀** and **▶** and the scan box step through the scans of the active channel;
 the count beside it is the number of scans in the channel. **Average selected range** replaces the
 scan with the mean spectrum over the selected retention-time range, which is how a weak product
-spectrum is read.
+spectrum is read. `⇧`-drag across the spectrum itself selects an m/z range, and **XIC from
+selection** extracts it as a trace whose window is exactly the range selected — MIL-Q's *Extract
+XIC from selection*.
 
 When a peak from the Peaks panel is selected, the pane shows its deconvoluted MS/MS instead,
 mirrored against the library reference when the peak is annotated: measured up, library down.
@@ -167,7 +169,8 @@ is only meaningful on a spectrum that carries the satellites: a product-ion scan
 monoisotopic precursor, so overlay on the survey channel.
 
 **Spectrum peaks** — the spectrum in the pane as a table: m/z, intensity, relative intensity,
-most intense first.
+most intense first. Double-click a row to extract that peak's mass as an XIC with the tolerance set
+in the Manual XIC tab, as MIL-Q does.
 
 ## What it does not do
 

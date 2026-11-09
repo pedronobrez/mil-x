@@ -41,6 +41,8 @@ aquisição IDA real e no estudo sintético; veja [[command-line]].
 - **S/N por região de ruído na grade de revisão** — altura sobre o ruído de um trecho de linha de
   base que o revisor sombreou, pico a pico ou desvio padrão, nomeado ao lado do S/N do próprio
   MS-DIAL. Veja [[evidence-panels#Sinal-ruído sobre uma região de ruído]].
+- **XIC do intervalo de m/z sombreado no espectro**, e de uma linha da tabela Spectrum peaks com clique
+  duplo — as duas formas do MIL-Q de pedir um cromatograma a partir de um espectro.
 - **Rótulos do espectro por um orçamento por região**, para que um trecho lotado não gaste todo
   rótulo. Veja [[explorer-workspace#O cromatograma]].
 - **Conferência de pasta antes de qualquer leitura** — um `.wiff` sem o seu `.wiff.scan`, um `.scan`
