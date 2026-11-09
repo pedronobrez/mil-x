@@ -99,8 +99,11 @@ public static class RawExplorer
             list.Add(i);
         }
 
-        // DDA: many different precursors, each seen a handful of times; DIA: few windows, each seen many times
-        var isDda = groups.Count > 64 || groups.Count > ms2.Count / 4.0;
+        // DDA: many different precursors, each seen a handful of times; DIA: few windows, each acquired in
+        // nearly every cycle. A small study with twelve compounds fragmented five times each is still DDA,
+        // which is why the typical group is also held against the number of survey scans.
+        var typicalGroup = groups.Values.Select(g => g.Count).OrderBy(n => n).ElementAt(groups.Count / 2);
+        var isDda = groups.Count > 64 || groups.Count > ms2.Count / 4.0 || (ms1.Count > 0 && typicalGroup < ms1.Count * 0.5);
         if (isDda)
         {
             channels.Add(new RawChannel(RawChannelKind.Ms2Events, $"MS2 events ({ms2.Count})", ms2, 0, 0, 0));

@@ -1812,31 +1812,11 @@ public sealed partial class AnalyticsViewModel : ViewModelBase
         });
     }
 
-    /// <summary>Writes a height (and area) matrix of all spots × samples as TSV.</summary>
+    /// <summary>Writes the height and area matrix of all spots × samples as TSV, through the exporter the command line shares.</summary>
     public async Task ReexportAsync(string path)
     {
-        var sb = new StringBuilder();
-        sb.Append("Alignment ID\tName\tRT (min)\tm/z\tAdduct\tFormula\tOntology\tScore\tFill %");
-        foreach (var s in _samples) sb.Append('\t').Append(s.FileName).Append(" height");
-        foreach (var s in _samples) sb.Append('\t').Append(s.FileName).Append(" area");
-        sb.Append('\n');
-        foreach (var spot in _spots)
-        {
-            sb.Append(spot.Id).Append('\t').Append(spot.Name).Append('\t').Append(spot.Rt.ToString("F3", CultureInfo.InvariantCulture)).Append('\t')
-              .Append(spot.Mz.ToString("F5", CultureInfo.InvariantCulture)).Append('\t').Append(spot.Adduct).Append('\t').Append(spot.Formula).Append('\t').Append(spot.Ontology).Append('\t')
-              .Append(spot.Score.ToString("F3", CultureInfo.InvariantCulture)).Append('\t').Append(spot.FillPercent.ToString("F0", CultureInfo.InvariantCulture));
-            foreach (var s in _samples)
-            {
-                var p = spot.SamplePeaks.FirstOrDefault(q => q.FileId == s.FileId);
-                sb.Append('\t').Append(p is null ? "" : p.Height.ToString("F0", CultureInfo.InvariantCulture));
-            }
-            foreach (var s in _samples)
-            {
-                var p = spot.SamplePeaks.FirstOrDefault(q => q.FileId == s.FileId);
-                sb.Append('\t').Append(p is null || double.IsNaN(p.Area) ? "" : p.Area.ToString("F0", CultureInfo.InvariantCulture));
-            }
-            sb.Append('\n');
-        }
-        await File.WriteAllTextAsync(path, sb.ToString());
+        var spots = _spots;
+        var samples = _samples;
+        await Task.Run(() => MatrixExporter.Write(path, spots, samples));
     }
 }

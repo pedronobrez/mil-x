@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    milx: the MIL suite's shared command line (docs/CLI-CONTRACT.md, mil-cli/1). The contract's
+    subcommands run on MilX.RawData and MilX.Pipeline — no Avalonia on any code path — and the
+    MS-DIAL workflows (lcms, gcms, …) are handed to the MSDIALCUI console in-process, so one binary
+    answers a script, an agent or the inbox folder of the serve mode the same way.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>MilX.Cli</RootNamespace>
+    <AssemblyName>milx</AssemblyName>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <Configurations>Debug;Release;Debug vendor unsupported;Release vendor unsupported</Configurations>
+    <NoWarn>$(NoWarn);CS0618</NoWarn>
+    <SciexPluginDir>$(MSBuildThisFileDirectory)../MilX.Plugins.SciexWiff/bin/$(Configuration)/net8.0/</SciexPluginDir>
+    <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MilX.Pipeline\MilX.Pipeline.csproj" />
+    <ProjectReference Include="..\MilX.Interop.OpenQuant\MilX.Interop.OpenQuant.csproj" />
+    <ProjectReference Include="..\MilX.Plugins.SciexWiff\MilX.Plugins.SciexWiff.csproj" ReferenceOutputAssembly="false" />
+    <!-- the MS-DIAL console, for lcms and the other workflows, run in-process -->
+    <ProjectReference Include="..\..\..\MsdialWorkbench-MSDIAL-v5.5.260817\tests\MSDIAL5\MsdialCoreTestApp\MsdialCoreTestApp.csproj" SetTargetFramework="TargetFramework=net8" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="MilX.Cli.Tests" />
+  </ItemGroup>
+
+  <!-- the SCIEX plugin beside the binary, as the desktop application has it -->
+  <Target Name="CopySciexPlugin" AfterTargets="Build" Condition="Exists('$(SciexPluginDir)')">
+    <ItemGroup>
+      <SciexPluginFile Include="$(SciexPluginDir)*.dll;$(SciexPluginDir)*.txt"
+                       Exclude="$(SciexPluginDir)Common.dll;$(SciexPluginDir)MilX.RawData.dll;$(SciexPluginDir)NCDK.dll;$(SciexPluginDir)MessagePack*.dll;$(SciexPluginDir)Accord*.dll;$(SciexPluginDir)Newtonsoft.Json.dll;$(SciexPluginDir)Splash.dll;$(SciexPluginDir)MathNet.Numerics.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(SciexPluginFile)" DestinationFolder="$(OutDir)plugins/sciex/" SkipUnchangedFiles="true" ContinueOnError="true" />
+  </Target>
+
+</Project>

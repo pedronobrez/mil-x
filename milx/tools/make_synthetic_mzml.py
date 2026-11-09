@@ -12,7 +12,7 @@ The generator writes real binary data arrays (base64, optionally zlib), a valid
 same code paths as msconvert output.
 
 Usage:
-  python3 make_synthetic_mzml.py --out /path/to/dir [--samples 3] [--no-zlib] [--seed 7]
+  python3 make_synthetic_mzml.py --out /path/to/dir [--samples 3] [--no-zlib] [--seed 7] [--ida 4]
 """
 import argparse
 import base64
@@ -137,8 +137,17 @@ def spectrum_xml(index, scan_no, rt_sec, ms_level, mzs, ints, precursor=None, us
     return "".join(xml)
 
 
-def simulate_sample(name, rng, sample_scale, rt_shift, use_zlib, run_minutes=5.0, cycle_sec=0.6, top_n=2):
-    """Return list of (rt_sec, ms_level, mzs, ints, precursor) for one sample."""
+def simulate_sample(name, rng, sample_scale, rt_shift, use_zlib, run_minutes=5.0, cycle_sec=0.6, top_n=2, ida_slots=0):
+    """
+    Return list of (rt_sec, ms_level, mzs, ints, precursor) for one sample.
+
+    With ida_slots > 0 the MS2 scans follow SCIEX's IDA layout instead of a plain top-N: every cycle
+    carries exactly ida_slots dependent scans, slot k holding the k-th most intense candidate of that
+    cycle (or an empty scan with no precursor when there is none), and there is no dynamic exclusion,
+    so a precursor is fragmented in every cycle it is intense in and moves between slots as its rank
+    changes. That is the pattern the gated source exists for: one precursor's product spectra spread
+    over several slots, to be gathered by the precursor each scan actually isolated.
+    """
     spectra = []
     t = 0.0
     last_ms2_time = {}  # compound index -> last time an MS2 was triggered (dynamic exclusion)
@@ -171,16 +180,9 @@ def simulate_sample(name, rng, sample_scale, rt_shift, use_zlib, run_minutes=5.0
             if inten > 2.0e4:
                 candidates.append((inten, ci, mh))
         spectra.append((t, 1, np.array(mzs), np.array(ints), None))
-        # ---- MS2 (DDA top-N with 3 s dynamic exclusion) ----
         candidates.sort(reverse=True)
-        n_sel = 0
-        for inten, ci, mh in candidates:
-            if n_sel >= top_n:
-                break
-            if t - last_ms2_time.get(ci, -1e9) < 3.0:
-                continue
-            last_ms2_time[ci] = t
-            n_sel += 1
+
+        def product_scan(inten, ci, mh, rank):
             frags = COMPOUNDS[ci][5]
             fm, fi = [], []
             scale = inten * 0.15
@@ -194,7 +196,26 @@ def simulate_sample(name, rng, sample_scale, rt_shift, use_zlib, run_minutes=5.0
             n_noise2 = int(rng.integers(10, 25))
             fm.extend(rng.uniform(50.0, mh - 1.0, n_noise2))
             fi.extend(rng.uniform(5.0, 60.0, n_noise2))
-            spectra.append((t + 0.2 * n_sel, 2, np.array(fm), np.array(fi), (mh, 30.0)))
+            return (t + 0.2 * rank, 2, np.array(fm), np.array(fi), (mh, 30.0))
+
+        if ida_slots > 0:
+            # ---- IDA-like: a fixed number of dependent slots per cycle, filled by rank, no exclusion ----
+            for slot in range(ida_slots):
+                if slot < len(candidates):
+                    inten, ci, mh = candidates[slot]
+                    spectra.append(product_scan(inten, ci, mh, slot + 1))
+                # an untriggered slot is simply absent, as the native reader skips it
+        else:
+            # ---- MS2 (DDA top-N with 3 s dynamic exclusion) ----
+            n_sel = 0
+            for inten, ci, mh in candidates:
+                if n_sel >= top_n:
+                    break
+                if t - last_ms2_time.get(ci, -1e9) < 3.0:
+                    continue
+                last_ms2_time[ci] = t
+                n_sel += 1
+                spectra.append(product_scan(inten, ci, mh, n_sel))
         t += cycle_sec
     return spectra
 
@@ -482,6 +503,9 @@ def main():
     ap.add_argument("--seed", type=int, default=7)
     ap.add_argument("--minutes", type=float, default=5.0)
     ap.add_argument("--mode", choices=["lcms", "gcms"], default="lcms")
+    ap.add_argument("--ida", type=int, default=0, metavar="SLOTS",
+                    help="LC-MS only: an IDA-like layout with SLOTS dependent scans per cycle, filled by rank with no "
+                         "exclusion, so several precursors share a slot and one precursor moves between slots")
     args = ap.parse_args()
     os.makedirs(args.out, exist_ok=True)
     rng = np.random.default_rng(args.seed)
@@ -494,7 +518,7 @@ def main():
         if args.mode == "gcms":
             spectra = simulate_gcms_sample(rng, scale, rt_shift, run_minutes=max(args.minutes, 21.0) if args.minutes == 5.0 else args.minutes)
         else:
-            spectra = simulate_sample(name, rng, scale, rt_shift, use_zlib, run_minutes=args.minutes)
+            spectra = simulate_sample(name, rng, scale, rt_shift, use_zlib, run_minutes=args.minutes, ida_slots=args.ida)
         path = os.path.join(args.out, name + ".mzML")
         write_mzml(path, name, spectra, use_zlib)
         n_ms1 = sum(1 for sp in spectra if sp[1] == 1)
