@@ -6,8 +6,9 @@ namespace MilX.Desktop.Controls;
 
 /// <summary>
 /// Centroid (stick) mass spectrum. Intensities are normalised to 100 %. When <see cref="ReferencePeaks"/>
-/// is set the reference is drawn mirrored below the axis (measured up, library down). The N most intense
-/// peaks of each spectrum are labelled with their m/z.
+/// is set the reference is drawn mirrored below the axis (measured up, library down). Peaks are labelled
+/// with their m/z under <see cref="LabelBudget"/>'s rule: a budget per region of the visible axis, so a
+/// crowded stretch does not spend every label before a lone peak elsewhere is named.
 /// </summary>
 public sealed class SpectrumChart : ChartBase
 {
@@ -15,6 +16,7 @@ public sealed class SpectrumChart : ChartBase
     public static readonly StyledProperty<IReadOnlyList<Point>?> ReferencePeaksProperty = AvaloniaProperty.Register<SpectrumChart, IReadOnlyList<Point>?>(nameof(ReferencePeaks));
     /// <summary>A theoretical pattern drawn over the measured spectrum as hollow sticks, in the measured spectrum's units.</summary>
     public static readonly StyledProperty<IReadOnlyList<Point>?> OverlayPeaksProperty = AvaloniaProperty.Register<SpectrumChart, IReadOnlyList<Point>?>(nameof(OverlayPeaks));
+    /// <summary>0 draws no labels; any other value turns them on, under the label budget (the number itself no longer caps them).</summary>
     public static readonly StyledProperty<int> TopLabelsProperty = AvaloniaProperty.Register<SpectrumChart, int>(nameof(TopLabels), 8);
     public static readonly StyledProperty<double> PrecursorMzProperty = AvaloniaProperty.Register<SpectrumChart, double>(nameof(PrecursorMz), double.NaN);
     public static readonly StyledProperty<bool> NormalizeProperty = AvaloniaProperty.Register<SpectrumChart, bool>(nameof(Normalize), true);
@@ -38,6 +40,9 @@ public sealed class SpectrumChart : ChartBase
     public bool Normalize { get => GetValue(NormalizeProperty); set => SetValue(NormalizeProperty, value); }
 
     private bool HasReference => ReferencePeaks is { Count: > 0 };
+
+    /// <summary>How many m/z labels the measured half drew at the last render; the tests count them.</summary>
+    internal int LabelsDrawn { get; private set; }
 
     protected override bool PadYRange => false;
 
@@ -190,20 +195,26 @@ public sealed class SpectrumChart : ChartBase
             ink.Add(new Rect(px0 - 1, Math.Min(zero, py0), 2, Math.Abs(zero - py0)));
         }
 
-        // labels for the most intense visible peaks, skipping overlaps
+        // labels: the budget decides who asks (per region of the visible axis), the collision rule who fits
         var labelBrush = new SolidColorBrush(color);
         var placed = new List<double>();
-        foreach (var (x, y) in visible.OrderByDescending(v => Math.Abs(v.Y)).Take(Math.Max(0, TopLabels)))
+        var drawn = 0;
+        if (TopLabels > 0)
         {
-            var px = tx(x);
-            if (placed.Any(q => Math.Abs(q - px) < 48)) continue;
-            var ft = MakeText(x.ToString("F4", CultureInfo.InvariantCulture), Compact ? 9 : 9.5, labelBrush);
-            var py = mirrored ? ty(y) + 2 : ty(y) - ft.Height - 2;
-            var lx = Math.Clamp(px - ft.Width / 2, plot.X, plot.Right - ft.Width);
-            ctx.DrawText(ft, new Point(lx, py));
-            ink.Add(new Rect(lx, py, ft.Width, ft.Height));
-            placed.Add(px);
+            foreach (var (x, y) in LabelBudget.Choose(visible, xMin, xMax))
+            {
+                var px = tx(x);
+                if (placed.Any(q => Math.Abs(q - px) < 48)) continue;
+                var ft = MakeText(x.ToString("F4", CultureInfo.InvariantCulture), Compact ? 9 : 9.5, labelBrush);
+                var py = mirrored ? ty(y) + 2 : ty(y) - ft.Height - 2;
+                var lx = Math.Clamp(px - ft.Width / 2, plot.X, plot.Right - ft.Width);
+                ctx.DrawText(ft, new Point(lx, py));
+                ink.Add(new Rect(lx, py, ft.Width, ft.Height));
+                placed.Add(px);
+                drawn++;
+            }
         }
+        if (!mirrored) LabelsDrawn = drawn;
         return ink;
     }
 

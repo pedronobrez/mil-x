@@ -49,7 +49,7 @@ The toolbar:
 | **Normalise** | scales every trace to 100 %; the Y axis reads relative intensity |
 | **Stack** | draws each trace in its own horizontal band |
 | **Contour** | replaces the chromatogram with the active channel as a surface — see [[explorer-workspace#The contour]] |
-| **m/z labels** | labels the eight most intense peaks of the spectrum with their m/z |
+| **m/z labels** | labels peaks of the spectrum with their m/z — not simply the tallest: the visible axis is cut into eight regions and each may name up to three peaks, tallest first in rounds, so a crowded low-mass stretch cannot spend every label before a lone peak further up is named; a label that would overprint another is dropped. The same rule draws the mirror, the evidence panels and the exported figure |
 | **RT labels** | labels the apex of each trace in view with its retention time |
 | **Legend** | |
 | **Smooth (σ, scans)** | a Gaussian smoothing of every trace, in scans; 0 is off |

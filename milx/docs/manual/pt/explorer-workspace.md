@@ -49,7 +49,7 @@ A barra de ferramentas:
 | **Normalise** | escala todo traço a 100 %; o eixo Y passa a intensidade relativa |
 | **Stack** | desenha cada traço na sua própria faixa horizontal |
 | **Contour** | substitui o cromatograma pelo canal ativo como superfície — veja [[explorer-workspace#O contorno]] |
-| **m/z labels** | rotula os oito picos mais intensos do espectro com o seu m/z |
+| **m/z labels** | rotula picos do espectro com o seu m/z — não simplesmente os mais altos: o eixo visível é cortado em oito regiões e cada uma pode nomear até três picos, do mais alto para baixo em rodadas, de modo que um trecho lotado de massas baixas não gasta todo rótulo antes de um pico solitário mais acima ser nomeado; um rótulo que imprimiria sobre outro é descartado. A mesma regra desenha o espelho, os painéis de evidência e a figura exportada |
 | **RT labels** | rotula o ápice de cada traço em vista com o seu tempo de retenção |
 | **Legend** | |
 | **Smooth (σ, scans)** | uma suavização gaussiana de todo traço, em varreduras; 0 desliga |
